@@ -1052,6 +1052,44 @@
       "progress": "Merged: shell, song loader, sheet music, camera preview on every tab, Practice panel, history, optional login. Remaining: the real design (F1)."
     },
     {
+      "id": "L3b",
+      "lane": "shell",
+      "title": "auto-scroll the sheet music",
+      "intent": "auto-scroll",
+      "why": "For longer songs the page should follow the music so the player never has to scroll by hand while playing.",
+      "owned_paths": [
+        "web/src/modules/sheet/**",
+        "web/src/app/**"
+      ],
+      "contracts": [
+        "transport-state",
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "idea - not started; tests to be written by the lead and approved by a human",
+        "plain": [
+          "While a song plays, the sheet music scrolls so the bar being played stays in view",
+          "Scrolling by hand pauses the auto-scroll for a few seconds; a button switches it off"
+        ]
+      },
+      "out_of_scope": [
+        "Page-turn animations"
+      ],
+      "deps": [
+        "L3"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false,
+      "read_first": [
+        "web/src/modules/sheet",
+        "web/src/bus/index.ts"
+      ],
+      "progress": "Requested by the team on Saturday afternoon for later. Not started."
+    },
+    {
       "id": "L4",
       "lane": "server-core",
       "title": "server + Tiger Data + Auth0",
