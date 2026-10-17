@@ -10,10 +10,14 @@ import { KEYWORD_STATUS, KeywordGate } from './keywords';
 import { MicPipeline } from './pipeline';
 import { busSink } from './sink';
 import { createSpeechListener, type SpeechListener } from './speech';
+import { setFakeScript, startPracticeController } from './practice';
 
 export { fakeHum, twinkleMelody } from './fake';
 export type { FakeHumOptions, HumNote } from './fake';
 export { CONFIG } from './config';
+// Practice mode (compare the player with the song). The scripted-performance helpers let tests play a made-up player.
+export { buildFeedback, compareNotes, computeCalibration, feedScriptedPerformance, melodyOf, scriptPlayed, setFakeScript as setFakePractice } from './practice';
+export type { ScriptOptions } from './practice';
 
 const MODULE = 'audio-live';
 
@@ -57,6 +61,8 @@ export function start(): Stop {
   let speech: SpeechListener | null = null;
   let speechChecked = false;
   let fakeResult = 0;
+  // The page-clock time that time 0 of the microphone's notes and onsets refers to. Practice mode needs it to line them up with the song.
+  let micOriginMs = 0;
 
   const fireKeywords = (words: string[]) => {
     for (const w of words) sendSignal({ id: `audio.keyword.${w}`, kind: 'moment', state: 'start' });
@@ -114,7 +120,8 @@ export function start(): Stop {
     reportStatus(MODULE, 'starting', isFakeMode() ? 'Starting made-up microphone data...' : 'Starting the microphone...');
 
     if (isFakeMode()) {
-      session = { fake: true, stop: fakeHum(twinkleMelody(), { loop: true }) };
+      micOriginMs = performance.now();
+      session = { fake: true, stop: fakeHum(twinkleMelody(), { loop: true, originMs: micOriginMs }) };
       reportStatus(MODULE, 'running', 'Using made-up microphone data (fake mode)');
       return;
     }
@@ -140,7 +147,8 @@ export function start(): Stop {
 
     const ctx = getAudioContext();
     if (ctx.state === 'suspended') ctx.resume().catch(() => {}); // the shell normally did this on the click already
-    const analyzer = new Analyzer(busSink, performance.now());
+    micOriginMs = performance.now();
+    const analyzer = new Analyzer(busSink, micOriginMs);
     const pipeline = new MicPipeline(ctx.sampleRate, analyzer);
     let capture: Capture;
     try {
@@ -189,9 +197,18 @@ export function start(): Stop {
     }
   });
 
+  // practice mode: listens for practiceControl, and only uses the microphone when it is already on
+  const practice = startPracticeController({ isOn: () => session !== null, originMs: () => micOriginMs }, bus);
+  if (isFakeMode() && typeof window !== 'undefined') {
+    // lets the lead's browser tests change the made-up player, e.g. __music.fakePractice({ pace: 0.9 })
+    const hook = (window as unknown as { __music?: Record<string, unknown> }).__music;
+    if (hook) hook.fakePractice = setFakeScript;
+  }
+
   return () => {
     offEnable();
     offSignal();
+    practice.stop();
     sayToActive = null;
     if (wantOn || session) {
       wantOn = false;
