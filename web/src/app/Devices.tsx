@@ -53,13 +53,19 @@ function Device({ d, fake }: { d: (typeof DEVICES)[number]; fake: boolean }) {
     setOn(after && after !== before ? buttonAfter(d.module, after, next) : next);
   };
 
+  const words = statusWords(status);
+  const fakeNote = fake && d.module !== 'touchdesigner' ? ` (practice data, no real ${d.name.toLowerCase()} used)` : '';
+  // "Off" / "On" is already said by the row itself; anything more (a problem, what it is doing) shows as a note.
+  const plain = !status || status.state === 'idle' || words === 'On';
+
   return (
-    <li className="device">
-      <button type="button" data-testid={d.testid} aria-pressed={on} onClick={toggle}>
-        {on ? d.on : d.off}
-      </button>{' '}
-      {d.name}: <span data-testid={d.statusId} data-state={status?.state ?? 'idle'}>{statusWords(status)}</span>
-      {fake && d.module !== 'touchdesigner' && <span className="muted"> (practice data, no real {d.name.toLowerCase()} used)</span>}
+    <li className="device" data-on={on}>
+      <button type="button" className="device-toggle" data-testid={d.testid} data-device={d.module} aria-pressed={on} title={`${on ? d.on : d.off}. ${d.name}: ${words}${fakeNote}`} onClick={toggle}>
+        <span className="device-name">{d.name}</span> <span className="device-state">{on ? 'on' : 'off'}</span>
+      </button>
+      <span className={plain ? 'sr-only' : 'device-note'} data-testid={d.statusId} data-state={status?.state ?? 'idle'} title={words}>
+        {words}
+      </span>
     </li>
   );
 }
@@ -67,14 +73,17 @@ function Device({ d, fake }: { d: (typeof DEVICES)[number]; fake: boolean }) {
 export function Devices({ fake }: { fake: boolean }) {
   const issues = useBusValue('issues') ?? [];
   return (
-    <section className="panel" aria-labelledby="devices-heading">
-      <h2 id="devices-heading">Devices</h2>
+    <section className="devices-section" aria-labelledby="devices-heading">
+      <h2 id="devices-heading" className="kicker devices-heading">
+        Devices
+      </h2>
       <ul className="devices">
         {DEVICES.map((d) => (
           <Device key={d.module} d={d} fake={fake} />
         ))}
       </ul>
-      <p>
+      {fake && <p className="small-note">Practice data: no real camera or microphone is used.</p>}
+      <p className="small-note">
         Mapping problems: <strong data-testid="issues-count">{issues.length}</strong>
       </p>
       {issues.length > 0 && (

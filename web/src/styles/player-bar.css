@@ -1,0 +1,124 @@
+/* The player bar: a paper card floating at the bottom of the window on Learn and Play. */
+.player-bar {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  bottom: 1.25rem;
+  width: min(60rem, calc(100vw - 2rem));
+  transform: translateX(-50%) rotate(-0.3deg);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem 1.4rem;
+  padding: 0.9rem 1.4rem;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 22px;
+  box-shadow: 7px 7px 0 var(--ink);
+}
+
+.play-button,
+.play-button:hover:not(:disabled) {
+  width: 4.25rem;
+  height: 4.25rem;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 4px 4px 0 var(--ink);
+  display: grid;
+  place-items: center;
+}
+
+.play-button::after {
+  content: '';
+  margin-left: 0.35rem;
+  border-left: 1.25rem solid #fff;
+  border-top: 0.8rem solid transparent;
+  border-bottom: 0.8rem solid transparent;
+}
+
+.player-info {
+  min-width: 0;
+}
+
+.song-title {
+  margin: 0;
+  font: 800 1.55rem/1.15 var(--display);
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.song-meta {
+  margin: 0.2rem 0 0;
+  font: 500 0.75rem/1.4 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.song-meta .fact + .fact::before {
+  content: ' · ';
+}
+
+.song-meta .unsure {
+  margin-left: 0.4em;
+  text-transform: none;
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+.progress {
+  margin-top: 0.55rem;
+  height: 0.8rem;
+  border: var(--border);
+  border-radius: 99px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(135deg, var(--mustard) 0 8px, #ffd56e 8px 16px);
+}
+
+.player-status {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+}
+
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.player-label,
+.player-label > span {
+  font: 500 0.7rem var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.player-label.volume {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.player-label.volume input {
+  width: 6.5rem;
+  margin: 0;
+}

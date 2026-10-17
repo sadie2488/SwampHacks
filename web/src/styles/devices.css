@@ -1,0 +1,181 @@
+/* ---------- song picker and devices (the left card) ---------- */
+
+.song-loader .row {
+  margin: 0.8rem 0 0.4rem;
+}
+
+/* the file picker is hidden inside its label; the label looks like a pill button and shows the focus ring */
+.upload-button {
+  display: inline-block;
+  font: 600 0.95rem/1.2 var(--display);
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 99px;
+  padding: 0.45rem 1.05rem;
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.upload-button:hover {
+  background-color: #fffaf0;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.upload-button:has(input:focus-visible) {
+  outline: 3px solid var(--teal-deep);
+  outline-offset: 4px;
+}
+
+.upload-button:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.side-card .analysis-warnings {
+  margin: 0.6rem 0 0;
+  font-size: 0.88rem;
+}
+
+.devices-section {
+  margin-top: 0.6rem;
+}
+
+/* On Learn and Play the card's title is the song picker; the devices need no title of their own there. */
+.stage-song .devices-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.devices {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+}
+
+.device {
+  margin: 0.25rem 0;
+}
+
+/* One row per device: round icon, name, and a small ON / OFF. The whole row is the switch. */
+.device-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.3rem 0.4rem 0.3rem 0.1rem;
+  font: 600 0.95rem/1.2 var(--display);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.device-toggle::before {
+  content: '◉';
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: var(--border);
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 1rem;
+  transition: background-color 0.12s;
+}
+
+.device-toggle[data-device='audio-live']::before {
+  content: '♪';
+}
+
+.device-toggle[data-device='touchdesigner']::before {
+  content: '✦';
+}
+
+.device-toggle[aria-pressed='true'],
+.device-toggle[aria-pressed='true']:hover:not(:disabled) {
+  background: transparent;
+  color: var(--ink);
+}
+
+.device-toggle[aria-pressed='true']::before {
+  background: var(--teal-deep);
+  color: #fff;
+}
+
+.device-toggle:hover:not(:disabled) {
+  background: rgba(255, 194, 61, 0.22);
+  box-shadow: none;
+}
+
+.device-toggle:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.device-state {
+  margin-left: auto;
+  font: 500 0.72rem var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.device-toggle[aria-pressed='true'] .device-state {
+  color: var(--teal-deep);
+}
+
+/* what the device is doing, or its problem, in one short line under its row (the full text is in the tooltip) */
+.device-note {
+  display: block;
+  margin: -0.1rem 0 0.2rem 3.1rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.device-note[data-state='error'] {
+  color: var(--error);
+  font-weight: 700;
+  white-space: normal;
+}
+
+.devices-section details {
+  font-size: 0.85rem;
+}
+
+.side-card .camera-preview {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.side-card .camera-preview-waiting {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  font-size: 0.85rem;
+}
+

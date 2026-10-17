@@ -1,0 +1,70 @@
+/* The compact "− value +" pills for speed and pitch. */
+.seg {
+  display: inline-flex;
+  align-items: stretch;
+  border: var(--border);
+  border-radius: 99px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.seg > button,
+.seg > button:hover:not(:disabled),
+.seg > button:active:not(:disabled) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+  background: transparent;
+  padding: 0.25rem 0.7rem;
+  font-weight: 800;
+}
+
+.seg > button:hover:not(:disabled) {
+  background: var(--mustard-soft);
+}
+
+.seg > button:focus-visible {
+  outline-offset: -3px;
+}
+
+.seg > output {
+  min-width: 3rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--teal-deep);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Narrow window: the bar wraps to two rows, play button and song on top, the controls under them. */
+@media (max-width: 759px) {
+  .player-bar {
+    bottom: 0.6rem;
+    width: calc(100vw - 1.25rem);
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem 0.9rem;
+    padding: 0.7rem 0.9rem;
+    transform: translateX(-50%);
+  }
+
+  .play-button,
+  .play-button:hover:not(:disabled) {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .song-title {
+    font-size: 1.15rem;
+  }
+
+  .player-controls {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+  }
+
+  .player-row {
+    justify-content: flex-start;
+  }
+}

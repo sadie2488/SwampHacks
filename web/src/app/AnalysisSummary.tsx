@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { SongAnalysis } from '@/contracts';
 import { useBusValue } from './hooks';
 
@@ -26,54 +27,73 @@ export function describeAnalysis(a: SongAnalysis) {
   };
 }
 
-export function AnalysisSummary() {
+/** The song's plain-words cautions. They sit with the song picker, above the sheet music. */
+export function AnalysisWarnings() {
   const analysis = useBusValue('analysis');
-  if (!analysis) return <p className="muted">No song yet. Upload a file or use the demo song.</p>;
-  const d = describeAnalysis(analysis);
-  const warnings = warningsOf(analysis);
+  const warnings = analysis ? warningsOf(analysis) : [];
+  if (warnings.length === 0) return null;
   return (
-    <section className="panel" aria-labelledby="summary-heading" data-testid="analysis-summary">
-      <h2 id="summary-heading">About this song</h2>
-      {warnings.length > 0 && (
-        <div className="notice analysis-warnings" role="status" data-testid="analysis-warnings">
-          <p className="analysis-warnings-title">Please note</p>
-          <ul>
-            {warnings.map((w, i) => (
-              <li key={i} data-testid={`analysis-warning-${i}`}>
-                {w}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <dl className="facts">
-        <div>
-          <dt>Title</dt>
-          <dd data-testid="analysis-title">{d.title}</dd>
-        </div>
-        <div>
-          <dt>Tempo</dt>
-          <dd data-testid="analysis-tempo">{d.tempo}</dd>
-          {d.tempoUnsure && (
-            <dd className="unsure muted" data-testid="analysis-tempo-unsure">
-              {TEMPO_UNSURE_TEXT}
-            </dd>
-          )}
-        </div>
-        <div>
-          <dt>Key</dt>
-          <dd data-testid="analysis-key">{d.key}</dd>
+    <div className="notice analysis-warnings" role="status" data-testid="analysis-warnings">
+      <p className="analysis-warnings-title">Please note</p>
+      <ul>
+        {warnings.map((w, i) => (
+          <li key={i} data-testid={`analysis-warning-${i}`}>
+            {w}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * The song's title and one short line of facts ("C major · 4/4 · 100 BPM"), as shown in the player bar.
+ * `extra` goes at the end of that line (the player bar puts the time there). Nothing at all until a song is loaded.
+ */
+export function SongFacts({ extra }: { extra?: ReactNode }) {
+  const analysis = useBusValue('analysis');
+  if (!analysis) return null;
+  const d = describeAnalysis(analysis);
+  return (
+    <div className="song-facts" data-testid="analysis-summary">
+      <h2 className="song-title" data-testid="analysis-title">
+        {d.title}
+      </h2>
+      <p className="song-meta">
+        <span className="fact">
+          <span className="sr-only">Key: </span>
+          <span data-testid="analysis-key">{d.key}</span>
           {d.keyUnsure && (
-            <dd className="unsure muted" data-testid="analysis-key-unsure">
+            <span className="unsure" data-testid="analysis-key-unsure">
               {KEY_UNSURE_TEXT}
-            </dd>
+            </span>
           )}
-        </div>
-        <div>
-          <dt>Time signature</dt>
-          <dd data-testid="analysis-time-signature">{d.timeSignature}</dd>
-        </div>
-      </dl>
-    </section>
+        </span>
+        <span className="fact">
+          <span className="sr-only">Time signature: </span>
+          <span data-testid="analysis-time-signature">{d.timeSignature}</span>
+        </span>
+        <span className="fact">
+          <span className="sr-only">Tempo: </span>
+          <span data-testid="analysis-tempo">{d.tempo}</span>
+          {d.tempoUnsure && (
+            <span className="unsure" data-testid="analysis-tempo-unsure">
+              {TEMPO_UNSURE_TEXT}
+            </span>
+          )}
+        </span>
+        {extra}
+      </p>
+    </div>
+  );
+}
+
+/** Both pieces together, warnings first. */
+export function AnalysisSummary() {
+  return (
+    <>
+      <AnalysisWarnings />
+      <SongFacts />
+    </>
   );
 }

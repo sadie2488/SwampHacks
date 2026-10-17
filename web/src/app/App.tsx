@@ -11,9 +11,10 @@ import { Sheet } from '@/modules/sheet';
 import { start as startTouchDesigner } from '@/modules/touchdesigner';
 import { start as startVision } from '@/modules/vision';
 import { Backdrop } from '@/ui/backdrop/Backdrop';
-import { AnalysisSummary } from './AnalysisSummary';
+import { AnalysisWarnings } from './AnalysisSummary';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
+import { HandsCard } from './HandsCard';
 import { History } from './History';
 import { LoginButton } from './LoginButton';
 import { PanelBoundary } from './PanelBoundary';
@@ -42,34 +43,45 @@ const MODULES: Array<[name: string, start: () => Stop]> = [
   ['create', startCreate],
 ];
 
-function SongView({ loader, setLoader }: { loader: LoaderState; setLoader: (s: LoaderState) => void }) {
+/** Learn and Play: the practice card, the player bar at the bottom, and the sheet music on its paper strip. */
+function SongView({ tab }: { tab: Tab }) {
   return (
-    <div className="song-view">
-      <SongLoader state={loader} setState={setLoader} />
-      <AnalysisSummary />
-      <div className="song-controls">
-        <Transport />
-        <PanelBoundary name="practice">
-          <Practice />
+    <>
+      {tab === 'play' && (
+        <PanelBoundary name="hands">
+          <HandsCard />
         </PanelBoundary>
+      )}
+      <div className="song-controls">
+        <div className="card practice-card">
+          <PanelBoundary name="practice">
+            <Practice />
+          </PanelBoundary>
+          <PanelBoundary name="practice history">
+            <History />
+          </PanelBoundary>
+        </div>
+        <Transport />
       </div>
-      <PanelBoundary name="practice history"><History /></PanelBoundary>
       {/* the sheet sits on a calm torn-paper strip, in front of the landscape */}
       <section className="sheet-strip" aria-labelledby="sheet-heading">
         <div className="sheet-strip-inner">
-          <h2 id="sheet-heading">Sheet music</h2>
+          <h2 id="sheet-heading" className="kicker">
+            Sheet music
+          </h2>
           <PanelBoundary name="sheet music">
             <Sheet />
           </PanelBoundary>
         </div>
       </section>
-    </div>
+    </>
   );
 }
 
 export function App() {
   const [tab, setTab] = useState<Tab>('learn');
   const [loader, setLoader] = useState<LoaderState>(idleLoader);
+  const songTab = tab === 'learn' || tab === 'play';
 
   // Start every module once. A module that fails to start must not take the page down with it.
   useEffect(() => {
@@ -111,23 +123,38 @@ export function App() {
             </button>
           ))}
         </div>
-        <LoginButton />
+        <div className="header-end">
+          <LoginButton />
+        </div>
       </header>
 
       <main className="app-main">
-        <Devices fake={isFakeMode()} />
-        <CameraPreview />
-        <div role="tabpanel" id="mode-panel" className="mode-panel" aria-labelledby={`tab-${tab}`}>
-          {(tab === 'learn' || tab === 'play') && <SongView loader={loader} setLoader={setLoader} />}
+        <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>
+          {/* the left card: the song picker (Learn and Play), the devices, and the camera picture right under them */}
+          <div className="card side-card">
+            {songTab && (
+              <>
+                <SongLoader state={loader} setState={setLoader} />
+                <AnalysisWarnings />
+              </>
+            )}
+            <Devices fake={isFakeMode()} />
+            <CameraPreview />
+          </div>
+          {songTab && <SongView tab={tab} />}
           {tab === 'create' && (
-            <PanelBoundary name="Create">
-              <CreatePanel />
-            </PanelBoundary>
+            <div className="stage-main">
+              <PanelBoundary name="Create">
+                <CreatePanel />
+              </PanelBoundary>
+            </div>
           )}
           {tab === 'lab' && (
-            <PanelBoundary name="Command Lab">
-              <CommandLab />
-            </PanelBoundary>
+            <div className="stage-main">
+              <PanelBoundary name="Command Lab">
+                <CommandLab />
+              </PanelBoundary>
+            </div>
           )}
         </div>
       </main>
