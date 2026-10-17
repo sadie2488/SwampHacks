@@ -1,0 +1,42 @@
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+relay.private.json
+
+# Per-laptop identity (written by /start)
+.claude/lane.local.json
+.claude/settings.local.json
+
+# Scratch space
+scratch/
+
+# Big files: datasets, models, recordings
+data/
+datasets/
+models/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.mp4
+*.mov
+*.webm
+*.y4m
+
+# Dependencies and builds
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
