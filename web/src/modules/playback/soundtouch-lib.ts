@@ -19,9 +19,12 @@ interface RateTransposerCore {
 }
 interface StretchCore {
   tempo: number;
+  overlapLength: number;
+  seekWindowLength: number;
   inputBuffer: FifoBuffer;
   outputBuffer: FifoBuffer;
   setParameters(sampleRate: number, sequenceMs: number, seekWindowMs: number, overlapMs: number): void;
+  seekBestOverlapPosition(): number;
   process(): void;
   clear(): void;
 }
@@ -41,44 +44,78 @@ export interface StretchPipeline {
   setResample(ratio: number): void;
   process(): void;
   clear(): void;
+  /**
+   * How far (in song frames) the sound coming out runs AHEAD of a plain count of "input used up". The stretcher blends
+   * each new piece of sound into the last one, and what it plays is a little further on in the song than the count says.
+   * Measured, not guessed: it follows the offsets the stretcher really chose.
+   */
+  leadFrames(): number;
+  /** How many output frames after a clear() are the stretcher's start-up blend (skip them when lining things up). */
+  startupFrames(): number;
 }
 
-export function createPipeline(sampleRate: number): StretchPipeline {
-  const { RateTransposer, Stretch } = lib as {
+/**
+ * Builds createPipeline() for a given copy of the library. This function is also copied as TEXT into the audio worklet,
+ * so it must only use its own argument and plain JavaScript, nothing from the rest of this file.
+ */
+export function makePipelineFactory(libObj: unknown): (sampleRate: number) => StretchPipeline {
+  const { RateTransposer, Stretch } = libObj as {
     RateTransposer: new (createBuffers: boolean) => RateTransposerCore;
     Stretch: new (createBuffers: boolean) => StretchCore;
   };
-  const transposer = new RateTransposer(true);
-  const stretch = new Stretch(true);
-  stretch.inputBuffer = transposer.outputBuffer;
-  stretch.setParameters(sampleRate, 0, 0, 8);
-  let speed = 1;
-  let resample = 1;
-  const apply = () => {
-    transposer.rate = resample;
-    stretch.tempo = speed / resample;
-  };
-  return {
-    input: transposer.inputBuffer,
-    output: stretch.outputBuffer,
-    setSpeed(s) {
-      speed = s;
-      apply();
-    },
-    setResample(r) {
-      resample = r;
-      apply();
-    },
-    process() {
-      transposer.process();
-      stretch.process();
-    },
-    clear() {
-      transposer.clear();
-      stretch.clear();
-    },
+  return function createPipeline(sampleRate: number): StretchPipeline {
+    const transposer = new RateTransposer(true);
+    const stretch = new Stretch(true);
+    stretch.inputBuffer = transposer.outputBuffer;
+    stretch.setParameters(sampleRate, 0, 0, 8);
+    let speed = 1;
+    let resample = 1;
+    // Watch which overlap position the stretcher picks each time; the running average is its real "lead".
+    let avgOffset = 0;
+    const pickOffset = stretch.seekBestOverlapPosition.bind(stretch);
+    stretch.seekBestOverlapPosition = () => {
+      const offset = pickOffset();
+      avgOffset += (offset - avgOffset) * 0.15;
+      return offset;
+    };
+    const apply = () => {
+      transposer.rate = resample;
+      stretch.tempo = speed / resample;
+    };
+    return {
+      input: transposer.inputBuffer,
+      output: stretch.outputBuffer,
+      setSpeed(s) {
+        speed = s;
+        apply();
+      },
+      setResample(r) {
+        resample = r;
+        apply();
+      },
+      process() {
+        transposer.process();
+        stretch.process();
+      },
+      clear() {
+        transposer.clear();
+        stretch.clear();
+        avgOffset = 0;
+      },
+      leadFrames() {
+        const overlap = stretch.overlapLength;
+        const body = stretch.seekWindowLength - overlap;
+        // The stretcher repeats or skips whole pieces, so on average what it plays sits half a piece off the straight line.
+        return (overlap + avgOffset + ((1 - stretch.tempo) * body) / 2) * resample;
+      },
+      startupFrames() {
+        return stretch.overlapLength;
+      },
+    };
   };
 }
+
+export const createPipeline = makePipelineFactory(lib);
 
 // Pieces used only by the Node proof test (the ready-made SoundTouch + SimpleFilter route from the package's own docs).
 interface SoundTouchCore {

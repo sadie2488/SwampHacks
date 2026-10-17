@@ -85,3 +85,88 @@ export function peak(x: ArrayLike<number>): number {
   for (let i = 0; i < x.length; i++) m = Math.max(m, Math.abs(x[i]));
   return m;
 }
+
+/** Noise that is the same every run (so a test can compare samples exactly). */
+export function noise(n: number, seed = 1, amp = 0.5): Float32Array {
+  const x = new Float32Array(n);
+  let s = seed >>> 0 || 1;
+  for (let i = 0; i < n; i++) {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    x[i] = amp * ((s / 0xffffffff) * 2 - 1);
+  }
+  return x;
+}
+
+/** A short 3 kHz burst (1.5 ms, smooth edges): the "click" of a click track. */
+function burst(sampleRate: number): Float32Array {
+  const n = Math.round(0.0015 * sampleRate);
+  const b = new Float32Array(n);
+  for (let i = 0; i < n; i++) b[i] = 0.8 * (0.5 - 0.5 * Math.cos((2 * Math.PI * (i + 0.5)) / n)) * Math.sin((2 * Math.PI * 3000 * i) / sampleRate);
+  return b;
+}
+
+/** A click every `gapSec`, from 1 s to 1 s before the end. `times` are the song times of the click centres. */
+export function clickTrack(sampleRate: number, seconds: number, gapSec: number): { samples: Float32Array; times: number[] } {
+  const samples = new Float32Array(Math.round(seconds * sampleRate));
+  const b = burst(sampleRate);
+  const times: number[] = [];
+  for (let t = 1; t < seconds - 1; t += gapSec) {
+    samples.set(b, Math.round(t * sampleRate) - (b.length >> 1));
+    times.push(t);
+  }
+  return { samples, times };
+}
+
+/** What an engine looks like to the position measurement. */
+export interface MeasurableEngine {
+  render(left: Float32Array, right: Float32Array, frames: number): void;
+  readonly positionSec: number;
+}
+
+/**
+ * Play a click track and, for every click, compare WHEN it is heard with WHERE the engine says the song is at that moment.
+ * Returns the error per click in seconds: positive means the engine's position was ahead of the sound, negative behind.
+ * `blocks` are small (16 frames) so the position is known to well under a millisecond.
+ */
+export function clickPositionErrors(engine: MeasurableEngine, sampleRate: number, tempo: number, clicks: number[]): number[] {
+  const B = 16;
+  const lastClick = clicks[clicks.length - 1];
+  const total = Math.ceil(((lastClick + 0.5) / tempo) * sampleRate / B) * B;
+  const out = new Float32Array(total);
+  const pos = new Float64Array(total / B + 1);
+  const L = new Float32Array(B);
+  const R = new Float32Array(B);
+  pos[0] = engine.positionSec;
+  for (let b = 0; b < total / B; b++) {
+    engine.render(L, R, B);
+    out.set(L, b * B);
+    pos[b + 1] = engine.positionSec;
+  }
+  const positionAt = (frame: number) => {
+    const b = Math.floor(frame / B);
+    return pos[b] + (pos[b + 1] - pos[b]) * ((frame - b * B) / B);
+  };
+  const half = Math.round(0.0015 * sampleRate);
+  const errors: number[] = [];
+  for (const t of clicks) {
+    const ideal = Math.round((t / tempo) * sampleRate);
+    let at = -1;
+    let loudest = 0.05;
+    // A slowed-down song repeats pieces, so a click can be heard twice: take the one nearest to where a perfect stretch puts it.
+    for (let f = Math.max(half + 1, ideal - 0.2 * sampleRate); f < Math.min(total - half - 1, ideal + 0.2 * sampleRate); f++) {
+      if (Math.abs(out[f]) > loudest) {
+        loudest = Math.abs(out[f]);
+        at = f;
+      }
+    }
+    if (at < 0) continue;
+    let weight = 0;
+    let moment = 0;
+    for (let f = at - half; f <= at + half; f++) {
+      weight += out[f] * out[f];
+      moment += out[f] * out[f] * f;
+    }
+    errors.push(positionAt(moment / weight) - t);
+  }
+  return errors;
+}
