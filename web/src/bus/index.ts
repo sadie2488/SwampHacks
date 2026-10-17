@@ -6,6 +6,7 @@
 //   songAudio       shell        -> playback                              decoded audio of an uploaded file
 //   analysis        shell        -> playback, sheet, touchdesigner        the song-analysis result (fake or real)
 //   transport       playback     -> shell, sheet, command lab, touchdesigner   what is playing right now
+//   songLevels      playback     -> ui backdrop, touchdesigner             loudness of the playing song in 8 bands (about 30 per second)
 //   signal          vision, audio-live (and fixture replays) -> commands, command lab, create, touchdesigner
 //   landmarks       vision       -> command lab (tracking overlay)
 //   cameraStream    vision       -> command lab (shows the live camera; null when the camera is off)
@@ -54,6 +55,14 @@ export interface TransportState {
   /** Position inside the current beat, 0 to 1. */
   beatPhase?: number;
 }
+export interface SongLevels {
+  /** Eight frequency bands, low to high (about 20-60, 60-150, 150-400, 400-1k, 1k-2.5k, 2.5k-6k, 6k-12k, 12k-20k Hz), each 0 to 1. */
+  bands: number[];
+  /** Overall loudness, 0 to 1. */
+  level: number;
+  /** When it was measured (performance.now()). */
+  at: number;
+}
 export interface PitchFrame {
   t_ms: number;
   /** Detected concert-pitch MIDI (may have a fraction), or null when there is no clear pitch. */
@@ -88,6 +97,8 @@ export interface Topics {
   songAudio: { songId: string; buffer: AudioBuffer; fileName?: string };
   analysis: SongAnalysis;
   transport: TransportState;
+  /** Loudness of the playing song, about 30 times a second while playing; one frame of zeros on pause or stop. */
+  songLevels: SongLevels;
   signal: Signal;
   landmarks: Landmarks;
   cameraStream: MediaStream | null;
