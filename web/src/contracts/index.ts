@@ -34,6 +34,8 @@ export interface SongAnalysis {
   title?: string;
   source?: { kind?: 'upload' | 'demo' | 'fixture'; file_name?: string };
   analyzed_at?: string;
+  /** Plain-words cautions to show the person (for example: the notes may be wrong for a full band mix). */
+  warnings?: string[];
   duration_sec: number;
   tempo_bpm: number;
   tempo_confidence?: number;

@@ -3,11 +3,16 @@
   "$id": "https://contracts.swamphacks.invalid/song-analysis.schema.json",
   "title": "song-analysis",
   "description": "What the server learned about an uploaded song: tempo, beats, key, time signature, sections and the separated parts as notes. Cached by song_id.",
-  "x-contract-version": 1,
+  "x-contract-version": 2,
   "type": "object",
   "required": ["version", "song_id", "duration_sec", "tempo_bpm", "key", "time_signature", "parts"],
   "properties": {
     "version": { "const": 1 },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Plain-words cautions about this analysis, shown to the person (for example: the notes may be wrong for a full band mix)."
+    },
     "song_id": { "type": "string", "minLength": 1 },
     "title": { "type": "string" },
     "source": {
