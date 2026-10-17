@@ -1,5 +1,8 @@
 // Publishes the playing song's levels (levels.ts) about 30 times a second, ONLY while the song plays and the tab is visible.
 // On pause, stop, or a hidden tab: one frame of zeros, then the timer stops, so nothing runs while idle.
+// Exception: while TouchDesigner streaming is on, a hidden tab keeps measuring, because TouchDesigner fullscreen on top of
+// Chrome can make Windows report the page as hidden. That is why this uses setInterval, not requestAnimationFrame (which stops
+// in hidden tabs). Chrome may throttle timers in hidden tabs to about once a second, so TouchDesigner may see fewer updates.
 // Where the readings come from is a "source": the real one taps the AnalyserNode after the volume stage (output.ts);
 // fake mode (?fake=1) uses made-up bands that move gently, so the visuals can be tried without sound.
 import type { SongLevels } from '@/bus';
@@ -66,6 +69,7 @@ export function createSongLevels(deps: SongLevelsDeps) {
   const meter = new LevelMeter();
   const raw = new Float32Array(BAND_COUNT);
   let playing = false;
+  let keepAwake = false;
   let timer: unknown = null;
   let lastAt = 0;
 
@@ -81,7 +85,7 @@ export function createSongLevels(deps: SongLevelsDeps) {
 
   /** Start or stop the timer to match "playing and visible". Stopping publishes one frame of zeros. */
   function sync(): void {
-    const run = playing && !deps.isHidden();
+    const run = playing && (keepAwake || !deps.isHidden());
     if (run && timer === null) {
       meter.reset();
       lastAt = deps.now();
@@ -101,6 +105,12 @@ export function createSongLevels(deps: SongLevelsDeps) {
     setPlaying(on: boolean): void {
       if (on === playing) return;
       playing = on;
+      sync();
+    },
+    /** true: keep running while the tab is hidden (TouchDesigner streaming is on). */
+    setKeepAwake(on: boolean): void {
+      if (on === keepAwake) return;
+      keepAwake = on;
       sync();
     },
     /** True while the timer is running (for tests). */

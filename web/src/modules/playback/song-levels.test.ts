@@ -89,6 +89,23 @@ describe('song levels runner', () => {
     expect(t.last()).toMatchObject({ bands: ZEROS, level: 0 });
   });
 
+  it('keeps running in a hidden tab while TouchDesigner streams, and stops again when it is turned off', () => {
+    const t = setup();
+    t.runner.setPlaying(true);
+    t.runner.setKeepAwake(true);
+    t.setHidden(true);
+    expect(t.timers.size).toBe(1);
+    t.tick(3);
+    expect(t.last().level).toBeGreaterThan(0);
+    t.runner.setKeepAwake(false);
+    expect(t.timers.size).toBe(0);
+    expect(t.last()).toMatchObject({ bands: ZEROS, level: 0 });
+    t.runner.setKeepAwake(true); // hidden and TouchDesigner back on: starts again
+    expect(t.timers.size).toBe(1);
+    t.runner.setPlaying(false); // paused: stops even with TouchDesigner on
+    expect(t.timers.size).toBe(0);
+  });
+
   it('dispose stops the timer and leaves zeros behind', () => {
     const t = setup();
     t.runner.setPlaying(true);

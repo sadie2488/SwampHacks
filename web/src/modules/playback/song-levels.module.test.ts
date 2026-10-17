@@ -1,7 +1,7 @@
 // The playback module publishes songLevels on the bus: made-up moving bands in fake mode while playing, zeros after pause.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import twinkleJson from '@fixtures/song-analysis/twinkle.json';
-import { bus, resetControls, sendCommand } from '@/bus';
+import { bus, reportStatus, resetControls, sendCommand } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { start } from './index';
 
@@ -65,6 +65,38 @@ describe('playback publishes songLevels', () => {
     expect(vi.getTimerCount()).toBe(timersIdle);
     vi.advanceTimersByTime(300);
     expect(bus.last('songLevels')).toMatchObject({ bands: ZEROS, level: 0 });
+  });
+});
+
+describe('playback follows the TouchDesigner status for hidden tabs', () => {
+  it('keeps publishing while hidden when TouchDesigner is on, and stops when it goes idle', async () => {
+    let hidden = true;
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('document', {
+      get visibilityState() {
+        return hidden ? 'hidden' : 'visible';
+      },
+      addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+    });
+    stop(); // restart so the module sees the pretend document
+    stop = start();
+    bus.emit('analysis', twinkle);
+    reportStatus('touchdesigner', 'error', 'relay not running'); // on, but retrying the relay
+    sendCommand('playback.play', 'button');
+    await vi.advanceTimersByTimeAsync(0);
+    vi.advanceTimersByTime(300);
+    expect(bus.last('songLevels')!.level).toBeGreaterThan(0);
+    reportStatus('touchdesigner', 'idle', 'TouchDesigner is off.');
+    expect(bus.last('songLevels')).toMatchObject({ bands: ZEROS, level: 0 });
+    vi.advanceTimersByTime(300);
+    expect(bus.last('songLevels')).toMatchObject({ bands: ZEROS, level: 0 });
+    hidden = false;
+    for (const fn of listeners) fn();
+    vi.advanceTimersByTime(300);
+    expect(bus.last('songLevels')!.level).toBeGreaterThan(0);
+    sendCommand('playback.pause', 'button');
+    vi.stubGlobal('document', undefined);
   });
 });
 
