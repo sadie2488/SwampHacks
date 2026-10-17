@@ -55,8 +55,8 @@ function Device({ d, fake }: { d: (typeof DEVICES)[number]; fake: boolean }) {
 
   const words = statusWords(status);
   const fakeNote = fake && d.module !== 'touchdesigner' ? ` (practice data, no real ${d.name.toLowerCase()} used)` : '';
-  // The plain "Off" / "On" is already said by the row itself; anything more (a problem, what it is doing) shows as a note.
-  const plain = words === 'Off' || words === 'On';
+  // "Off" / "On" is already said by the row itself; anything more (a problem, what it is doing) shows as a note.
+  const plain = !status || status.state === 'idle' || words === 'On';
 
   return (
     <li className="device" data-on={on}>

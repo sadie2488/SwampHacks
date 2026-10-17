@@ -19,6 +19,10 @@
   font-size: 0.88rem;
 }
 
+.sheet-toolbar label + label {
+  margin-left: 0;
+}
+
 .sheet-toolbar select {
   font-size: 0.85rem;
   padding: 0.25rem 0.5rem 0.25rem 0.75rem;

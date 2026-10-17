@@ -274,16 +274,16 @@ describe('transport', () => {
 
 describe('devices', () => {
   it('toggles each device with an enable event and shows status in plain words', async () => {
-    expect(text('btn-enable-vision')).toBe('Turn on camera');
-    expect(text('btn-enable-audio')).toBe('Turn on microphone');
-    expect(text('btn-enable-td')).toBe('Send to TouchDesigner');
+    expect(text('btn-enable-vision')).toBe('Camera off');
+    expect(text('btn-enable-audio')).toBe('Microphone off');
+    expect(text('btn-enable-td')).toBe('TouchDesigner off');
     await click('btn-enable-vision');
     await click('btn-enable-audio');
     await click('btn-enable-td');
     expect(seen.filter((s) => s.startsWith('enable'))).toEqual(['enable:vision:true', 'enable:audio-live:true', 'enable:touchdesigner:true']);
     await click('btn-enable-vision');
     expect(seen).toContain('enable:vision:false');
-    expect(text('btn-enable-vision')).toBe('Turn on camera');
+    expect(text('btn-enable-vision')).toBe('Camera off');
 
     await emit('status', { module: 'vision', state: 'starting' });
     expect(text('status-vision')).toBe('Starting...');
@@ -292,7 +292,7 @@ describe('devices', () => {
     expect($('status-vision')!.getAttribute('data-state')).toBe('running');
     await emit('status', { module: 'audio-live', state: 'error', message: 'The microphone is blocked.' });
     expect(text('status-audio-live')).toBe('Problem: The microphone is blocked.');
-    expect(text('btn-enable-audio')).toBe('Turn on microphone'); // goes back so it can be tried again
+    expect(text('btn-enable-audio')).toBe('Microphone off'); // goes back so it can be tried again
     expect(text('status-touchdesigner')).toBe('Off');
   });
 
@@ -300,42 +300,42 @@ describe('devices', () => {
 
   it('keeps the TouchDesigner button on while it retries, however many problems it reports', async () => {
     await click('btn-enable-td');
-    expect(text('btn-enable-td')).toBe('Stop sending to TouchDesigner');
+    expect(text('btn-enable-td')).toBe('TouchDesigner on');
     await status('touchdesigner', 'starting', 'Connecting to the TouchDesigner relay...');
     await status('touchdesigner', 'error', 'Relay not found: start it with: node bridge/relay.mjs.');
     await status('touchdesigner', 'error', 'Relay not found: start it with: node bridge/relay.mjs. (31 frames)');
-    expect(text('btn-enable-td')).toBe('Stop sending to TouchDesigner');
+    expect(text('btn-enable-td')).toBe('TouchDesigner on');
     expect($('btn-enable-td')!.getAttribute('aria-pressed')).toBe('true');
     expect(text('status-touchdesigner')).toMatch(/^Problem: Relay not found/);
     // the relay starts later: nothing flips
     await status('touchdesigner', 'running', 'Sending to TouchDesigner (5 frames sent).');
-    expect(text('btn-enable-td')).toBe('Stop sending to TouchDesigner');
+    expect(text('btn-enable-td')).toBe('TouchDesigner on');
     // a click turns it off, and it stays off
     await status('touchdesigner', 'error', 'Lost the TouchDesigner relay (trying again).');
     await click('btn-enable-td');
     expect(seen.filter((s) => s.startsWith('enable:touchdesigner'))).toEqual(['enable:touchdesigner:true', 'enable:touchdesigner:false']);
-    expect(text('btn-enable-td')).toBe('Send to TouchDesigner');
+    expect(text('btn-enable-td')).toBe('TouchDesigner off');
     await status('touchdesigner', 'idle', 'TouchDesigner is off.');
-    expect(text('btn-enable-td')).toBe('Send to TouchDesigner');
+    expect(text('btn-enable-td')).toBe('TouchDesigner off');
   });
 
   it('the camera and microphone buttons follow their status: starting and running are on, idle and problems are off', async () => {
     await status('vision', 'starting', 'Asking for the camera...');
-    expect(text('btn-enable-vision')).toBe('Turn off camera');
+    expect(text('btn-enable-vision')).toBe('Camera on');
     await status('vision', 'running', 'Camera tracking is on');
-    expect(text('btn-enable-vision')).toBe('Turn off camera');
+    expect(text('btn-enable-vision')).toBe('Camera on');
     await status('vision', 'error', 'The camera is blocked.');
-    expect(text('btn-enable-vision')).toBe('Turn on camera');
+    expect(text('btn-enable-vision')).toBe('Camera off');
     await status('vision', 'running');
     await status('vision', 'idle');
-    expect(text('btn-enable-vision')).toBe('Turn on camera');
+    expect(text('btn-enable-vision')).toBe('Camera off');
 
     // switched on somewhere else (the Command Lab, say): the button agrees, and so does turning it off there
     await status('audio-live', 'running', 'Microphone is on');
-    expect(text('btn-enable-audio')).toBe('Turn off microphone');
+    expect(text('btn-enable-audio')).toBe('Microphone on');
     expect(seen.filter((s) => s.startsWith('enable'))).toEqual([]);
     await status('audio-live', 'idle', 'Microphone is off');
-    expect(text('btn-enable-audio')).toBe('Turn on microphone');
+    expect(text('btn-enable-audio')).toBe('Microphone off');
   });
 
   it('the camera button says off when the module answers a click with a problem at once', async () => {
@@ -344,7 +344,7 @@ describe('devices', () => {
     });
     await click('btn-enable-vision');
     stop();
-    expect(text('btn-enable-vision')).toBe('Turn on camera');
+    expect(text('btn-enable-vision')).toBe('Camera off');
     expect(text('status-vision')).toBe('Problem: This page cannot use the camera.');
   });
 
@@ -355,10 +355,10 @@ describe('devices', () => {
     bus.emit('status', { module: 'touchdesigner', state: 'error', message: 'Relay not found: start it with: node bridge/relay.mjs.' });
     root = createRoot(container);
     await act(async () => root.render(<App />));
-    expect(text('btn-enable-vision')).toBe('Turn off camera');
+    expect(text('btn-enable-vision')).toBe('Camera on');
     expect(text('status-vision')).toBe('On (Camera tracking is on)');
-    expect(text('btn-enable-audio')).toBe('Turn on microphone');
-    expect(text('btn-enable-td')).toBe('Stop sending to TouchDesigner'); // a problem there means it is on and retrying
+    expect(text('btn-enable-audio')).toBe('Microphone off');
+    expect(text('btn-enable-td')).toBe('TouchDesigner on'); // a problem there means it is on and retrying
   });
 
   it('counts mapping issues', async () => {
