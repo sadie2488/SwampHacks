@@ -17,7 +17,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    fs: { allow: [here('..')] },
+    // Setting "deny" replaces Vite's own list, so its defaults are repeated here, plus the private files of this project.
+    fs: {
+      allow: [here('..')],
+      deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/*.private.json', '**/relay.private.json'],
+    },
     proxy: { '/api': 'http://localhost:8000' },
   },
   worker: { format: 'es' },
