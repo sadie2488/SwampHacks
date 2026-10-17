@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.28.2",
     "@mediapipe/tasks-vision": "^1.1.1",
     "opensheetmusicdisplay": "^2.2.1",
     "pitchy": "^4.1.0",
