@@ -1083,7 +1083,7 @@
       "claimed_by": null,
       "passes": false,
       "read_first": [],
-      "progress": "Merged: upload, real analysis hook (see A2/A4), saving songs, sessions, feedback and creations (memory or Tiger Data), optional Auth0 login on server and website. Remaining: run the migration on the real database, try login against the real Auth0 tenant."
+      "progress": "Merged: upload, real analysis hook (see A2/A4), saving songs, sessions, feedback and creations (memory or Tiger Data), optional Auth0 login on server and website. The real Tiger Data database is connected and the tables are created (11 statements, safe to repeat); a real round trip (song, analysis, practice session and samples, feedback, saved track) worked and was cleaned up. Remaining: restart the running server so it uses the database, try login against the real Auth0 tenant."
     },
     {
       "id": "L5",

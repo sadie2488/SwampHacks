@@ -5,7 +5,7 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 | Status | Task | Urgency |
 |---|---|---|
 | ✅ | Sponsor accounts + keys: Vultr, Gemini, Tiger Data, Auth0 (keys are in `server/.env`) | 🔴 |
-| ☐ | **Database password**: the connection string in `server/.env` (`DATABASE_URL`) has no password in it (the connection fails with "no password supplied"). Tiger Data shows the password only once when the service is created. Easiest: in a terminal in the project folder run `node scripts/set-db-password.mjs`, type the password (it stays hidden) and it puts it in the right place. If typing in the terminal does not work: copy the password in the Tiger Data console, then run `node scripts/set-db-password.mjs --clipboard`. Or edit the line yourself, like `postgres://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require` (encode `@ / ? # : %` in the password as `%40 %2F %3F %23 %3A %25`). If it was lost, reset it in the Tiger Data console. Never paste it into chat. Then tell the main laptop and it will run `uv run python -m app.db ping` and `migrate` | 🟠 |
+| ✅ | **Database password**: done. The connection works and the tables are created (checked with a real round trip). Restart `node scripts/dev.mjs` so the running server uses it | 🟠 |
 | ☐ | GoDaddy domain name (not a secret: just tell the main laptop the name) | 🟠 |
 | ☐ | Deploy: read `deploy/README.md` (cost about $10 a month, $1 to $2 for the weekend, check the price on Vultr), then say yes or no to creating the server. Nothing is created until a person says yes | 🟠 |
 | ☐ | Confirm `VULTR_API_KEY` is in `server/.env` (restricted to the main laptop's IP) so the budget watcher can run | 🟠 |
