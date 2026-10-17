@@ -37,7 +37,7 @@ Post a verification report in the PR / update file:
 
 ## Commands people use
 `/checkin` (get a task + brief) · `/start` (guided setup) · `/explain <item>` · `/ask` · `/handback`
-(Being built — see `docs/build-spec.md` until they exist.)
+(They live in `.claude/skills/`. Folder-specific rules load automatically from `.claude/rules/`.)
 
 ## Where things are
 - Plan: `docs/plan.md` · Build spec: `docs/build-spec.md` · Commands design: `docs/commands-guide.md`
