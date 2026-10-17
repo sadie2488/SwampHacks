@@ -148,7 +148,7 @@ export const CONFIG = {
 
   // ---- spoken keywords ----
   keywords: {
-    words: ['play', 'pause', 'slower', 'faster', 'higher', 'lower'] as const,
+    words: ['play', 'pause', 'slower', 'faster', 'higher', 'lower', 'start', 'next', 'piano', 'synth', 'bass', 'pluck', 'drums', 'none', 'reverb', 'delay', 'filter', 'beat'] as const,
     /** The same word is not accepted again within this many ms. */
     cooldownMs: 800,
     /** Voice results are only accepted while the arming gesture is held (plus this many ms after letting go). */
