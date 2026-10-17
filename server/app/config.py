@@ -26,6 +26,9 @@ ENV_VAR_NAMES = (
     "VULTR_S3_SECRET_KEY",
     "AUTH0_DOMAIN",  # login (public)
     "AUTH0_CLIENT_ID",  # login (public)
+    "AUTH_ENABLED",  # switch for login (true or false)
+    "AUTH0_AUDIENCE",  # login: the API the tokens are for
+    "GEMINI_MODEL",  # coaching text: which model to ask (a sensible default is built in)
     "MUSIC_DATA_DIR",  # where uploads and analyses are saved (default: server/data)
 )
 

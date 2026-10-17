@@ -206,7 +206,7 @@ def test_ensure_song_adds_the_demo_song_once():
     assert repo.get_song(config.DEMO_SONG_ID)["title"] == "Kept"  # already known: left alone
 
 
-def test_ensure_song_finds_uploads_on_disk_and_refuses_strangers(tmp_path, monkeypatch):
+def test_ensure_song_finds_uploads_on_disk_and_refuses_strangers(tmp_path, monkeypatch, fake_analysis):
     monkeypatch.setenv("MUSIC_DATA_DIR", str(tmp_path))
     saved = store.save_upload("My Tune.wav", b"not really audio")
     repo = MemoryRepository()

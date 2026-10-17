@@ -12,7 +12,6 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 from . import config
-from .analyzer import analyze_audio
 from .main import app
 
 
@@ -53,7 +52,7 @@ def data_dir(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def client(data_dir):
+def client(data_dir, fake_analysis):  # the real analysis has its own tests in test_analysis_pipeline.py
     return TestClient(app)
 
 
@@ -167,7 +166,3 @@ def test_cors_allows_the_web_app(client):
         assert r.headers["access-control-allow-origin"] == origin
     r = client.get("/api/health", headers={"Origin": "http://evil.example"})
     assert "access-control-allow-origin" not in r.headers
-
-
-def test_fake_analyzer_returns_a_valid_analysis(tmp_path):
-    assert_valid_analysis(analyze_audio(tmp_path / "anything.wav"))

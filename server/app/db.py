@@ -213,8 +213,8 @@ def repository_kind() -> str:
     return "postgres" if database_url() else "memory"
 
 
-_PRIVATE_ENV_NAMES = tuple(n for n in config.ENV_VAR_NAMES if n not in ("MUSIC_DATA_DIR", "AUTH0_CLIENT_ID")) + (
-    "AUTH0_AUDIENCE",
+_PRIVATE_ENV_NAMES = tuple(
+    n for n in config.ENV_VAR_NAMES if n not in ("MUSIC_DATA_DIR", "AUTH0_CLIENT_ID", "AUTH_ENABLED", "GEMINI_MODEL")
 )
 _PATTERNS = (
     (re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://[^\s'\"<>]+"), "[address hidden]"),
