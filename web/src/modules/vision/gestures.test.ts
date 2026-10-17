@@ -19,6 +19,9 @@ import {
   pinchRatio,
   raisedLine,
   SWAP_HANDEDNESS,
+  THRESHOLDS,
+  isThumbsUp,
+  thumbRise,
   tiltToSlider,
   type NoseSample,
   type RawHand,
@@ -71,6 +74,22 @@ describe('one hand: fist, open palm, pinch', () => {
     const far = makeHand({ curl: 1, thumb: 'tucked', size: 0.04 });
     expect(isFist(far)).toBe(true);
     expect(isPinch(makeHand({ curl: [0.45, 0.1, 0.1, 0.1], thumb: 'pinch', size: 0.04 }))).toBe(true);
+  });
+
+  it('a thumbs-up is curled fingers with the thumb pointing up; it is not an open palm or a pinch', () => {
+    const up = makeHand({ curl: 1, thumb: 'up' });
+    expect(thumbRise(up)).toBeGreaterThan(THRESHOLDS.thumbUpOn);
+    expect(isThumbsUp(up)).toBe(true);
+    expect(isOpenPalm(up)).toBe(false);
+    expect(isPinch(up)).toBe(false);
+    expect(isThumbsUp(makeHand({ curl: 1, thumb: 'up', size: 0.04 }))).toBe(true);
+  });
+
+  it('a plain fist, a fist with the thumb out sideways, and an open hand are not thumbs-ups', () => {
+    expect(isThumbsUp(fist)).toBe(false);
+    expect(isThumbsUp(makeHand({ curl: 1, thumb: 'out' }))).toBe(false);
+    expect(isThumbsUp(makeHand({ curl: 0.5 }))).toBe(false);
+    expect(isThumbsUp(makeHand({ curl: 0, thumb: 'up' }))).toBe(false);
   });
 });
 

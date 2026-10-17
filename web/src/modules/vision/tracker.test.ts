@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { signalCatalog } from '@/contracts/catalogs';
-import { GestureTracker, palmCenter, type HandObs, type Pt, type Side, type SignalOut } from './gestures';
+import { GestureTracker, HAND, THRESHOLDS, palmCenter, type HandObs, type Pt, type Side, type SignalOut } from './gestures';
 import { makeFace, makeHand, type FaceSpec, type HandSpec } from './synthetic';
 
 const FRAME = 1000 / 15; // the camera runs at about 15 pictures a second
@@ -150,6 +150,38 @@ describe('pinch, raised hand', () => {
     const rig = new Rig();
     rig.frames(10, () => right({ curl: 0, wrist: { x: 0.7, y: 0.25 } }));
     expect(rig.states('vision.hand.right.raised')).toEqual(['start']);
+  });
+});
+
+describe('thumbs-up', () => {
+  const left = (spec: HandSpec): Look => ({ hands: [hand('left', spec)] });
+  /** A left thumbs-up whose thumb tip is `rise` hand-sizes above its middle joint (the helper's hand size is 0.12). */
+  const thumbAt = (rise: number): Look => {
+    const look = left({ curl: 1, thumb: 'up' });
+    const pts = look.hands![0].points;
+    pts[HAND.THUMB_TIP] = { x: pts[HAND.THUMB_IP].x, y: pts[HAND.THUMB_IP].y - rise * 0.12, z: 0 };
+    return look;
+  };
+
+  it('starts at thumbUpOn, stays on in the gap, ends below thumbUpOff, and needs thumbUpOn again to restart', () => {
+    const rig = new Rig();
+    rig.frames(10, () => left({ curl: 1, thumb: 'tucked' })); // plain fist
+    rig.frames(10, () => thumbAt(THRESHOLDS.thumbUpOn + 0.02)); // thumb up
+    rig.frames(10, () => thumbAt((THRESHOLDS.thumbUpOn + THRESHOLDS.thumbUpOff) / 2)); // sags a little: still on
+    rig.frames(10, () => thumbAt(THRESHOLDS.thumbUpOff - 0.03)); // thumb down: off
+    rig.frames(10, () => thumbAt((THRESHOLDS.thumbUpOn + THRESHOLDS.thumbUpOff) / 2)); // back in the gap: stays off
+    const edges = rig.edges('vision.hand.left.thumbs_up');
+    expect(edges.map(([s]) => s)).toEqual(['start', 'end']);
+    expect(edges[0][1]).toBeGreaterThanOrEqual(10 * FRAME);
+    expect(edges[1][1]).toBeGreaterThanOrEqual(30 * FRAME);
+    expect(rig.edges('vision.hand.left.open_palm')).toEqual([]);
+  });
+
+  it('a plain fist (thumb tucked) never starts a thumbs-up', () => {
+    const rig = new Rig();
+    rig.frames(30, () => left({ curl: 1, thumb: 'tucked' }));
+    expect(rig.states('vision.hand.left.fist')).toEqual(['start']);
+    expect(rig.edges('vision.hand.left.thumbs_up')).toEqual([]);
   });
 });
 
@@ -304,6 +336,8 @@ describe('everything in the signal catalog that vision promises', () => {
 
     rig.frames(10, () => ({ hands: both({ curl: 0 }), face: face(0.45, 10) }));
     rig.frames(10, () => ({ hands: both({ curl: 1, thumb: 'tucked' }), face: face() }));
+    // the catalog only has a left thumbs-up; the right hand holds a plain fist meanwhile
+    rig.frames(10, () => ({ hands: [hand('right', { curl: 1, thumb: 'tucked' }), hand('left', { curl: 1, thumb: 'up' })], face: face() }));
     rig.frames(10, () => ({ hands: both({ curl: [0.45, 0.1, 0.1, 0.1], thumb: 'pinch' }), face: face() }));
     rig.frames(10, () => ({ hands: both({ curl: 0, wrist: { x: 0.7, y: 0.3 } }), face: face() }));
     rig.frames(6, () => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.5 } }), face: face() }));
