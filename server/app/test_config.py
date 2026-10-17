@@ -228,8 +228,19 @@ def test_importing_the_app_and_calling_every_route_never_leaks_a_value(tmp_path,
     calls.append(("/api/songs", upload("big.wav", wav, "audio/wav")))
     assert calls[-1][1].status_code == 413
 
-    # A new route added without a call above fails here, so it cannot skip this check.
-    assert {path for path, _ in calls} == {route.path for route in app.routes}
+    # Every OTHER route (added later by any lane) is called here automatically with empty input, so no route can
+    # skip this check and nobody has to remember to edit this test. Path parameters are filled with a dummy value.
+    explicit = {path for path, _ in calls}
+    for path, methods in app.openapi()["paths"].items():
+        if path in explicit:
+            continue
+        for method in methods:
+            if method not in {"get", "post", "put", "patch", "delete"}:
+                continue
+            url = re.sub(r"\{[^}]+\}", "x", path)
+            body = {} if method in {"post", "put", "patch"} else None
+            calls.append((path, client.request(method.upper(), url, json=body)))
+    assert set(app.openapi()["paths"]) <= {path for path, _ in calls}
 
     for path, response in calls:
         text = response.text + str(dict(response.headers))
