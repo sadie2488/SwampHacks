@@ -3,7 +3,8 @@
 // Levels are RMS on a 0..1 scale (1.0 = full-scale). Handy values: 0.01 = -40 dBFS, 0.03 = -30 dBFS, 0.1 = -20 dBFS.
 export const CONFIG = {
   /** Write every snap, clap and ignored loud sound (with the measurements behind the decision) to the browser console
-   * at "Verbose" level. Switch the console's level filter to Verbose to read it while tuning the numbers below. */
+   * at "Verbose" level, one short line each. Switch the console's level filter to Verbose to read it while tuning the
+   * numbers below: clap, snap and tap a few times, then copy the "[audio-live]" lines. */
   debug: true,
 
   // ---- pitch (the hum or voice) ----
@@ -87,24 +88,62 @@ export const CONFIG = {
   },
 
   // ---- snap vs clap ----
+  // What the made-up test sounds in test-signals.ts measure (8 of each, at 48 and 44.1 kHz):
+  //                  peak        flatness    length     attack   centre          share above 2.5 kHz
+  //   clap           0.17-0.30   0.09-0.14   25-40 ms   0-5 ms   1.9-2.2 kHz     22-37 %
+  //   snap + echo    0.15-0.26   0.20-0.26   15-70 ms   0-5 ms   5.1-5.7 kHz     91-96 %   (a duller snap: 3.7-4.1 kHz, 77-86 %)
+  //   desk thump     0.27-0.42   0.00-0.02   10-30 ms   0-10 ms  0.3-0.4 kHz     0-1 %
+  //   key click      0.08-0.11   0.31-0.51   5-10 ms    0 ms     3.8-5.4 kHz     67-91 %
+  //   speech burst   0.13-0.15   0.08-0.13   95-100 ms  20-70 ms 1.6-2.1 kHz     17-38 %
+  // A real clap a metre from a laptop mic is roughly 0.1 peak (-20 dBFS) in a quiet room: an estimate, not measured yet.
+  // Every loud sound is written to the console with these same numbers (see `debug` at the top): use them to tune.
   hand: {
     /** Both need a burst at least this loud ... */
     minPeakRms: 0.04,
-    /** ... and this many times louder than the recent average. */
+    /** ... and this many times louder than the recent average. (Unchanged: in a quiet room a clap jumps 20 times or more.) */
     minJumpRatio: 5,
-    /** Noisiness check (spectral flatness, 0..1). Singing and instruments score near 0, hand sounds higher. Below this = not a hand sound. */
-    minFlatness: 0.03,
+    /** While the song is playing, the two numbers above are multiplied by this (so 0.064 and 8). The song coming back through
+     * the speakers makes the room louder and its drums sound like claps, so a hand sound must stand out more. 1 = no change. */
+    playingStrictness: 1.6,
+    /** Noisiness check (spectral flatness, 0..1). Singing and instruments score near 0, hand sounds higher. Below this = not a hand sound.
+     * Was 0.03. Raised to 0.05: the test claps score 0.08 or more, a desk thump 0.02 or less. */
+    minFlatness: 0.05,
+    /** New check. The centre of the sound (spectral centroid) must be at least this high. A thump on the desk sits under
+     * 500 Hz, a clap at 1-2.5 kHz. */
+    minCentroidHz: 700,
+    /** New check. The loudest moment must come within this many ms of the start (measured in 5 ms steps). Hands are
+     * instant; speech and music swell up over 15 ms or more. */
+    maxAttackMs: 10,
+    /** New check. Shorter than this is a click (a key press right next to the mic), not a snap or clap: those are over in
+     * 5-10 ms, while a snap or clap at arm's length rings on in the room for 15 ms or more (measured in 5 ms steps).
+     * Downside: a "dry" snap right next to the mic in a dead room is ignored too. Set to 5 to allow those again. */
+    minBurstMs: 15,
     /** Longer than this is not a snap or clap. */
     clapMaxBurstMs: 150,
     snap: {
-      /** A snap is SHORT ... */
-      maxBurstMs: 25,
-      /** ... and BRIGHT: energy centred high up (spectral centroid) with most of it above 2.5 kHz. */
-      minCentroidHz: 3000,
-      minHfRatio: 0.5,
+      /** A snap lasts at most this long ... Was 25 ms: a real snap with room echo lasts about 30-60 ms, so it was missed. */
+      maxBurstMs: 80,
+      /** ... and is BRIGHT: centre of the sound (spectral centroid) high up, a good share of the energy above 2.5 kHz.
+       * Was 3000 Hz and 50 %. Lowered a little because the room echo of a snap is duller than the crack itself. The test
+       * clap stays at 2.2 kHz and 37 % or below, so it stays a clap. A very bright, flat-handed clap may now count as a snap. */
+      minCentroidHz: 2800,
+      minHfRatio: 0.45,
     },
-    /** Another snap or clap within this many ms of the last one is the same sound echoing, not counted twice. */
-    cooldownMs: 250,
+    /** Another snap or clap within this many ms of the last one is the same sound echoing, not counted twice.
+     * Was 250. Lowered to 200 so a quick double clap (claps about 0.2 s apart) still counts as two. */
+    cooldownMs: 200,
+  },
+
+  // ---- audio.clap.double (two claps close together; the play/pause rule uses it, so one stray sound cannot) ----
+  doubleClap: {
+    /** The second clap must come at least this long after the first ... (claps closer than hand.cooldownMs, 200 ms,
+     * are already counted as one, so in practice the gap is 200 ms or more) */
+    minGapMs: 150,
+    /** ... and at most this long after it. */
+    maxGapMs: 700,
+    // A run of claps (each within maxGapMs of the one before) gives ONE double clap, at its second clap. The run has to
+    // stop (a pause longer than maxGapMs) before another double clap can happen. So clapping along to music, or a
+    // drum beat in the song, toggles at most once instead of flipping play/pause on every other beat.
   },
 
   // ---- spoken keywords ----

@@ -32,17 +32,24 @@ afterEach(() => {
 });
 
 const clap = () => sendSignal({ id: 'audio.clap', kind: 'moment', state: 'start', confidence: 0.9 });
+const doubleClap = () => sendSignal({ id: 'audio.clap.double', kind: 'moment', state: 'start', confidence: 0.9 });
 
 describe('commands module on the bus', () => {
   it('publishes the issues (none for the real mappings.yaml) as soon as it starts', () => {
     expect(issueUpdates[0]).toEqual([]);
   });
 
-  it('a clap becomes a command plus a "fired" event, and a second clap inside the cooldown does not', () => {
+  it('a single clap does nothing in play mode (play/pause needs a double clap)', () => {
     clap();
     clap();
+    expect(commands).toEqual([]);
+  });
+
+  it('a double clap becomes a command plus a "fired" event, and a second one inside the cooldown does not', () => {
+    doubleClap();
+    doubleClap();
     expect(commands).toHaveLength(1);
-    expect(commands[0]).toMatchObject({ command: 'playback.toggle', how: 'trigger', source: 'gesture', mode: 'play', mapping: 'clap toggles play/pause', signal: 'audio.clap', version: 1 });
+    expect(commands[0]).toMatchObject({ command: 'playback.toggle', how: 'trigger', source: 'gesture', mode: 'play', mapping: 'clap toggles play/pause', signal: 'audio.clap.double', version: 1 });
     expect(typeof commands[0].t_ms).toBe('number');
     expect(fired).toHaveLength(1);
     expect(fired[0].mapping).toBe('clap toggles play/pause');
@@ -51,7 +58,7 @@ describe('commands module on the bus', () => {
 
   it('follows the mode topic', () => {
     bus.emit('mode', 'create');
-    clap();
+    doubleClap();
     expect(commands).toEqual([]);
   });
 
@@ -85,13 +92,13 @@ describe('commands module on the bus', () => {
   it('broken YAML keeps the last good rules', () => {
     setMappingsText('- name: x\n  when: [audio.clap\n');
     expect(issueUpdates[issueUpdates.length - 1]).toHaveLength(1);
-    clap();
+    doubleClap();
     expect(commands).toHaveLength(1);
   });
 
   it('stopping lets go of everything', () => {
     stop();
-    clap();
+    doubleClap();
     expect(commands).toEqual([]);
   });
 });

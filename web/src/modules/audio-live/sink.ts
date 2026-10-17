@@ -14,6 +14,8 @@ export interface Sink {
   onset(confidence: number, tMs: number): void;
   /** audio.snap or audio.clap. */
   hand(kind: 'snap' | 'clap', confidence: number, tMs: number): void;
+  /** audio.clap.double: a second clap soon after a first. */
+  doubleClap(confidence: number, tMs: number): void;
   /** A note or onset for the feedback code. */
   performance(event: PerformanceEvent): void;
 }
@@ -24,5 +26,6 @@ export const busSink: Sink = {
   hum: (value, midi, confidence, tMs) => sendSignal({ id: 'audio.hum.pitch', kind: 'slider', value, raw: midi, confidence, t_ms: tMs }),
   onset: (confidence, tMs) => sendSignal({ id: 'audio.onset', kind: 'moment', state: 'start', confidence, t_ms: tMs }),
   hand: (kind, confidence, tMs) => sendSignal({ id: `audio.${kind}`, kind: 'moment', state: 'start', confidence, t_ms: tMs }),
+  doubleClap: (confidence, tMs) => sendSignal({ id: 'audio.clap.double', kind: 'moment', state: 'start', confidence, t_ms: tMs }),
   performance: (event) => bus.emit('performance', event),
 };

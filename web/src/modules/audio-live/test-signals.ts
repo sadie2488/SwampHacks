@@ -115,13 +115,50 @@ export function burst(opts: { seconds: number; at: number; sr: number; decayMs: 
   return out;
 }
 
-/** A bright, short finger-snap-like sound. */
-export const snapSound = (opts: { seconds: number; at: number; sr: number; amp?: number; seed?: number }) =>
-  burst({ ...opts, decayMs: 3, band: [2500, 9000] });
+type SoundOpts = { seconds: number; at: number; sr: number; amp?: number; seed?: number };
+
+/**
+ * A bright finger-snap-like sound: a very short crack, plus the room ringing on after it (a quieter bright tail).
+ * `echoMs` is roughly how long the measured burst lasts (default 40 ms, like a snap an arm's length from a laptop).
+ * echoMs 0 = a "dry" crack with no room at all, which is over within 5-10 ms and is treated like a key click.
+ */
+export function snapSound(opts: SoundOpts & { echoMs?: number }): Float32Array {
+  const { echoMs = 40, amp = 0.7, seed = 7 } = opts;
+  const crack = burst({ ...opts, decayMs: 3, band: [2500, 9000] });
+  if (echoMs <= 0) return crack;
+  return mix(crack, burst({ ...opts, decayMs: echoMs * SNAP_ECHO_DECAY, band: [1800, 9000], amp: amp * 0.45, seed: seed + 101 }));
+}
+// the tail starts a bit under half as loud as the crack and is measured as over at a fifth of it: that takes about 0.85 decay times
+const SNAP_ECHO_DECAY = 0.75;
 
 /** A broader, longer hand-clap-like sound. */
-export const clapSound = (opts: { seconds: number; at: number; sr: number; amp?: number; seed?: number }) =>
-  burst({ ...opts, decayMs: 16, band: [600, 3500] });
+export const clapSound = (opts: SoundOpts) => burst({ ...opts, decayMs: 16, band: [600, 3500] });
+
+/** A knuckle on a desk: a low thud with a small knock on top. */
+export const deskTap = (opts: SoundOpts) => {
+  const { amp = 0.7, seed = 7 } = opts;
+  return mix(burst({ ...opts, decayMs: 10, band: [60, 500], amp }), burst({ ...opts, decayMs: 2, band: [800, 4000], amp: amp * 0.4, seed: seed + 3 }));
+};
+
+/** A key press right next to the microphone: a sharp click that is over almost at once. */
+export const keyClick = (opts: SoundOpts) => burst({ ...opts, decayMs: 1, band: [1000, 8000], amp: opts.amp ?? 0.5 });
+
+/** A spoken syllable's worth of breathy noise (voice band 300-3500 Hz): swells up over 15 ms, holds 60 ms, fades over 30 ms. */
+export function speechBurst(opts: SoundOpts): Float32Array {
+  const { seconds, at, sr, amp = 0.6, seed = 7 } = opts;
+  const out = new Float32Array(Math.round(seconds * sr));
+  const r = rng(seed);
+  const hp = highpass(300, sr);
+  const lp1 = lowpass(3500, sr);
+  const lp2 = lowpass(3500, sr);
+  const start = Math.round(at * sr);
+  for (let k = 0; k < Math.round(0.105 * sr) && start + k < out.length; k++) {
+    const t = k / sr;
+    const env = t < 0.015 ? t / 0.015 : t < 0.075 ? 1 : 1 - (t - 0.075) / 0.03;
+    out[start + k] = lp2(lp1(hp(r() * 2 - 1))) * env * amp;
+  }
+  return out;
+}
 
 export function mix(...parts: Float32Array[]): Float32Array {
   const out = new Float32Array(Math.max(...parts.map((p) => p.length)));

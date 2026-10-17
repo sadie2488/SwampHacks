@@ -9,7 +9,7 @@
 #   when            what the app senses            list: contracts/signal-catalog.json
 #   do              what gets changed              list: contracts/control-catalog.json
 #   how             follow  = the control follows a slider signal (hand goes up -> tempo goes up)
-#                   trigger = fires once per moment (clap -> play/pause)
+#                   trigger = fires once per moment (double clap -> play/pause)
 #                   toggle  = flips something on/off
 #                   nudge   = moves a control one step (say "faster" -> tempo +0.1)
 #
@@ -47,12 +47,13 @@
   range: [1.0, 0.5]
   smoothing: 0.5
 
+# A DOUBLE clap, not one: single clap-like sounds (desk taps, keys, the song's own drums) happen by accident and would start and stop the music.
 - name: clap toggles play/pause
   mode: play
-  when: audio.clap
+  when: audio.clap.double
   do: playback.toggle
   how: trigger
-  cooldown_ms: 600
+  cooldown_ms: 800
 
 # Voice commands only work while the left fist is held, so the instrument you are playing does not set them off.
 
