@@ -52,8 +52,15 @@ before(async () => {
   const context = await browser.newContext({ permissions: ['camera', 'microphone'], viewport: { width: 1280, height: 900 } });
   page = await context.newPage();
   page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
+  // When a real database is configured but unreachable (for example its password is missing), the server answers the
+  // saving routes with a plain 503 and the app falls back to this computer. The browser prints that as a console error.
+  // Allow exactly that case; any other server error (5xx) anywhere is still a problem.
+  const SAVING_ROUTES = /\/api\/(sessions|creations|songs|feedback-items)\b/;
+  page.on('response', (r) => {
+    if (r.status() >= 500 && !(r.status() === 503 && SAVING_ROUTES.test(r.url()))) problems.push(`server error ${r.status()} from ${new URL(r.url()).pathname}`);
+  });
   page.on('console', (m) => {
-    if (m.type() === 'error' && !/favicon|Failed to load resource.*404/i.test(m.text())) problems.push(`console error: ${m.text()}`);
+    if (m.type() === 'error' && !/favicon|Failed to load resource.*404|Failed to load resource.*503/i.test(m.text())) problems.push(`console error: ${m.text()}`);
   });
   await page.goto(`${BASE}/?fake=1`);
 });

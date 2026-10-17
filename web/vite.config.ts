@@ -22,7 +22,8 @@ export default defineConfig({
       allow: [here('..')],
       deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/*.private.json', '**/relay.private.json'],
     },
-    proxy: { '/api': 'http://localhost:8000' },
+    // API_PROXY lets a second copy of the app talk to a second copy of the server (the lead's tests do this)
+    proxy: { '/api': process.env.API_PROXY ?? 'http://localhost:8000' },
   },
   worker: { format: 'es' },
   test: {

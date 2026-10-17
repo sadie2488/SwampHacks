@@ -5,6 +5,7 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 | Status | Task | Urgency |
 |---|---|---|
 | ✅ | Sponsor accounts + keys: Vultr, Gemini, Tiger Data, Auth0 (keys are in `server/.env`) | 🔴 |
+| ☐ | **Database password**: the connection string in `server/.env` (`DATABASE_URL`) has no password in it (the connection fails with "no password supplied"). Tiger Data shows the password only once when the service is created. Put it in the string yourself, like `postgres://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require`. If it was lost, reset it in the Tiger Data console. Never paste it into chat. Then tell the main laptop and it will run `uv run python -m app.db ping` and `migrate` | 🟠 |
 | ☐ | GoDaddy domain name (not a secret: just tell the main laptop the name) | 🟠 |
 | ☐ | Confirm `VULTR_API_KEY` is in `server/.env` (restricted to the main laptop's IP) so the budget watcher can run | 🟠 |
 | ☐ | After submitting: delete all Vultr resources (checklist in `docs/vultr.md`) | 🟡 |
