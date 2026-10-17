@@ -18,3 +18,8 @@ How assumptions are handled:
 | 7 | Briefs contain nothing private (they may be committed and emailed) | Unconfirmed |
 | 8 | Only Veda edits the mapping file, unless someone overrides | Unconfirmed |
 | 9 | Repo owner and merger is GitHub account `sadie2488` | Confirmed |
+| 10 | The brief has no "getting started" section; `/start` gives the setup steps (the template's section 3 is "Hard rules") | Assumed |
+| 11 | Claude Code's docs don't confirm the `MultiEdit` tool name or the notebook path field name; the folder guard handles both spellings and blocks if it can't find a path | Assumed |
+| 12 | The "needs input" notification may not fire in the VS Code panel (docs are silent); run Claude in VS Code's integrated terminal | Unconfirmed |
+| 13 | The GitHub CLI (`gh`) will be installed on the main laptop; the plan's pull requests, CI checks and merges depend on it | Unconfirmed |
+| 14 | Project permission "allow" rules only take effect after each person accepts the folder-trust prompt; "deny" rules and hooks apply right away | Per the docs, untested |

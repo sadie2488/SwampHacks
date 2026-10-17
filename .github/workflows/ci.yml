@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rules:
+    name: Rules (folders, AI credit, files)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Get the pull request code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: pr
+      # The checks run from the base branch, so a pull request can't change the checks that judge it.
+      - name: Get the trusted check scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: base
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Folder ownership
+        if: github.event_name == 'pull_request'
+        working-directory: pr
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BRANCH: ${{ github.head_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node ../base/scripts/ci/check-ownership.mjs
+      - name: No AI credit anywhere
+        working-directory: pr
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node ../base/scripts/ci/check-attribution.mjs
+      - name: Big files, media, and secrets files
+        if: github.event_name == 'pull_request'
+        working-directory: pr
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node ../base/scripts/ci/check-files.mjs
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Project tests
+        run: node --test "tests/**/*.test.mjs"
+      - name: Hook self-test
+        run: node scripts/hook-selftest.mjs
