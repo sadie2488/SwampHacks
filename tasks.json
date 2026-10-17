@@ -1112,7 +1112,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Files only, nothing created on Vultr: deploy/ has a plain-language runbook with the cost estimate (about $10 a month, $1 to $2 for 3 to 4 days, from memory: verify on the Vultr page), a setup script and an update script for the new Ubuntu server, a Caddy config (HTTPS, the website, /api proxy) and a service file. Checked locally: the website builds, the production-style server answers, the scripts parse (node deploy/check-local.mjs). NOT tested: any real server, the HTTPS certificate, the Caddy file, camera over HTTPS, login on the domain. Needs a human yes with the cost, the domain name, and the code on GitHub main before it can be used."
     },
     {
       "id": "F1",

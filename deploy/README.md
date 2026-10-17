@@ -225,7 +225,7 @@ Checked on the lead's Windows laptop only: the shell scripts parse (`bash -n`), 
 - Camera, microphone and hand tracking over HTTPS, and the Content Security Policy in a browser
 - The TouchDesigner relay from the live site (the page connects to `ws://localhost:9980` on the performer's own laptop; Chrome may ask for a "local network" permission)
 - Reaching Tiger Data from the Vultr server, and `ffmpeg` for m4a/aac songs
-- The NodeSource, Caddy and uv download addresses used by `setup.sh` (Node 20 is at or near end-of-life; it is only used to build the website, never to run the site, and `NODE_MAJOR=22` should work too)
+- The NodeSource, Caddy and uv download addresses used by `setup.sh` (Node 22, the same version the project's automatic checks use; it is only used to build the website, never to run the site)
 
 ## Files in this folder
 

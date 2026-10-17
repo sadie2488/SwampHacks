@@ -12,7 +12,7 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-example.com}"                                        # your website address
 REPO_URL="${REPO_URL:-https://github.com/sadie2488/SwampHacks.git}"    # where the code comes from
 BRANCH="${BRANCH:-main}"                                               # which version of the code to run
-NODE_MAJOR="${NODE_MAJOR:-20}"                                         # Node is only used to build the website
+NODE_MAJOR="${NODE_MAJOR:-22}"                                         # Node is only used to build the website
 SWAP_SIZE="${SWAP_SIZE:-2G}"                                           # safety net for a 2 GB server
 SKIP_DNS_CHECK="${SKIP_DNS_CHECK:-0}"                                  # 1 = do not check the domain points here
 
