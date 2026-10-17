@@ -19,6 +19,9 @@
     "yaml": "^2.9.1"
   },
   "dependencies": {
-    "@auth0/auth0-react": "^2.28.2"
+    "@auth0/auth0-react": "^2.28.2",
+    "imapflow": "^2.5.2",
+    "mailparser": "^3.9.40",
+    "nodemailer": "^10.1.2"
   }
 }

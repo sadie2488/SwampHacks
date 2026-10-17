@@ -1,0 +1,8 @@
+{
+  "gmail_address": "",
+  "app_password": "",
+  "allowed_addresses": [],
+  "send_to": [],
+  "max_emails_per_hour": 10,
+  "ask_wait_minutes": 3
+}
