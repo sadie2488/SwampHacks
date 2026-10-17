@@ -152,10 +152,13 @@ export function start(): Stop {
     micOriginMs = performance.now();
     const analyzer = new Analyzer(busSink, micOriginMs);
     const pipeline = new MicPipeline(ctx.sampleRate, analyzer);
+    // stricter snap and clap detection while the song plays (it comes back through the speakers)
+    const offTransport = bus.on('transport', (t) => pipeline.setSongPlaying(t.playing), { replay: true });
     let capture: Capture;
     try {
       capture = await startCapture(ctx, stream, (chunk, lost) => pipeline.push(chunk, lost));
     } catch (e) {
+      offTransport();
       release();
       if (cancelled()) return;
       wantOn = false;
@@ -163,12 +166,14 @@ export function start(): Stop {
       return;
     }
     if (cancelled()) {
+      offTransport();
       capture.stop();
       return release();
     }
     session = {
       fake: false,
       stop: () => {
+        offTransport();
         capture.stop();
         release();
         analyzer.flush();

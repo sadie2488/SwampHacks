@@ -166,14 +166,17 @@ describe('attacks (onsets)', () => {
 // Limits of snap vs clap (read this before trusting it):
 //  - These are computer-made bursts of filtered noise. A real finger snap or clap differs with the mic, the room,
 //    how far away the hands are, and the person. The thresholds in config.ts are a first guess, to be tuned live.
-//  - It separates "short and bright" from "longer and broader" only. A snap with a low thump, or a flat-handed clap
-//    with little sizzle, can land on the wrong side. The cooldown means two hand sounds closer than ~250 ms count as one.
-//  - Other short noisy sounds can pass as a clap: a hard "t" or "k" spoken near the mic, a keyboard clack, a door.
+//  - It separates "bright" (mostly above 2.5 kHz) from "broader and lower" only. A snap with a low thump, or a
+//    flat-handed clap with a lot of sizzle, can land on the wrong side. The cooldown means two hand sounds closer
+//    than ~200 ms count as one.
+//  - Desk thumps (too low), key clicks (too short) and speech (swells up) are rejected; see hands.test.ts. Other short
+//    noisy sounds can still pass as a clap: a hard "t" or "k" spoken near the mic, a door. That is why play/pause
+//    needs a double clap.
 //  - Tonal sounds (singing, humming, instruments) are rejected because they are not noise-like.
 describe('snap versus clap', () => {
   for (const sr of RATES) {
     describe(`at ${sr} Hz`, () => {
-      it('calls a short bright burst a snap', () => {
+      it('calls a bright burst with a little room echo a snap', () => {
         for (const seed of [1, 2, 3, 4, 5]) {
           const sig = snapSound({ seconds: 1.5, at: 0.8, sr, seed });
           const ev = runDetector(sig, sr);
@@ -191,11 +194,10 @@ describe('snap versus clap', () => {
         }
       });
 
-      it('puts the snap higher and shorter than the clap', () => {
+      it('puts the snap higher and brighter than the clap', () => {
         const snap = bursts(runDetector(snapSound({ seconds: 1.5, at: 0.8, sr }), sr))[0].features;
         const clap = bursts(runDetector(clapSound({ seconds: 1.5, at: 0.8, sr }), sr))[0].features;
         expect(snap.centroidHz).toBeGreaterThan(clap.centroidHz);
-        expect(snap.burstMs).toBeLessThan(clap.burstMs);
         expect(snap.hfRatio).toBeGreaterThan(clap.hfRatio);
       });
 
@@ -226,12 +228,15 @@ describe('snap versus clap', () => {
   }
 
   it('explains its decisions in plain words', () => {
-    const f = { centroidHz: 800, hfRatio: 0.1, flatness: 0.001, burstMs: 40, peakRms: 0.3, jumpRatio: 20 };
+    const f = { centroidHz: 800, hfRatio: 0.1, flatness: 0.001, burstMs: 40, peakRms: 0.3, jumpRatio: 20, attackMs: 0 };
     expect(classifyBurst(f).reason).toMatch(/tonal/);
     expect(classifyBurst({ ...f, flatness: 0.3, burstMs: 400 }).reason).toMatch(/too long/);
     expect(classifyBurst({ ...f, flatness: 0.3, peakRms: 0.001 }).reason).toMatch(/quiet/);
     expect(classifyBurst({ ...f, flatness: 0.3 }).kind).toBe('clap');
-    expect(classifyBurst({ ...f, flatness: 0.3, centroidHz: 4500, hfRatio: 0.8, burstMs: 10 }).kind).toBe('snap');
+    expect(classifyBurst({ ...f, flatness: 0.3, centroidHz: 4500, hfRatio: 0.8, burstMs: 40 }).kind).toBe('snap');
+    expect(classifyBurst({ ...f, flatness: 0.3, burstMs: 5 }).reason).toMatch(/click/);
+    expect(classifyBurst({ ...f, flatness: 0.3, attackMs: 40 }).reason).toMatch(/swells up/);
+    expect(classifyBurst({ ...f, flatness: 0.3, centroidHz: 300 }).reason).toMatch(/thump/);
   });
 
   it('keeps all the thresholds in the config', () => {

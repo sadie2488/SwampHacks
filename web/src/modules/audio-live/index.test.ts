@@ -183,6 +183,29 @@ describe('real microphone (stand-in browser)', () => {
     expect(ids(m.log.signals, 'audio.clap')[0].state).toBe('start');
   });
 
+  it('hears a double clap through the whole chain, and is stricter while the song plays', async () => {
+    const twoClaps = (seconds: number, at: number, amp?: number) =>
+      mix(silence(seconds, SR), clapSound({ seconds, at, sr: SR, amp }), clapSound({ seconds, at: at + 0.4, sr: SR, amp, seed: 9 }));
+    // two fairly quiet claps (peak about 0.05): heard while the song is stopped ...
+    signalSource = twoClaps(2.1, 1.0, 0.15);
+    const { m } = await enabled();
+    await pass(2);
+    expect(ids(m.log.signals, 'audio.clap').length).toBe(2);
+    expect(ids(m.log.signals, 'audio.clap.double').map((s) => [s.kind, s.state])).toEqual([['moment', 'start']]);
+    m.enable(false);
+
+    // ... but ignored while it plays (they need a peak of 0.064 then)
+    const loaded = await load();
+    const { stream } = makeStream();
+    loaded.getUserMedia.mockResolvedValue(stream);
+    loaded.bus.emit('transport', { loaded: true, playing: true, positionSec: 0, durationSec: 10, tempo: 1, pitch: 0, volume: 1, loop: false, loopSection: null });
+    loaded.start();
+    loaded.enable(true);
+    await pass(2.04);
+    expect(ids(loaded.log.signals, 'audio.clap')).toEqual([]);
+    expect(ids(loaded.log.signals, 'audio.clap.double')).toEqual([]);
+  });
+
   it('only publishes signals that are in the catalog, with the right kind and sane values', async () => {
     signalSource = mix(hum(), clapSound({ seconds: 2.1, at: 1.9, sr: SR }));
     const { m } = await enabled();

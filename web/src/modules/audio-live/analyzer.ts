@@ -19,6 +19,8 @@ export class Analyzer {
   private nextHumMs = -Infinity;
   private recentMidi: number[] = [];
   private lastOnsetSec = -Infinity;
+  /** The clap run so far (see CONFIG.doubleClap): when its last clap was, how sure it was, and how many claps it has. */
+  private clapRun = { lastSec: -Infinity, confidence: 0, count: 0 };
 
   /** @param originMs the page-clock time (performance.now()) that matches time 0 of this session. */
   constructor(
@@ -92,9 +94,22 @@ export class Analyzer {
     this.sink.performance({ version: 1, type: 'onset', time_sec: Math.max(0, tSec), loudness: levelFromRms(rms, this.cfg.loudness), confidence: clamp01(confidence) });
   }
 
-  /** A snap or a clap, with the time its attack was heard. */
+  /** A snap or a clap, with the time its attack was heard. A second clap soon after a first is also a double clap. */
   hand(kind: 'snap' | 'clap', tSec: number, confidence: number): void {
     this.sink.hand(kind, clamp01(confidence), this.ms(tSec));
+    if (kind === 'clap') this.clap(tSec, clamp01(confidence));
+  }
+
+  private clap(tSec: number, confidence: number): void {
+    const d = this.cfg.doubleClap;
+    const run = this.clapRun;
+    const gapMs = Math.round((tSec - run.lastSec) * 1000);
+    if (gapMs < d.minGapMs) return; // too close to be a new clap: the same one echoing
+    // one double clap per run: a third, fourth... clap in a row only keeps the run going
+    run.count = gapMs <= d.maxGapMs ? run.count + 1 : 1;
+    if (run.count === 2) this.sink.doubleClap(Math.min(run.confidence, confidence), this.ms(tSec));
+    run.lastSec = tSec;
+    run.confidence = confidence;
   }
 
   /** The mic stopped: finish the note that is still sounding. */

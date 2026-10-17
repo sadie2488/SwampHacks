@@ -2,7 +2,14 @@
 // It does not care where the samples come from (AudioWorklet, AnalyserNode, or a test), only that they arrive in order.
 import type { Analyzer } from './analyzer';
 import { CONFIG } from './config';
-import { detectPitch, TransientDetector } from './dsp';
+import { detectPitch, TransientDetector, type BurstFeatures, type BurstVerdict } from './dsp';
+
+/** One short line per loud sound, for tuning on a real microphone (see CONFIG.debug). */
+export function describeBurst(v: BurstVerdict, f: BurstFeatures, strictness = 1): string {
+  const verdict = v.kind === 'other' ? 'IGNORED' : v.kind.toUpperCase();
+  const strict = strictness !== 1 ? ` | song playing: needs x${strictness} peak and jump` : '';
+  return `${verdict}: ${v.reason} | peak ${f.peakRms.toFixed(3)} jump ${f.jumpRatio.toFixed(1)} flat ${f.flatness.toFixed(3)} len ${Math.round(f.burstMs)}ms attack ${Math.round(f.attackMs)}ms centre ${Math.round(f.centroidHz)}Hz high ${Math.round(f.hfRatio * 100)}%${strict}`;
+}
 
 export class MicPipeline {
   private readonly hop: number;
@@ -25,6 +32,11 @@ export class MicPipeline {
     this.win = new Float32Array(this.windowSize);
     this.nextHopAt = this.windowSize;
     this.transients = new TransientDetector(sampleRate, cfg.onset, cfg.burst, cfg.hand);
+  }
+
+  /** The song is playing (or stopped): snaps and claps must stand out more while it plays (CONFIG.hand.playingStrictness). */
+  setSongPlaying(playing: boolean): void {
+    this.transients.strictness = playing ? this.cfg.hand.playingStrictness : 1;
   }
 
   /** Seconds of audio processed so far (the session clock). */
@@ -74,7 +86,7 @@ export class MicPipeline {
       if (e.type === 'onset') this.analyzer.attack(tSec, e.rms, e.confidence);
       else {
         if (e.verdict.kind !== 'other') this.analyzer.hand(e.verdict.kind, tSec, e.verdict.confidence);
-        if (this.cfg.debug) console.debug('[audio-live]', e.verdict.kind === 'other' ? 'loud sound ignored:' : e.verdict.kind, e.verdict.reason, e.features);
+        if (this.cfg.debug) console.debug(`[audio-live] ${describeBurst(e.verdict, e.features, this.transients.strictness)}`);
       }
     }
   }

@@ -153,6 +153,8 @@ export interface BurstFeatures extends SpectralFeatures {
   peakRms: number;
   /** Peak loudness divided by the recent average before it. */
   jumpRatio: number;
+  /** How long after the start the loudest moment came, in ms (5 ms steps). Hands are instant, voices swell up. */
+  attackMs: number;
 }
 export type BurstKind = 'snap' | 'clap' | 'other';
 export interface BurstVerdict {
@@ -165,25 +167,31 @@ export interface BurstVerdict {
 
 /**
  * The rule, in words:
- *  - it must be loud enough and a sudden jump,
+ *  - it must be loud enough and a sudden jump (both stricter while the song is playing: `strictness` > 1),
+ *  - it must ring on a little (`minBurstMs`, a key click does not) and die away within `clapMaxBurstMs`,
+ *  - it must be at its loudest straight away (speech and music swell up),
+ *  - it must not be a low thump (centre of the sound at least `minCentroidHz`),
  *  - it must be noise-like (voices and instruments are not),
- *  - it must die away within `clapMaxBurstMs`,
- *  - SNAP = short and bright (centroid high, most energy above 2.5 kHz),
- *  - CLAP = anything else that passed: a bit longer and/or broader, mid-range.
+ *  - SNAP = bright (centroid high, a good share of energy above 2.5 kHz) and not too long,
+ *  - CLAP = anything else that passed: broader, lower, and/or longer.
  */
-export function classifyBurst(f: BurstFeatures, cfg = CONFIG.hand): BurstVerdict {
-  if (f.peakRms < cfg.minPeakRms) return { kind: 'other', confidence: 0, reason: 'too quiet to be a snap or clap' };
-  if (f.jumpRatio < cfg.minJumpRatio) return { kind: 'other', confidence: 0, reason: 'not a sharp enough jump in loudness' };
-  if (f.flatness < cfg.minFlatness) return { kind: 'other', confidence: 0, reason: 'tonal (voice or instrument), not a hand sound' };
-  if (f.burstMs > cfg.clapMaxBurstMs) return { kind: 'other', confidence: 0, reason: 'lasts too long to be a snap or clap' };
+export function classifyBurst(f: BurstFeatures, cfg = CONFIG.hand, strictness = 1): BurstVerdict {
+  const other = (reason: string): BurstVerdict => ({ kind: 'other', confidence: 0, reason });
+  if (f.peakRms < cfg.minPeakRms * strictness) return other('too quiet to be a snap or clap');
+  if (f.jumpRatio < cfg.minJumpRatio * strictness) return other('not a sharp enough jump in loudness');
+  if (f.burstMs > cfg.clapMaxBurstMs) return other('lasts too long to be a snap or clap');
+  if (f.burstMs < cfg.minBurstMs) return other('too short: a click (like a key press), not a snap or clap');
+  if (f.attackMs > cfg.maxAttackMs) return other('swells up too slowly (speech or music), hands are instant');
+  if (f.centroidHz < cfg.minCentroidHz) return other('too low and dull (a thump on the desk), not a hand sound');
+  if (f.flatness < cfg.minFlatness) return other('tonal (voice or instrument), not a hand sound');
   const s = cfg.snap;
   const bright = f.centroidHz >= s.minCentroidHz && f.hfRatio >= s.minHfRatio;
   if (f.burstMs <= s.maxBurstMs && bright) {
     const margin = Math.min((f.centroidHz - s.minCentroidHz) / s.minCentroidHz, (f.hfRatio - s.minHfRatio) / s.minHfRatio, (s.maxBurstMs - f.burstMs) / s.maxBurstMs);
-    return { kind: 'snap', confidence: clamp01(0.5 + margin), reason: 'short and bright' };
+    return { kind: 'snap', confidence: clamp01(0.5 + margin), reason: 'bright and short' };
   }
   const margin = Math.min((cfg.clapMaxBurstMs - f.burstMs) / cfg.clapMaxBurstMs, (f.flatness - cfg.minFlatness) / cfg.minFlatness);
-  const why = f.burstMs > s.maxBurstMs ? 'lasts a bit longer than a snap' : 'not bright enough for a snap';
+  const why = bright ? 'lasts longer than a snap' : 'not bright enough for a snap';
   return { kind: 'clap', confidence: clamp01(0.5 + margin / 2), reason: `broad noise burst, ${why}` };
 }
 
@@ -215,7 +223,9 @@ export class TransientDetector {
   private state: 'idle' | 'capture' = 'idle';
   private lastOnsetSample = -Infinity;
   private quietUntil = -Infinity;
-  private cap = { start: 0, peak: 0, bg: 0 };
+  private cap = { start: 0, peak: 0, peakAt: 0, bg: 0 };
+  /** Multiplies the loudness and jump a snap or clap needs (set above 1 while the song is playing). */
+  strictness = 1;
 
   constructor(
     private readonly sampleRate: number,
@@ -267,16 +277,19 @@ export class TransientDetector {
       const ratio = level / Math.max(bg, o.noiseFloorRms);
       if (warm && level >= o.minRms && ratio >= o.jumpRatio && this.ms(blockStart - this.lastOnsetSample) >= o.refractoryMs && blockStart >= this.quietUntil) {
         this.lastOnsetSample = blockStart;
-        this.cap = { start: blockStart, peak: level, bg };
+        this.cap = { start: blockStart, peak: level, peakAt: blockStart, bg };
         this.state = 'capture';
         events.push({ type: 'onset', sample: blockStart, rms: level, ratio, confidence: clamp01(Math.log2(ratio / o.jumpRatio) / 3 + 0.5) });
       }
     } else {
-      this.cap.peak = Math.max(this.cap.peak, level);
+      if (level > this.cap.peak) {
+        this.cap.peak = level;
+        this.cap.peakAt = blockStart;
+      }
       const sinceStart = this.ms(this.written - this.cap.start);
       const decayed = level < this.burstCfg.decayFrac * this.cap.peak && blockStart > this.cap.start;
       if (decayed || sinceStart >= this.burstCfg.maxWaitMs) {
-        const burstMs = decayed ? this.ms(blockStart - this.cap.start) : sinceStart;
+        const burstMs = Math.round(decayed ? this.ms(blockStart - this.cap.start) : sinceStart);
         events.push(this.finishBurst(burstMs));
         this.state = 'idle';
       }
@@ -299,8 +312,9 @@ export class TransientDetector {
       burstMs,
       peakRms: this.cap.peak,
       jumpRatio: this.cap.peak / Math.max(this.cap.bg, this.onsetCfg.noiseFloorRms),
+      attackMs: Math.round(this.ms(this.cap.peakAt - start)),
     };
-    const verdict = classifyBurst(features, this.handCfg);
+    const verdict = classifyBurst(features, this.handCfg, this.strictness);
     // cooldown: after a snap or clap, attacks are ignored for a moment so one sound (and its echo) is not counted twice
     if (verdict.kind !== 'other') this.quietUntil = start + Math.round((this.handCfg.cooldownMs * this.sampleRate) / 1000);
     return { type: 'burst', sample: start, verdict, features };
