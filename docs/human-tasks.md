@@ -13,7 +13,7 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 | ☐ | Sadie: Gmail app password for the email relay | 🔴 |
 | ☐ | Repo owner: turn on GitHub secret scanning + push protection (Settings → Code security) | 🔴 |
 | ☐ | Approve the first tests | 🟠 |
-| ☐ | Design inspiration | 🟠 |
+| ☐ | Design: look at the three mockups (Firefly Marsh, Glass Hall, Paper Reef; link in the main laptop's chat) and say A, B, C or a mix, plus any inspiration | 🟠 |
 | ☐ | TouchDesigner visuals | 🟡 |
 | ☐ | Pick the demo song + instrument | 🟡 |
 

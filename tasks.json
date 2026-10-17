@@ -1143,7 +1143,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Three 3D mockup directions made and shown to Lalitha (A Firefly Marsh, B Glass Hall, C Paper Reef; Learn and Play screens each) as real WebGL scenes with the app's real labels. Waiting for her pick (or a mix) and any inspiration, then a helper builds it in web/src/ui and web/src/styles. The source of the mockups is in scratch/design-mockups (not in git). Needs three.js added to web/package.json by the lead."
     }
   ]
 }
