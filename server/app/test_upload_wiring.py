@@ -377,6 +377,23 @@ def test_such_a_melody_that_looks_like_a_full_mix_comes_with_the_warning(monkeyp
     assert notes is second and warnings == [analyzer.WARNING_FULL_MIX]
 
 
+@pytest.mark.parametrize(
+    ("confidence", "warned"),
+    [(0.3, True), (0.49, True), (0.55, True), (0.59, True), (0.61, False), (0.85, False)],
+)
+def test_the_warning_goes_only_when_the_tracker_is_clearly_sure_of_such_a_melody(monkeypatch, confidence, warned):
+    second = tune(20, confidence)
+    notes, warnings, _ = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+    assert notes is second  # the melody is shown either way
+    assert warnings == ([analyzer.WARNING_FULL_MIX] if warned else [])
+
+
+def test_such_a_melody_with_far_too_many_notes_a_second_is_warned_about_even_when_sure(monkeypatch):
+    busy = [note(i * 0.1, 0.9, length=0.09) for i in range(100)]  # ten notes a second all through the 10 second song
+    notes, warnings, _ = melody_step(monkeypatch, None, busy, first_error=NO_MELODY)
+    assert notes is busy and warnings == [analyzer.WARNING_FULL_MIX]
+
+
 def test_a_first_try_that_returns_an_empty_list_counts_as_no_melody_too(monkeypatch):
     second = tune(20, 0.85)
     notes, warnings, calls = melody_step(monkeypatch, [], second)

@@ -281,8 +281,10 @@ def test_a_tune_hidden_by_very_loud_drums_is_found_once_the_drums_are_out(client
     p, r = drums.score(found, drums.TRUTH)
     print(f"[analyzer] very loud drums: no melody before; now {len(found)} notes, precision {p:.2f} recall {r:.2f}")
     assert r >= 0.9 and p >= 0.5
-    assert (analyzer.WARNING_FULL_MIX in doc.get("warnings", [])) == analyzer.looks_like_full_mix(found)
-    assert analyzer.WARNING_NO_MELODY not in doc.get("warnings", [])
+    confidence = analyzer._melody_stats(found)[0]
+    print(f"[analyzer] very loud drums: pitch confidence {confidence:.2f}")
+    # notes that were found only without the drums keep the warning until the tracker is clearly sure (0.6)
+    assert doc["warnings"] == [analyzer.WARNING_FULL_MIX]
     assert "Second try without drums for a song with no melody" in caplog.text
 
 

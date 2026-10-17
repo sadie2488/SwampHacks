@@ -180,9 +180,15 @@ def _melody_part(melody, y, sr: int, result: dict) -> tuple[list[dict], list[str
         notes = _melody_when_drums_hid_it(melody, y, sr, result)
         if notes is None:
             return [], [WARNING_NO_MELODY]
-        mixed = looks_like_full_mix(notes)
+        mixed = _unsure_after_drums_out(notes)
     part = melody.melody_to_part(notes)  # also suggests an instrument when the range fits one
     return [part], [WARNING_FULL_MIX] if mixed else []
+
+
+def _unsure_after_drums_out(notes: list[dict]) -> bool:
+    """Do notes found on the drums-out sound still get the full-mix warning? Yes, unless they are clearly one line."""
+    stats = _melody_stats(notes)
+    return stats is None or stats[0] < DRUMS_OUT_CLEAR_CONFIDENCE or looks_like_full_mix(notes)
 
 
 def _drums_out_melody(melody, y, sr: int, result: dict) -> list[dict] | None:
@@ -271,7 +277,7 @@ def _without_drums(melody, y, sr: int, result: dict, notes: list[dict]) -> tuple
     )
     if not better:
         return notes, True
-    return again, looks_like_full_mix(again) or after[0] < DRUMS_OUT_CLEAR_CONFIDENCE
+    return again, _unsure_after_drums_out(again)
 
 
 def analyze_audio(path: Path) -> dict:
