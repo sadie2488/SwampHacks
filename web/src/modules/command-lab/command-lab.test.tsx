@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bus, resetControls, sendCommand, sendSignal, type Landmarks } from '@/bus';
 import { controlCatalog, signalCatalog } from '@/contracts/catalogs';
 import type { Signal } from '@/contracts';
-import { CommandLab } from './index';
+import { CommandLab, drawLandmarks } from './index';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -24,6 +24,7 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fakeContext as unknown as CanvasRenderingContext2D);
   resetControls();
   bus.emit('issues', []);
+  bus.emit('status', { module: 'vision', state: 'idle' }); // the bus remembers the last status, so start every test with the camera off
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -70,6 +71,27 @@ describe('Command Lab', () => {
     expect(q('meter-audio.clap').dataset.on).toBe('true');
     await wait(520);
     expect(q('meter-audio.clap').dataset.on).toBe('false');
+  });
+
+  it('a one-shot moment that never sends an end is not stuck "on": it flashes and the count goes up', async () => {
+    const reading = (id: string) => q(`meter-${id}`).querySelector('.lab-reading')!.textContent;
+    for (const id of ['audio.clap', 'audio.keyword.higher']) {
+      act(() => sendSignal({ id, kind: 'moment', state: 'start' }));
+      expect(q(`meter-${id}`).dataset.on, id).toBe('true'); // flashing
+      expect(reading(id), id).toBe('happened 1 time'); // not "on"
+    }
+    await wait(520);
+    for (const id of ['audio.clap', 'audio.keyword.higher']) expect(q(`meter-${id}`).dataset.on, id).toBe('false');
+    act(() => sendSignal({ id: 'audio.clap', kind: 'moment', state: 'start' }));
+    expect(reading('audio.clap')).toBe('happened 2 times');
+    expect(reading('audio.keyword.higher')).toBe('happened 1 time');
+  });
+
+  it('a held moment (a fist) still reads "on" until its end arrives', () => {
+    act(() => sendSignal({ id: 'vision.hand.right.fist', kind: 'moment', state: 'start' }));
+    expect(q('meter-vision.hand.right.fist').querySelector('.lab-reading')!.textContent).toBe('on');
+    act(() => sendSignal({ id: 'vision.hand.right.fist', kind: 'moment', state: 'end' }));
+    expect(q('meter-vision.hand.right.fist').querySelector('.lab-reading')!.textContent).toBe('happened 1 time');
   });
 
   it('a control shows its value and flashes when a command arrives', async () => {
@@ -129,6 +151,38 @@ describe('Command Lab', () => {
     expect(q('lab-enable-camera').textContent).toBe('Turn camera on');
   });
 
+  it('the camera button follows the vision module\'s status, wherever the camera was switched', () => {
+    expect(q('lab-enable-camera').textContent).toBe('Turn camera on');
+    expect(q('lab-enable-camera').getAttribute('aria-pressed')).toBe('false');
+    const expectations: Array<['starting' | 'running' | 'idle' | 'error', string]> = [
+      ['starting', 'Turn camera off'],
+      ['running', 'Turn camera off'],
+      ['idle', 'Turn camera on'],
+      ['running', 'Turn camera off'],
+      ['error', 'Turn camera on'],
+    ];
+    for (const [state, label] of expectations) {
+      act(() => bus.emit('status', { module: 'vision', state }));
+      expect(q('lab-enable-camera').textContent, state).toBe(label);
+      expect(q('lab-enable-camera').getAttribute('aria-pressed'), state).toBe(String(label === 'Turn camera off'));
+    }
+  });
+
+  it('ignores the status of other modules', () => {
+    act(() => bus.emit('status', { module: 'audio-live', state: 'running' }));
+    expect(q('lab-enable-camera').textContent).toBe('Turn camera on');
+  });
+
+  it('opens already showing the camera as on (and its message) when the vision module is running', () => {
+    act(() => root.unmount());
+    bus.emit('status', { module: 'vision', state: 'running', message: 'Camera is on.' });
+    root = createRoot(container);
+    act(() => root.render(<CommandLab />));
+    expect(q('lab-enable-camera').textContent).toBe('Turn camera off');
+    expect(q('lab-enable-camera').getAttribute('aria-pressed')).toBe('true');
+    expect(container.textContent).toContain('Camera is on.');
+  });
+
   it('has a muted, inline video and an overlay canvas', () => {
     const video = q('lab-video') as HTMLVideoElement;
     expect(video.tagName).toBe('VIDEO');
@@ -152,6 +206,19 @@ describe('Command Lab', () => {
     expect(calls.arc).toBe(21 + 2);
     expect(calls.moveTo).toBeGreaterThan(0);
     expect((q('lab-overlay') as HTMLCanvasElement).width).toBe(640);
+  });
+
+  it('draws points exactly where they arrive (x * width): the landmarks are already mirrored, so the canvas never flips them', () => {
+    const arcs: Array<[number, number]> = [];
+    const ctx = { clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, fill() {}, arc: (x: number, y: number) => void arcs.push([x, y]) };
+    const canvas = { width: 640, height: 480, getContext: () => ctx } as unknown as HTMLCanvasElement;
+    // a "Right" hand (the user's own right hand) whose first point is at x = 0.2, the rest at x = 0.9
+    const points = Array.from({ length: 21 }, (_, i) => ({ x: i === 0 ? 0.2 : 0.9, y: 0.5, z: 0 }));
+    drawLandmarks(canvas, { t_ms: 1, width: 640, height: 480, hands: [{ handedness: 'Right', points }] });
+    expect(arcs).toHaveLength(21);
+    expect(arcs[0][0]).toBeCloseTo(0.2 * 640); // 128, not 512 (which would be 1 - 0.2 flipped in JS)
+    expect(arcs[0][1]).toBeCloseTo(0.5 * 480);
+    expect(arcs[1][0]).toBeCloseTo(0.9 * 640);
   });
 
   describe('Test without a camera', () => {

@@ -94,6 +94,14 @@
   how: nudge
   step: 1
 
+- name: say "lower" only while left fist is held
+  mode: play
+  when: audio.keyword.lower
+  only_while: vision.hand.left.fist
+  do: playback.pitch
+  how: nudge
+  step: -1
+
 # --- Create mode -------------------------------------------------------------------------------------------------
 
 - name: snap adds a layer
