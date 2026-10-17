@@ -8,6 +8,7 @@ import { startController } from './controller';
 import { playFakeHum } from './fake-hum';
 import { currentLayer, describeState, hasBeat, initialState, isRecording } from './layers';
 import { EFFECT_IDS, INSTRUMENT_IDS, midiToName } from './music';
+import { SavedTracks } from './saved-tracks';
 import { applyAnalysis, createSettings, takeSummaryText } from './settings';
 import { createStore } from './store';
 import { createToneEngine } from './tone-engine';
@@ -199,6 +200,8 @@ export function CreatePanel() {
           Play loop
         </button>
       </p>
+
+      <SavedTracks store={store} />
     </section>
   );
 }

@@ -48,7 +48,8 @@ export type Action =
   | { type: 'play' }
   | { type: 'stop' }
   | { type: 'beatOn' }
-  | { type: 'beatOff' };
+  | { type: 'beatOff' }
+  | { type: 'loadTrack'; bpm: number; bars: number; layers: Layer[] };
 
 export const BEAT_ID = 'beat';
 
@@ -151,6 +152,14 @@ export function reduce(s: CreateState, a: Action): CreateState {
         ...s,
         layers: [...s.layers, { id: BEAT_ID, name: 'Beat', kind: 'beat', instrument: 'drums', volume: DEFAULT_LAYER_VOLUME, effects: DEFAULT_EFFECT, muted: false, notes: buildBeatNotes(s.bpm, s.bars) }],
       };
+
+    case 'loadTrack': {
+      // a saved track replaces everything, but never in the middle of a take
+      if (isRecording(s)) return s;
+      const hum = a.layers.filter((l) => l.kind === 'hum');
+      const current = hum[hum.length - 1] ?? a.layers[a.layers.length - 1];
+      return { ...s, bpm: a.bpm, bars: a.bars, layers: a.layers, currentId: current?.id ?? null, phase: 'idle', recordingId: null, counter: hum.length, message: '' };
+    }
 
     case 'beatOff': {
       if (!hasBeat(s)) return s;
