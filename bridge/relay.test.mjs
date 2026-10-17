@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import dgram from 'node:dgram';
 import { readFileSync } from 'node:fs';
 import net from 'node:net';
+import os from 'node:os';
 import { after, before, describe, test } from 'node:test';
 import { WebSocket } from 'ws';
 import { frameToOsc, looksLikeFrame } from './frame-osc.mjs';
 import { decodePacket } from './osc.mjs';
-import { DEFAULTS, parseArgs, startRelay } from './relay.mjs';
+import { DEFAULTS, isOriginAllowed, parseArgs, startRelay } from './relay.mjs';
 import { SAMPLE_EXPECTED, SAMPLE_FRAME, runSelftest } from './selftest.mjs';
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`../fixtures/td-message/${name}.json`, import.meta.url), 'utf8'));
@@ -172,6 +173,116 @@ describe('the running relay', () => {
   });
 });
 
+/** Try to connect with a given Origin header (undefined = send none). Resolves { ws } when accepted, { status } when refused. */
+function tryConnect(port, origin) {
+  return new Promise((done) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}`, origin === undefined ? {} : { headers: { Origin: origin } });
+    ws.received = [];
+    ws.on('message', (data) => ws.received.push(data.toString()));
+    ws.once('open', () => done({ ws }));
+    ws.once('unexpected-response', (req, res) => {
+      res.resume();
+      done({ status: res.statusCode });
+    });
+    ws.once('error', () => {});
+  });
+}
+
+describe('which web pages may connect', () => {
+  test('the rule: no Origin, or a page on this computer; anything else only when added', () => {
+    for (const ok of [undefined, 'http://localhost', 'http://localhost:5173', 'https://localhost:8443', 'http://127.0.0.1:3000', 'http://[::1]:5173', 'HTTP://LOCALHOST:5173']) {
+      assert.equal(isOriginAllowed(ok), true, String(ok));
+    }
+    const refused = ['http://evil.example', 'https://evil.example:5173', 'http://localhost.evil.example', 'http://127.0.0.1.evil.example', 'http://localhost@evil.example', 'http://localhost:5173/path', 'http://127.0.0.2:3000', 'ftp://localhost', 'null', '', 'file://', ['http://localhost'], 42];
+    for (const no of refused) assert.equal(isOriginAllowed(no), false, JSON.stringify(no));
+    assert.equal(isOriginAllowed('http://192.168.1.5:5173', ['http://192.168.1.5:5173']), true);
+    assert.equal(isOriginAllowed('http://192.168.1.5:5173', ['http://192.168.1.5:3000']), false);
+    assert.equal(isOriginAllowed('http://evil.example', ['http://192.168.1.5:5173']), false);
+  });
+
+  test('real connections: no Origin and local pages get in, other sites get HTTP 403', async () => {
+    const lines = [];
+    const relay = await startRelay({ wsPort: 0, print: (l) => lines.push(l) });
+    const open = [];
+    for (const origin of [undefined, 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://[::1]:5173']) {
+      const got = await tryConnect(relay.wsPort, origin);
+      assert.ok(got.ws, `${origin} should be accepted`);
+      open.push(got.ws);
+    }
+    for (const origin of ['http://evil.example', 'https://evil.example:5173', 'null', 'http://localhost.evil.example']) {
+      const got = await tryConnect(relay.wsPort, origin);
+      assert.equal(got.status, 403, `${origin} should be refused`);
+    }
+    assert.equal(relay.stats().clients, 4);
+    assert.equal(relay.stats().refused, 4);
+    const line = 'Refused a connection from http://evil.example: only pages on this computer may connect. Use --allow-origin to allow it.';
+    assert.ok(lines.includes(line), lines.join('\n'));
+    for (const ws of open) ws.terminate();
+    await relay.close();
+  });
+
+  test('a refused page can not read the stream or inject frames', async () => {
+    const td = await fakeTouchDesigner();
+    const relay = await startRelay({ wsPort: 0, oscPort: td.port, print: () => {} });
+    const good = await connect(relay.wsPort);
+    const listener = await connect(relay.wsPort);
+    assert.equal((await tryConnect(relay.wsPort, 'http://evil.example')).status, 403);
+    good.send(JSON.stringify(SAMPLE_FRAME));
+    assert.ok(await until(() => listener.received.length === 1));
+    assert.equal(relay.stats().clients, 2);
+    good.terminate();
+    listener.terminate();
+    await relay.close();
+    await td.close();
+  });
+
+  test('a page that keeps retrying is mentioned once, but every refusal is counted', async () => {
+    const lines = [];
+    const relay = await startRelay({ wsPort: 0, print: (l) => lines.push(l) });
+    for (let n = 0; n < 3; n++) assert.equal((await tryConnect(relay.wsPort, 'http://evil.example')).status, 403);
+    assert.equal((await tryConnect(relay.wsPort, 'http://other.example')).status, 403);
+    assert.equal(lines.filter((l) => /^Refused a connection from/.test(l)).length, 2);
+    assert.equal(relay.stats().refused, 4);
+    await relay.close();
+  });
+
+  test('--allow-origin lets one more page in (and only that page)', async () => {
+    const relay = await startRelay({ wsPort: 0, allowOrigins: ['http://192.168.1.5:5173'], print: () => {} });
+    const allowed = await tryConnect(relay.wsPort, 'http://192.168.1.5:5173');
+    assert.ok(allowed.ws, 'the added page should be accepted');
+    assert.equal((await tryConnect(relay.wsPort, 'http://192.168.1.5:3000')).status, 403);
+    assert.equal((await tryConnect(relay.wsPort, 'http://evil.example')).status, 403);
+    const local = await tryConnect(relay.wsPort, 'http://localhost:5173');
+    const none = await tryConnect(relay.wsPort);
+    assert.ok(local.ws, 'this computer still works');
+    assert.ok(none.ws, 'no Origin still works');
+    for (const ws of [allowed.ws, local.ws, none.ws]) ws.terminate();
+    await relay.close();
+  });
+
+  test('without --allow-origin the same outside page is refused', async () => {
+    const relay = await startRelay({ wsPort: 0, print: () => {} });
+    assert.equal((await tryConnect(relay.wsPort, 'http://192.168.1.5:5173')).status, 403);
+    await relay.close();
+  });
+
+  test('by default other computers on the network can not reach it', async (t) => {
+    const lan = Object.values(os.networkInterfaces()).flat().find((i) => i && i.family === 'IPv4' && !i.internal);
+    if (!lan) return t.skip('this computer has no network address to try');
+    const relay = await startRelay({ wsPort: 0, print: () => {} });
+    const outcome = await new Promise((done) => {
+      const probe = net.createConnection({ port: relay.wsPort, host: lan.address });
+      probe.once('connect', () => {
+        probe.destroy();
+        done('connected');
+      });
+      probe.once('error', (err) => done(err.code));
+    });
+    assert.equal(outcome, 'ECONNREFUSED');
+    await relay.close();
+  });
+});
+
 describe('options', () => {
   test('--bundle sends one packet that holds the whole frame', async () => {
     const td = await fakeTouchDesigner();
@@ -230,7 +341,7 @@ describe('options', () => {
 
 describe('command line flags', () => {
   test('defaults', () => {
-    assert.deepEqual(parseArgs([]), { ...DEFAULTS, bundle: false, log: false, selftest: false, help: false });
+    assert.deepEqual(parseArgs([]), { ...DEFAULTS, bundle: false, log: false, selftest: false, help: false, allowOrigins: [] });
   });
   test('all the flags, with a space or an equals sign', () => {
     const a = parseArgs(['--ws-port', '9981', '--osc-host', '192.168.1.5', '--osc-port=7001', '--log', '--bundle']);
@@ -247,6 +358,18 @@ describe('command line flags', () => {
     assert.throws(() => parseArgs(['--osc-port', '70000']), /whole number from 0 to 65535/);
     assert.throws(() => parseArgs(['--ws-port']), /needs a value/);
     assert.throws(() => parseArgs(['--wsport', '1']), /don't know the option "--wsport".*--help/);
+  });
+  test('--allow-origin can be repeated, is tidied up, and must look like a web page address', () => {
+    const a = parseArgs(['--allow-origin', 'http://192.168.1.5:5173/', '--allow-origin=HTTPS://Demo.Example', '--log']);
+    assert.deepEqual(a.allowOrigins, ['http://192.168.1.5:5173', 'https://demo.example']);
+    assert.equal(a.log, true);
+    assert.throws(() => parseArgs(['--allow-origin']), /--allow-origin needs a web page address/);
+    assert.throws(() => parseArgs(['--allow-origin', '*']), /--allow-origin needs a web page address/);
+    assert.throws(() => parseArgs(['--allow-origin', 'evil.example']), /--allow-origin needs a web page address/);
+  });
+  test('the relay listens on this laptop only by default, and --ws-host can change that', () => {
+    assert.equal(DEFAULTS.wsHost, '127.0.0.1');
+    assert.equal(parseArgs(['--ws-host', '0.0.0.0']).wsHost, '0.0.0.0');
   });
 });
 

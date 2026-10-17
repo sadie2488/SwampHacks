@@ -37,12 +37,38 @@ export interface SenderDeps {
   /** Puts the frame on the bus ("td" topic), so the app can be tested without TouchDesigner. */
   publish: (frame: TdMessage) => void;
   report: (state: SenderState, message: string) => void;
+  /** Added to the end of every status message (for example "Ignored the ?td= address ..."). */
+  notice?: string;
 }
 
-/** The address the relay listens on. A page address ending in ?td=ws://host:port overrides the default. */
+const THIS_COMPUTER = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * The address the relay listens on. A page address ending in ?td=ws://localhost:9981 picks another port. Anything that is
+ * not this computer is ignored (so a crafted link can't make the page stream hands and levels to someone else's server)
+ * unless the page address also has &td_remote=1. When an address is ignored, `notice` says so in plain words.
+ */
+export function resolveRelayUrl(search: string | undefined): { url: string; notice?: string } {
+  const params = new URLSearchParams(search ?? '');
+  const wanted = params.get('td');
+  if (!wanted) return { url: DEFAULT_RELAY_URL };
+  let parsed: URL | null = null;
+  try {
+    parsed = new URL(wanted);
+  } catch {
+    // not an address at all
+  }
+  if (!parsed || (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') || !parsed.hostname) {
+    return { url: DEFAULT_RELAY_URL, notice: 'Ignored the ?td= address: it must look like ws://localhost:9981.' };
+  }
+  if (!THIS_COMPUTER.has(parsed.hostname) && params.get('td_remote') !== '1') {
+    return { url: DEFAULT_RELAY_URL, notice: 'Ignored the ?td= address: only this computer is allowed unless you add &td_remote=1.' };
+  }
+  return { url: parsed.href };
+}
+
 export function relayUrl(search: string | undefined): string {
-  const wanted = new URLSearchParams(search ?? '').get('td');
-  return wanted && /^wss?:\/\/[^\s/]+/.test(wanted) ? wanted : DEFAULT_RELAY_URL;
+  return resolveRelayUrl(search).url;
 }
 
 export function createSender(deps: SenderDeps) {
@@ -60,11 +86,12 @@ export function createSender(deps: SenderDeps) {
 
   function say(): void {
     lastStatusAt = deps.now();
-    if (!enabled) return deps.report('idle', 'TouchDesigner is off.');
-    if (open) return deps.report('running', `Sending to TouchDesigner (${sent} frames sent).`);
-    if (!failedOnce) return deps.report('starting', 'Connecting to the TouchDesigner relay...');
+    const report = (state: SenderState, message: string) => deps.report(state, deps.notice ? `${message} ${deps.notice}` : message);
+    if (!enabled) return report('idle', 'TouchDesigner is off.');
+    if (open) return report('running', `Sending to TouchDesigner (${sent} frames sent).`);
+    if (!failedOnce) return report('starting', 'Connecting to the TouchDesigner relay...');
     const lead = everConnected ? 'Lost the TouchDesigner relay (trying again). To restart it' : 'Relay not found: start it';
-    deps.report('error', `${lead} with: node bridge/relay.mjs. The app keeps working without it (${made} frames made so far).`);
+    report('error', `${lead} with: node bridge/relay.mjs. The app keeps working without it (${made} frames made so far).`);
   }
 
   function scheduleRetry(): void {

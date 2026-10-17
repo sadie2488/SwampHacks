@@ -67,6 +67,19 @@ function openClient(port) {
   });
 }
 
+/** Connect pretending to be a web page from `origin`. Resolves { socket } when let in, { status } when refused. */
+function tryClient(port, origin) {
+  return new Promise((done) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}`, { headers: { Origin: origin } });
+    socket.once('open', () => done({ socket }));
+    socket.once('unexpected-response', (req, res) => {
+      res.resume();
+      done({ status: res.statusCode });
+    });
+    socket.once('error', (err) => done({ status: err.message }));
+  });
+}
+
 export async function runSelftest(print = console.log) {
   const problems = [];
   const ok = (line) => print(`  ok: ${line}`);
@@ -124,6 +137,13 @@ export async function runSelftest(print = console.log) {
     await wait(100);
     if (sender.received.length === 0) ok('the sender did not get its own frame echoed back');
     else bad('the sender got its own frame echoed back');
+
+    const local = await tryClient(relay.wsPort, 'http://localhost:5173');
+    const outside = await tryClient(relay.wsPort, 'http://evil.example');
+    if (local.socket) clients.push(local.socket);
+    if (outside.socket) clients.push(outside.socket);
+    if (local.socket && outside.status === 403) ok('a web page on this computer can connect, a page from another website is refused');
+    else bad(`expected a page on this computer to connect and another website to be refused (got ${local.socket ? 'connected' : 'refused'} and ${outside.socket ? 'connected' : `status ${outside.status}`})`);
 
     const stats = relay.stats();
     if (stats.ignored === 2 && stats.framesTotal === 1) ok('2 malformed messages were ignored without crashing');

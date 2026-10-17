@@ -20,6 +20,14 @@ It prints where it is listening and a status line every few seconds (frames per 
 
 If it says a port is already in use, the relay is probably already running in another window. Otherwise use `--ws-port 9981` and add `?td=ws://localhost:9981` to the web page's address.
 
+### Who may connect
+
+The relay only listens on this laptop, and it only lets in web pages that are open on this laptop (addresses starting `http://localhost`, `http://127.0.0.1` or `http://[::1]`) and programs that are not web pages, such as TouchDesigner's WebSocket DAT. A page from any other website is refused, so a stray browser tab can't read your hand and sound data or send fake data. When that happens the relay prints a line like `Refused a connection from http://evil.example: ...`.
+
+To let one more page in on purpose (for example the app opened from a phone at `http://192.168.1.5:5173`), start the relay with `--allow-origin http://192.168.1.5:5173` (you can repeat it).
+
+The web page works the same way in the other direction: a `?td=` address is only used when it points at this computer (`ws://localhost:9981`, `ws://127.0.0.1:9981` or `ws://[::1]:9981`). Anything else is ignored, the status line says so, and the page uses `ws://localhost:9980`. To send to another computer on purpose, add `&td_remote=1` to the page's address.
+
 ## Way 1: OSC In CHOP (easiest)
 
 1. Add an **OSC In CHOP**.
@@ -73,4 +81,4 @@ No relay running? The app still works. It keeps making frames, shows "Relay not 
 
 - The address list is in `bridge/frame-osc.mjs`; keep this page in step with it.
 - The relay sends one OSC message per value (works with every receiver). `--bundle` sends one bundle per frame instead.
-- The relay only listens on this laptop unless you add `--ws-host 0.0.0.0`.
+- The relay only listens on this laptop (`127.0.0.1`) unless you add `--ws-host 0.0.0.0`. The web-page check (`--allow-origin`) applies either way.
