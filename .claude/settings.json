@@ -1,0 +1,144 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-remote*)",
+      "Bash(git fetch*)",
+      "Bash(git pull*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout -b *)",
+      "Bash(git worktree *)",
+      "Bash(git push *)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr status*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view*)",
+      "Bash(gh auth status*)",
+      "Bash(gh repo view*)",
+      "Bash(npm test*)",
+      "Bash(npm run *)",
+      "Bash(npm ci*)",
+      "Bash(npx vitest*)",
+      "Bash(npx tsc*)",
+      "Bash(uv run *)",
+      "Bash(uv sync*)",
+      "Bash(node scripts/*)",
+      "Bash(node --test*)"
+    ],
+    "ask": [
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(git branch -D *)",
+      "Bash(git checkout -- *)",
+      "Bash(git restore *)",
+      "Bash(git stash drop*)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Read(.env.*.local)",
+      "Read(.env.development)",
+      "Read(.env.production)",
+      "Read(.env.staging)",
+      "Read(.env.test)",
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.*.local)",
+      "Edit(.env.development)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.test)",
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Edit(~/.aws/**)",
+      "Read(relay.private.json)",
+      "Edit(relay.private.json)",
+      "Bash(git push origin main*)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push *--no-verify*)",
+      "Bash(git commit *--no-verify*)",
+      "Bash(git config core.hooksPath*)",
+      "Bash(git config --global core.hooksPath*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -fr *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/scope-guard.mjs\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/bash-guard.mjs\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/secret-guard.mjs\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/evidence-gate.mjs\"",
+            "timeout": 125
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/evidence-gate.mjs\"",
+            "timeout": 125
+          }
+        ]
+      }
+    ]
+  }
+}
