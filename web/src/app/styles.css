@@ -213,3 +213,63 @@ output {
 .camera-preview-waiting {
   margin: 0 0 1rem;
 }
+
+/* Transport and Practice sit side by side on a wide screen and stack on a narrow one. */
+.song-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 0 1rem;
+  align-items: start;
+}
+
+.practice-steps {
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.practice-steps li {
+  margin: 0.2rem 0;
+}
+
+.feedback-card {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 0.4rem;
+  background: var(--page);
+}
+
+.feedback-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.feedback-card h4 {
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.feedback-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.feedback-coach {
+  margin-top: 0.6rem;
+}
+
+.feedback-coach p {
+  margin: 0.2rem 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.8rem;
+}

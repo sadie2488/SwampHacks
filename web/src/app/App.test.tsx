@@ -3,6 +3,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
 import { bus, resetControls, type Topics } from '@/bus';
 import * as audioLive from '@/modules/audio-live';
@@ -439,5 +440,46 @@ describe('sheet controls', () => {
       inst.dispatchEvent(new Event('change', { bubbles: true }));
     });
     await until(() => last().includes('<step>C</step><octave>4</octave>'), 'guitar written an octave higher');
+  });
+});
+
+describe('practice panel', () => {
+  const practiceIds = ['btn-calibrate', 'btn-practice-start', 'btn-practice-stop', 'practice-status'];
+
+  it('sits next to the transport controls on Learn and Play, and not on Create or the Command Lab', async () => {
+    for (const tab of ['tab-learn', 'tab-play']) {
+      await click(tab);
+      for (const id of practiceIds) expect($(id), `${tab} ${id}`).not.toBeNull();
+      expect($('btn-calibrate')!.closest('.song-controls'), tab).toBe($('btn-play')!.closest('.song-controls'));
+      expect($('btn-play')!.closest('.song-controls'), tab).not.toBeNull();
+    }
+    for (const tab of ['tab-create', 'tab-lab']) {
+      await click(tab);
+      expect($('btn-calibrate'), tab).toBeNull();
+    }
+  });
+
+  it('asks the listening part to start, and loops the trouble bars of the loaded demo song at 80% speed', async () => {
+    const control: string[] = [];
+    const stop = bus.on('practiceControl', (c) => control.push(c.action));
+    await click('use-demo');
+    await until(() => $('sheet-ready'), 'the sheet');
+    await click('btn-practice-start');
+    expect(control).toEqual(['start']);
+    expect(seen).toContain('command:playback.play:button:trigger:');
+
+    seen.length = 0;
+    await emit('feedback', structuredClone(rulesTempo) as unknown as Topics['feedback']);
+    expect(text('feedback-tempo')).toBe('You played about 90 BPM; the song is 100 BPM: a bit slow');
+    await until(() => $('feedback-coaching'), 'the built-in tips (the demo server answers with a song, not coaching)');
+    expect(text('feedback-coaching-label')).toBe('Coach (built-in tips)');
+    await click('btn-loop-bar');
+    expect(seen.filter((s) => s.startsWith('command'))).toEqual([
+      'command:playback.loop_section:button:set:0,4.8',
+      'command:playback.loop:button:set:true',
+      'command:playback.tempo:button:set:0.8',
+      'command:playback.play:button:trigger:',
+    ]);
+    stop();
   });
 });

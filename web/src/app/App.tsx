@@ -14,6 +14,7 @@ import { AnalysisSummary } from './AnalysisSummary';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
 import { PanelBoundary } from './PanelBoundary';
+import { Practice } from './Practice';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
 import { Transport } from './Transport';
 
@@ -43,7 +44,12 @@ function SongView({ loader, setLoader }: { loader: LoaderState; setLoader: (s: L
     <>
       <SongLoader state={loader} setState={setLoader} />
       <AnalysisSummary />
-      <Transport />
+      <div className="song-controls">
+        <Transport />
+        <PanelBoundary name="practice">
+          <Practice />
+        </PanelBoundary>
+      </div>
       <section className="panel" aria-labelledby="sheet-heading">
         <h2 id="sheet-heading">Sheet music</h2>
         <PanelBoundary name="sheet music">
