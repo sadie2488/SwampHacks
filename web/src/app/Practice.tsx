@@ -53,6 +53,7 @@ export function Practice() {
       <h2 id="practice-heading">Practice: play along</h2>
       <ol className="practice-steps">
         <li>Turn on the microphone (button above).</li>
+        <li>Use headphones so the microphone doesn't hear the song.</li>
         <li>Clap along to calibrate (so we can cancel the delay).</li>
         <li>Play along with the song.</li>
       </ol>

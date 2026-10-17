@@ -13,6 +13,7 @@ import { start as startVision } from '@/modules/vision';
 import { AnalysisSummary } from './AnalysisSummary';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
+import { History } from './History';
 import { LoginButton } from './LoginButton';
 import { PanelBoundary } from './PanelBoundary';
 import { Practice } from './Practice';
@@ -51,6 +52,7 @@ function SongView({ loader, setLoader }: { loader: LoaderState; setLoader: (s: L
           <Practice />
         </PanelBoundary>
       </div>
+      <PanelBoundary name="practice history"><History /></PanelBoundary>
       <section className="panel" aria-labelledby="sheet-heading">
         <h2 id="sheet-heading">Sheet music</h2>
         <PanelBoundary name="sheet music">
