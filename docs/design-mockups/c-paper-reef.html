@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Paper Reef</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#17313a;--paper:#fff4e0;--coral:#ff7a59;--mustard:#ffc23d;--teal:#1f8f86;--mint:#bfe6cf}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#fff0d6;color:var(--ink);font-family:'Bricolage Grotesque',sans-serif}
+canvas#c{position:fixed;inset:0;width:100%;height:100%}
+.ui{position:fixed;inset:0;pointer-events:none}.ui>*{pointer-events:auto}
+header{position:absolute;left:44px;right:44px;top:26px;display:flex;align-items:center;justify-content:space-between}
+.mark{font:800 28px 'Bricolage Grotesque';letter-spacing:-.02em;background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;padding:6px 16px;box-shadow:4px 4px 0 var(--ink);transform:rotate(-1.2deg)}.mark span{color:var(--coral)}
+nav{display:flex;gap:10px}nav a{font:600 16px 'Bricolage Grotesque';padding:9px 20px;border:2.5px solid var(--ink);border-radius:99px;background:var(--paper);box-shadow:3px 3px 0 var(--ink)}nav a.on{background:var(--mustard)}
+.ghost{font:600 14px 'Bricolage Grotesque';background:var(--paper);border:2.5px solid var(--ink);border-radius:99px;padding:8px 18px;box-shadow:3px 3px 0 var(--ink)}
+.card{background:var(--paper);border:2.5px solid var(--ink);border-radius:22px;box-shadow:7px 7px 0 var(--ink)}
+.kicker{font:500 11px 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+h2,h3{margin:0;font:800 26px 'Bricolage Grotesque';letter-spacing:-.02em}
+.btn{white-space:nowrap;font:600 15px 'Bricolage Grotesque';color:var(--ink);background:var(--paper);border:2.5px solid var(--ink);border-radius:99px;padding:8px 18px;box-shadow:3px 3px 0 var(--ink)}
+.btn.pri{background:var(--coral);color:#fff}.btn.mu{background:var(--mustard)}
+.screen-play .only-learn,.screen-learn .only-play{display:none}
+.left{position:absolute;left:48px;top:104px;width:318px;padding:20px 22px;transform:rotate(-.7deg)}
+.left .row{margin:12px 0 4px;display:flex;gap:10px;flex-wrap:wrap}
+.dev{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:15px;font-weight:600}.dev i{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper);display:grid;place-items:center;font-style:normal}
+.dev.on i{background:var(--teal);color:#fff}.dev small{margin-left:auto;font:500 11px 'DM Mono';letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+.right{position:absolute;right:48px;top:104px;width:370px;padding:20px 22px;transform:rotate(.6deg)}
+.steps{margin:12px 0;padding:0;list-style:none;font-size:15px;font-weight:500}.steps li{display:flex;gap:12px;margin:9px 0;line-height:1.3}.steps b{flex:none;width:26px;height:26px;border-radius:50%;border:2.5px solid var(--ink);display:grid;place-items:center;font:800 12px 'Bricolage Grotesque'}.steps li.now b{background:var(--coral);color:#fff}
+.dock{position:absolute;left:50%;transform:translateX(-50%) rotate(-.3deg);bottom:30px;width:900px;padding:16px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center}
+.pl{width:68px;height:68px;border-radius:50%;background:var(--coral);border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);display:grid;place-items:center}.pl:after{content:"";border-left:20px solid #fff;border-top:13px solid transparent;border-bottom:13px solid transparent;margin-left:6px}
+.meta{margin-top:4px;font:500 12px 'DM Mono';letter-spacing:.06em;text-transform:uppercase;opacity:.7}
+.track{margin-top:12px;height:12px;border:2.5px solid var(--ink);border-radius:99px;background:#fff;position:relative;overflow:hidden}.track i{position:absolute;left:0;top:0;bottom:0;width:34%;background:repeating-linear-gradient(135deg,var(--mustard) 0 8px,#ffd56e 8px 16px)}
+.ctr{display:flex;flex-direction:column;gap:8px;align-items:flex-end}.ctr .r{display:flex;gap:8px;align-items:center;font:500 11px 'DM Mono';letter-spacing:.1em;text-transform:uppercase}
+.seg{display:flex;border:2.5px solid var(--ink);border-radius:99px;overflow:hidden;background:#fff;font:600 13px 'Bricolage Grotesque';letter-spacing:0;text-transform:none}.seg span{padding:5px 11px}.seg .on{background:var(--teal);color:#fff}
+.hud{position:absolute;left:48px;top:104px;width:340px;padding:20px 22px;transform:rotate(-.6deg)}
+.m{margin:13px 0}.m .n{display:flex;justify-content:space-between;font-size:14px;font-weight:600}.m .bar{height:14px;border:2.5px solid var(--ink);border-radius:99px;background:#fff;margin-top:5px;position:relative;overflow:hidden}.m .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--coral)}
+.portal{position:absolute;right:56px;top:104px;width:480px;height:370px;padding:10px;transform:rotate(.7deg)}.cam{width:100%;height:100%;border-radius:14px;border:2.5px solid var(--ink);background:linear-gradient(180deg,#bfe6cf,#7cc4b0);position:relative;overflow:hidden}
+.rules{position:absolute;right:56px;bottom:30px;width:480px;padding:16px 22px;transform:rotate(-.4deg)}.rules ul{margin:8px 0 0;padding:0}.rules li{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:2px dashed rgba(23,49,58,.25);font-size:15px;font-weight:600;opacity:.55}.rules li.hit{opacity:1}.rules em{font:500 11.5px 'DM Mono';font-style:normal;letter-spacing:.06em;background:var(--mustard);border:2px solid var(--ink);border-radius:99px;padding:3px 10px}
+</style></head>
+<body class="screen-learn">
+<canvas id="c"></canvas>
+<div class="ui">
+<header><div class="mark">Swamp<span>Hacks</span> Music</div><nav><a id="n1">Learn</a><a id="n2">Play</a><a>Create</a><a>Command Lab</a></nav><button class="ghost">Log in</button></header>
+
+<section class="card left only-learn"><div class="kicker">Pick a song</div><h3 style="margin-top:4px">What’s on the stand?</h3>
+ <div class="row"><button class="btn">Upload a song file</button><button class="btn mu">Use demo song</button></div>
+ <div class="dev"><i>◉</i>Camera<small>off</small></div><div class="dev on"><i>♪</i>Microphone<small>on</small></div><div class="dev"><i>✦</i>TouchDesigner<small>off</small></div></section>
+
+<section class="card right only-learn"><div class="kicker">Practice: play along</div><h3 style="margin-top:4px">Play it with the reef</h3>
+ <ol class="steps"><li class="now"><b>1</b>Turn on the microphone</li><li><b>2</b>Use headphones so the microphone doesn’t hear the song</li><li><b>3</b>Clap along to calibrate the delay</li><li><b>4</b>Play along with the song</li></ol>
+ <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn">Calibrate: clap along</button><button class="btn pri">Start practice</button><button class="btn">Stop</button></div>
+ <div class="kicker" style="margin-top:16px">Your practice so far</div>
+ <svg viewBox="0 0 300 50" width="100%" height="50"><polyline fill="none" stroke="#17313a" stroke-width="3" stroke-linejoin="round" points="0,42 42,38 84,34 126,37 168,24 210,18 252,12 300,6"/><g fill="#ff7a59" stroke="#17313a" stroke-width="2"><circle cx="168" cy="24" r="5"/><circle cx="210" cy="18" r="5"/><circle cx="252" cy="12" r="5"/><circle cx="300" cy="8" r="6"/></g></svg></section>
+
+<section class="card dock only-learn"><div class="pl"></div>
+ <div><h2>Twinkle, Twinkle, Little Star</h2><div class="meta">C major · 4/4 · 100 bpm · 00:12 / 00:38</div><div class="track"><i></i></div></div>
+ <div class="ctr"><div class="r"><button class="btn">Pause</button><button class="btn">Loop: off</button></div><div class="r">Speed<div class="seg"><span>0.5x</span><span>0.75x</span><span class="on">1.0x</span></div>Pitch<div class="seg"><span>−</span><span class="on">0</span><span>+</span></div></div></div></section>
+
+<section class="card hud only-play"><div class="kicker">What your hands say</div><h3 style="margin-top:4px">Wave at the reef</h3>
+ <div class="m"><div class="n"><span>Right hand height</span><span>tempo 1.12x</span></div><div class="bar"><i style="width:68%"></i></div></div>
+ <div class="m"><div class="n"><span>Left hand openness</span><span>0.31</span></div><div class="bar"><i style="width:31%"></i></div></div>
+ <div class="m"><div class="n"><span>Pinch</span><span>0.84</span></div><div class="bar"><i style="width:84%"></i></div></div>
+ <div class="m"><div class="n"><span>Head tilt</span><span>−4°</span></div><div class="bar"><i style="width:44%"></i></div></div>
+ <div style="display:flex;gap:10px;margin-top:16px"><button class="btn pri">Turn off camera</button><button class="btn">Mapping problems: 0</button></div></section>
+<section class="card portal only-play"><div class="cam">
+ <svg viewBox="0 0 460 350" width="100%" height="100%" style="position:absolute;inset:0"><g stroke="#17313a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M230 320 L216 250 L200 212 L186 176 M216 250 L226 202 L232 164 M226 250 L240 206 L252 170 M238 256 L256 218 L270 188 M246 268 L270 244 L288 222"/></g>
+ <g fill="#ffc23d" stroke="#17313a" stroke-width="3"><circle cx="230" cy="320" r="8"/><circle cx="216" cy="250" r="7"/><circle cx="200" cy="212" r="7"/><circle cx="186" cy="176" r="8"/><circle cx="226" cy="202" r="7"/><circle cx="232" cy="164" r="8"/><circle cx="240" cy="206" r="7"/><circle cx="252" cy="170" r="8"/><circle cx="256" cy="218" r="7"/><circle cx="270" cy="188" r="8"/><circle cx="270" cy="244" r="7"/><circle cx="288" cy="222" r="8"/></g></svg>
+ <div class="kicker" style="position:absolute;left:14px;bottom:10px;color:#17313a">Camera on · hands tracked</div></div></section>
+<section class="card rules only-play"><div class="kicker">Rules that just lit up</div><ul>
+ <li class="hit"><span>Clap</span><em>PLAY / PAUSE</em></li><li class="hit"><span>Right hand height</span><em>TEMPO 1.12x</em></li><li><span>Pinch and raise</span><em>PITCH +2</em></li><li><span>Nod</span><em>ADD LAYER</em></li></ul></section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const params=new URLSearchParams(location.search);const screen=params.get('screen')||'learn';
+document.body.className='screen-'+screen;document.getElementById(screen==='play'?'n2':'n1').className='on';
+const W=innerWidth,H=innerHeight;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(1);renderer.setSize(W,H,false);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();let seed=5;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+scene.background=new THREE.Color(0xfff0d6);
+const cam=new THREE.PerspectiveCamera(30,W/H,.1,200);
+cam.position.set(screen==='learn'?0:.0,2.3,26);cam.lookAt(0,screen==='learn'?2.4:2.0,0);
+scene.add(new THREE.HemisphereLight(0xfff4e0,0xbfe6cf,.62));
+const sun=new THREE.DirectionalLight(0xfff0d8,.62);sun.position.set(-14,18,24);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);
+Object.assign(sun.shadow.camera,{left:-34,right:34,top:22,bottom:-14,near:1,far:90});sun.shadow.bias=-.0004;sun.shadow.radius=3;scene.add(sun);
+const paper=(col)=>new THREE.MeshStandardMaterial({color:col,roughness:1,metalness:0});
+const put=(geo,col,x,y,z,opts={})=>{const m=new THREE.Mesh(geo,opts.basic?new THREE.MeshBasicMaterial({color:col}):paper(col));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;if(opts.rz)m.rotation.z=opts.rz;scene.add(m);return m};
+const ext=(shape,d=.07)=>new THREE.ExtrudeGeometry(shape,{depth:d,bevelEnabled:false,curveSegments:24});
+// sun
+put(ext(new THREE.Shape().absarc(0,0,3.4,0,Math.PI*2)),0xff7a59,9,9.4,-17);
+put(ext(new THREE.Shape().absarc(0,0,2.5,0,Math.PI*2)),0xffa07a,9,9.4,-16.8);
+// hills (far to near): paper layers with wavy edges
+const hillCols=[0xd7ecd3,0xa9dcc4,0x74c1ae,0x3fa597,0x23857f,0x176a68];
+hillCols.forEach((col,k)=>{const z=-14+k*2.3,base=2.2-k*.55+(k>3?0:0);const s=new THREE.Shape();s.moveTo(-40,-14);
+ for(let x=-40;x<=40;x+=.6){const y=base+k*0+Math.sin(x*.16+k*1.7)*(1.4-k*.1)+Math.sin(x*.41+k)*.45+ (5-k)*.9;s.lineTo(x,y)}
+ s.lineTo(40,-14);s.closePath();put(ext(s,.08),col,0,-1.2,z)});
+// water ribbons in front of the hills
+[0x2aa89a,0x1f8f86,0x167a74].forEach((col,k)=>{const s=new THREE.Shape();s.moveTo(-40,-14);for(let x=-40;x<=40;x+=.5)s.lineTo(x,-1.35-k*.55+Math.sin(x*.5+k*2)*.18);s.lineTo(40,-14);s.closePath();put(ext(s,.06),col,0,0,-2.3+k*.55)});
+// staff: five paper ribbons
+const STEP=.34,BASE=-.2;
+for(let L=0;L<5;L++){put(new THREE.BoxGeometry(60,.075,.06),0x17313a,0,BASE+(2+2*L)*STEP,0)}
+// treble clef-ish curl at left
+{const pts=[];for(let i=0;i<90;i++){const a=i*.2;const r=.12+i*.012;pts.push(new THREE.Vector3(-11.6+Math.cos(a)*r*.8,BASE+1.9*STEP*3+Math.sin(a)*r,0))}
+ const m=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),160,.05,6),paper(0x17313a));m.castShadow=true;scene.add(m)}
+// notes
+const tune=[0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1];const NOW=7;
+const cols=[0xff7a59,0xffc23d,0x2aa89a,0xff7a59,0xffc23d,0x2aa89a,0xff7a59];
+tune.forEach((pos,i)=>{const x=(i-NOW)*1.12,y=BASE+pos*STEP;const now=i===NOW,past=i<NOW;const r=now?.5:.31;
+ const col=now?0xfff4e0:(past?0xa7cdc0:cols[i%cols.length]);
+ const c=new THREE.CylinderGeometry(r,r,.14,48);c.rotateX(Math.PI/2);
+ put(c,col,x,y,.2,{basic:true});
+ if(now){const rg=new THREE.RingGeometry(.62,.82,64);const m=put(ext(new THREE.Shape().absarc(0,0,.82,0,Math.PI*2),.04),0xff7a59,x,y,.05);m.scale.set(1,1,1);const hole=put(c.clone(),0xfff4e0,x,y,.26,{basic:true});hole.scale.set(1.0,1,1)}
+ const st=new THREE.BoxGeometry(.075,1.15,.08);put(st,past?0x9bbfb5:0x17313a,x+r-.035,y+.58,.2,{basic:true})});
+// paper reeds and leaves (behind and in front)
+function leaf(h,w,bend){const s=new THREE.Shape();s.moveTo(0,0);s.quadraticCurveTo(w,h*.45,bend,h);s.quadraticCurveTo(-w*.4,h*.5,0,0);return ext(s,.03)}
+for(let i=0;i<34;i++){const x=-24+rnd()*48;if(Math.abs(x)<7&&rnd()<.5)continue;const h=2+rnd()*3.4;put(leaf(h,.25+rnd()*.15,(rnd()-.5)*1.2),[0x1f8f86,0x2aa89a,0x176a68][i%3],x,-1.3,-.8-rnd()*.6)}
+for(let i=0;i<9;i++){const x=(i<5?-1:1)*(10+rnd()*8);const h=4+rnd()*3;const m=put(leaf(h,.55,(rnd()-.5)*2),i%2?0x0f4f4f:0x14625e,x,-3.2,3.5+rnd()*1.8);m.rotation.z=(rnd()-.5)*.5}
+// foreground leaf corners
+[[-17,-3.5,.7],[16.5,-3.2,-.65]].forEach(([x,y,r],k)=>{const m=put(leaf(9,1.6,k?-2.4:2.4),0x0d4547,x,y,7);m.rotation.z=r*.6;const m2=put(leaf(7,1.2,k?-1.6:1.6),0x136b66,x+(k?-2.2:2.2),y,6.2);m2.rotation.z=r*.45});
+// lily pads + flowers
+for(let i=0;i<9;i++){const x=-20+rnd()*40,z=1.5+rnd()*3.5;const r=.7+rnd()*.7;const s=new THREE.Shape();s.moveTo(0,0);s.absarc(0,0,r,.3,Math.PI*2-.3);s.lineTo(0,0);const g=ext(s,.04);g.rotateX(-Math.PI/2);put(g,[0x4fb98a,0x3a9a6a][i%2],x,-2.1-rnd()*.5,z);
+ if(rnd()<.55){const f=ext(new THREE.Shape().absarc(0,0,.22,0,Math.PI*2),.06);f.rotateX(-Math.PI/2);put(f,0xff9eb0,x+.1,-2.05,z)}}
+// paper fireflies (confetti notes)
+for(let i=0;i<46;i++){const g=new THREE.CylinderGeometry(.09+rnd()*.08,.09,.04,16);g.rotateX(Math.PI/2);put(g,[0xffc23d,0xff7a59,0xfff4e0][i%3],-22+rnd()*44,-.5+rnd()*9,2+rnd()*4)}
+renderer.render(scene,cam);document.fonts.ready.then(()=>{window.__ready=true});
+</script></body></html>

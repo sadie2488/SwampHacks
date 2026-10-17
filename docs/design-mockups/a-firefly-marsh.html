@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Firefly Marsh</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#e9fff4;--dim:#8fb8aa;--glow:#9ff5d8;--amber:#ffc46b;--glass:rgba(8,32,34,.52);--line:rgba(159,245,216,.28)}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#04161a;color:var(--ink);font-family:'Fraunces',serif}
+canvas#c{position:fixed;inset:0;width:100%;height:100%}
+.ui{position:fixed;inset:0;pointer-events:none}.ui>*{pointer-events:auto}
+header{position:absolute;left:44px;right:44px;top:30px;display:flex;align-items:center;justify-content:space-between}
+.mark{font-size:25px;font-weight:300;font-style:italic;letter-spacing:.01em}.mark b{font-style:normal;font-weight:500;color:var(--glow)}
+nav{display:flex;gap:34px;font-size:17px}nav a{color:var(--dim);text-decoration:none;position:relative;padding:4px 0}
+nav a.on{color:var(--ink)}nav a.on::after{content:"";position:absolute;left:-6px;right:-6px;bottom:-8px;height:2px;background:linear-gradient(90deg,transparent,var(--glow),transparent);box-shadow:0 0 14px var(--glow)}
+.ghost{font:500 12px 'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:99px;padding:9px 16px;cursor:pointer}
+.glass{background:var(--glass);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 60px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+.kicker{font:500 11px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.btn{white-space:nowrap;font:400 15px 'Fraunces',serif;color:var(--ink);background:rgba(159,245,216,.07);border:1px solid var(--line);border-radius:99px;padding:9px 18px;cursor:pointer}
+.btn.pri{background:linear-gradient(180deg,rgba(255,196,107,.28),rgba(255,196,107,.1));border-color:rgba(255,196,107,.6);box-shadow:0 0 22px rgba(255,196,107,.25)}
+/* learn */
+.pick{position:absolute;left:44px;top:104px;width:300px;padding:18px 20px}.pick h3{margin:6px 0 12px;font-weight:500;font-size:20px}
+.pick .row{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--dim);margin-top:10px}
+.devices{position:absolute;left:44px;bottom:34px;display:flex;flex-direction:column;gap:10px}
+.orb{display:flex;align-items:center;gap:14px;font-size:15px;color:var(--dim)}.orb i{flex:none;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:radial-gradient(circle at 35% 30%,rgba(159,245,216,.28),rgba(8,32,34,.7) 70%);display:grid;place-items:center;font-style:normal;font-size:20px;color:var(--glow)}
+.orb.on i{box-shadow:0 0 26px var(--glow);border-color:var(--glow)}
+.transport{position:absolute;left:50%;transform:translateX(-50%);bottom:34px;width:760px;padding:20px 26px 18px}
+.t-top{display:flex;justify-content:space-between;align-items:baseline}.t-top h2{margin:0;font-weight:300;font-style:italic;font-size:26px;white-space:nowrap}.t-top .kicker{white-space:nowrap}
+.scrub{position:relative;height:30px;margin:12px 0 6px}.scrub .bar{position:absolute;left:0;right:0;top:14px;height:2px;background:rgba(159,245,216,.2)}
+.scrub .fill{position:absolute;left:0;width:34%;top:13px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--glow),var(--amber));box-shadow:0 0 14px var(--amber)}
+.scrub .dot{position:absolute;left:34%;top:7px;width:16px;height:16px;border-radius:50%;background:#fff6d8;box-shadow:0 0 22px 6px rgba(255,196,107,.7);transform:translateX(-8px)}
+.scrub s{position:absolute;top:10px;width:4px;height:4px;border-radius:50%;background:rgba(159,245,216,.55);text-decoration:none}
+.t-row{display:flex;align-items:center;gap:12px}.play{width:62px;height:62px;border-radius:50%;border:1px solid rgba(255,196,107,.8);background:radial-gradient(circle at 35% 30%,#ffe3a8,#e9a43d 70%);box-shadow:0 0 34px rgba(255,196,107,.55);display:grid;place-items:center;cursor:pointer}
+.play:after{content:"";border-left:20px solid #3a2300;border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+.seg{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;font:400 13px 'DM Mono',monospace}.seg span{padding:8px 11px;color:var(--dim);white-space:nowrap}.seg span.on{background:rgba(159,245,216,.16);color:var(--ink)}
+.t-row .lab{font:500 10.5px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-right:6px}
+.practice{position:absolute;right:44px;top:104px;width:372px;padding:20px 22px}.practice h3{margin:6px 0 10px;font-weight:500;font-size:20px}
+.steps{list-style:none;margin:0 0 14px;padding:0;font-size:14.5px;color:var(--dim)}.steps li{display:flex;gap:12px;align-items:flex-start;margin:9px 0}
+.steps b{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font:500 11px 'DM Mono',monospace;color:var(--glow)}
+.steps li.now{color:var(--ink)}.steps li.now b{background:var(--glow);color:#042;box-shadow:0 0 14px var(--glow)}
+.spark{height:46px;margin-top:6px}
+/* play */
+.screen-play .only-learn,.screen-learn .only-play{display:none}
+.portal{position:absolute;right:70px;top:110px;width:430px;height:430px;border-radius:50%;padding:14px}
+.portal .cam{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;background:radial-gradient(circle at 50% 38%,#1c4a47,#071a1d 78%)}
+.hud{position:absolute;left:44px;top:110px;width:300px;padding:20px 22px}
+.meter{margin:12px 0}.meter .n{display:flex;justify-content:space-between;font:500 11px 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.meter .m{height:6px;border-radius:6px;background:rgba(159,245,216,.14);position:relative;overflow:hidden}.meter .m i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,var(--glow),var(--amber));box-shadow:0 0 12px var(--amber)}
+.rules{position:absolute;right:44px;bottom:36px;width:430px;padding:18px 22px}.rules li{list-style:none;display:flex;justify-content:space-between;font-size:15px;margin:8px 0;color:var(--dim)}.rules li.hit{color:var(--ink)}.rules li.hit em{color:var(--amber)}.rules em{font:500 12px 'DM Mono',monospace;font-style:normal;letter-spacing:.06em}
+.rules ul{margin:0;padding:0}
+.ui:before{content:'';position:fixed;left:0;bottom:0;width:480px;height:260px;background:radial-gradient(ellipse at 0% 100%,rgba(2,10,12,.85),transparent 70%);pointer-events:none}
+.orb{text-shadow:0 1px 8px rgba(0,0,0,.8)}
+</style></head>
+<body class="screen-learn">
+<canvas id="c"></canvas>
+<div class="ui">
+<header>
+  <div class="mark">Swamp<b>Hacks</b> Music</div>
+  <nav><a id="n1">Learn</a><a id="n2">Play</a><a>Create</a><a>Command Lab</a></nav>
+  <button class="ghost">Log in</button>
+</header>
+
+<section class="glass pick only-learn"><div class="kicker">Pick a song</div><h3>What are we playing?</h3>
+  <div class="row"><button class="btn">Upload a song file</button><span>or</span></div>
+  <div class="row"><button class="btn pri">Use demo song</button></div></section>
+
+<section class="glass practice only-learn"><div class="kicker">Practice: play along</div><h3>Play it with the lights</h3>
+  <ol class="steps"><li class="now"><b>1</b>Turn on the microphone</li><li><b>2</b>Use headphones so the mic doesn’t hear the song</li><li><b>3</b>Clap along to calibrate the delay</li><li><b>4</b>Play along with the song</li></ol>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn">Calibrate: clap along</button><button class="btn pri">Start practice</button><button class="btn">Stop</button></div>
+  <div class="kicker" style="margin-top:18px">Your practice so far</div>
+  <svg class="spark" viewBox="0 0 280 46" width="100%"><polyline fill="none" stroke="#9ff5d8" stroke-width="2" points="0,38 40,34 80,30 120,33 160,22 200,18 240,12 280,8"/><g fill="#ffc46b"><circle cx="160" cy="22" r="3"/><circle cx="200" cy="18" r="3"/><circle cx="240" cy="12" r="3"/><circle cx="280" cy="8" r="4"/></g></svg></section>
+
+<div class="devices only-learn">
+  <div class="orb"><i>◉</i>Camera off</div><div class="orb on"><i>♪</i>Microphone on</div><div class="orb"><i>✦</i>TouchDesigner off</div>
+</div>
+
+<section class="glass transport only-learn">
+  <div class="t-top"><h2>Twinkle, Twinkle, Little Star</h2><span class="kicker">demo song · C major · 4/4 · 100 bpm</span></div>
+  <div class="scrub"><div class="bar"></div><div class="fill"></div><div class="dot"></div>
+    <s style="left:6%"></s><s style="left:12%"></s><s style="left:18%"></s><s style="left:24%"></s><s style="left:30%"></s><s style="left:44%"></s><s style="left:52%"></s><s style="left:58%"></s><s style="left:66%"></s><s style="left:74%"></s><s style="left:82%"></s><s style="left:90%"></s></div>
+  <div class="t-row"><div class="play"></div><button class="btn">Pause</button><button class="btn">Loop: off</button>
+    <span style="flex:1"></span><span class="lab">Speed</span><div class="seg"><span>0.5x</span><span>0.75x</span><span class="on">1.0x</span></div>
+    <span class="lab" style="margin-left:6px">Pitch</span><div class="seg"><span>−</span><span class="on">0</span><span>+</span></div></div>
+</section>
+
+<!-- play screen -->
+<section class="glass hud only-play"><div class="kicker">What your hands say</div>
+  <div class="meter"><div class="n"><span>Right hand height</span><span>tempo 1.12x</span></div><div class="m"><i style="width:68%"></i></div></div>
+  <div class="meter"><div class="n"><span>Left hand openness</span><span>0.31</span></div><div class="m"><i style="width:31%"></i></div></div>
+  <div class="meter"><div class="n"><span>Pinch</span><span>0.84</span></div><div class="m"><i style="width:84%"></i></div></div>
+  <div class="meter"><div class="n"><span>Head tilt</span><span>−4°</span></div><div class="m"><i style="width:44%"></i></div></div>
+  <div style="display:flex;gap:10px;margin-top:18px"><button class="btn pri">Turn off camera</button><button class="btn">Mapping problems: 0</button></div></section>
+<section class="glass portal only-play"><div class="cam">
+  <svg viewBox="0 0 400 400" width="100%" height="100%" style="position:absolute;inset:0"><defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <g filter="url(#g)" stroke="#9ff5d8" stroke-width="3" fill="none" stroke-linecap="round" opacity=".95">
+      <path d="M200 330 L186 262 L170 226 L158 190 M186 262 L196 214 L202 178 M196 262 L210 220 L220 186 M208 268 L226 232 L240 204 M216 280 L240 258 L258 238"/></g>
+    <g fill="#ffc46b" filter="url(#g)"><circle cx="200" cy="330" r="6"/><circle cx="186" cy="262" r="5"/><circle cx="170" cy="226" r="5"/><circle cx="158" cy="190" r="6"/><circle cx="196" cy="214" r="5"/><circle cx="202" cy="178" r="6"/><circle cx="210" cy="220" r="5"/><circle cx="220" cy="186" r="6"/><circle cx="226" cy="232" r="5"/><circle cx="240" cy="204" r="6"/><circle cx="240" cy="258" r="5"/><circle cx="258" cy="238" r="6"/></g>
+    <ellipse cx="200" cy="96" rx="44" ry="54" fill="none" stroke="rgba(159,245,216,.35)" stroke-width="2" stroke-dasharray="3 7"/></svg>
+  <div class="kicker" style="position:absolute;left:0;right:0;bottom:46px;text-align:center">Camera on · you are in the marsh</div></div></section>
+<section class="glass rules only-play"><div class="kicker">Rules that just lit up</div><ul>
+  <li class="hit"><span>Clap</span><em>→ PLAY / PAUSE</em></li>
+  <li class="hit"><span>Right hand height</span><em>→ TEMPO 1.12x</em></li>
+  <li><span>Pinch + raise</span><em>→ PITCH +2</em></li>
+  <li><span>Nod</span><em>→ ADD LAYER</em></li></ul></section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const params=new URLSearchParams(location.search);const screen=params.get('screen')||'learn';
+document.body.className='screen-'+screen;document.getElementById(screen==='play'?'n2':'n1').className='on';
+const W=innerWidth,H=innerHeight;
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(1);renderer.setSize(W,H,false);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+const scene=new THREE.Scene();
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+// sky gradient
+(function(){const c=document.createElement('canvas');c.width=4;c.height=512;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,512);
+ gr.addColorStop(0,'#01060a');gr.addColorStop(.45,'#06222a');gr.addColorStop(.62,'#0f5450');gr.addColorStop(.7,'#0a3a3a');gr.addColorStop(1,'#031014');g.fillStyle=gr;g.fillRect(0,0,4,512);
+ scene.background=new THREE.CanvasTexture(c)})();
+scene.fog=new THREE.FogExp2(0x0a3a3a,0.028);
+const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');const r=g.createRadialGradient(64,64,0,64,64,64);
+ r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.15,'rgba(255,255,255,.55)');r.addColorStop(.4,'rgba(255,255,255,.12)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c)})();
+const cam=new THREE.PerspectiveCamera(40,W/H,.1,300);
+if(screen==='learn'){cam.position.set(-6.2,2.1,10.5);cam.lookAt(4.2,1.55,-3)}else{cam.position.set(-6.2,1.7,10.5);cam.lookAt(4.2,2.0,-3)}
+scene.add(new THREE.HemisphereLight(0x5fd0c0,0x03101a,.55));
+const moonL=new THREE.DirectionalLight(0xbfeee0,.8);moonL.position.set(10,30,-60);scene.add(moonL);
+// water
+const wg=new THREE.PlaneGeometry(220,220,220,220);wg.rotateX(-Math.PI/2);
+{const p=wg.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,Math.sin(x*.9+z*.4)*.035+Math.sin(x*.35-z*.8)*.05+Math.sin(x*2.1+z*1.7)*.012)}wg.computeVertexNormals()}
+scene.add(new THREE.Mesh(wg,new THREE.MeshStandardMaterial({color:0x04181c,roughness:.12,metalness:.75})));
+// moon + path of light
+const sprite=(col,s,x,y,z,op=1)=>{const m=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:col,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));m.scale.set(s,s,1);m.position.set(x,y,z);scene.add(m);return m};
+sprite(0x7be9d2,80,60,17,-95,.55);sprite(0xeafff4,15,60,17,-95,1);
+{const c=document.createElement('canvas');c.width=64;c.height=512;const g=c.getContext('2d');g.clearRect(0,0,64,512);
+ for(let y=0;y<512;y+=3){const a=Math.max(0,1-y/512)*(.2+rnd()*.8);const w=8+rnd()*40;g.fillStyle=`rgba(210,255,240,${a*.9})`;g.fillRect(32-w/2,y,w,2)}
+ const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(8,70),new THREE.MeshBasicMaterial({map:t,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+ m.rotation.x=-Math.PI/2;const grp=new THREE.Group();grp.add(m);grp.position.set(41.4,.04,-65.2);grp.rotation.y=Math.atan2(-66,106);scene.add(grp)}
+// staff: a vine path above the water
+const staffPath=t=>{const x=-14+t*40;return new THREE.Vector3(x,0,-1-(x+10)*.18+Math.sin(x*.18)*1.1)};
+const BASE=.95,STEP=.2;
+for(let L=0;L<5;L++){const pts=[];for(let i=0;i<=80;i++){const t=i/80;const p=staffPath(t);p.y=BASE+(2+2*L)*STEP;pts.push(p)}
+ const curve=new THREE.CatmullRomCurve3(pts);
+ scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve,300,.012,6),new THREE.MeshBasicMaterial({color:0xb8ffe6,transparent:true,opacity:.85,fog:true})));
+ scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve,300,.06,8),new THREE.MeshBasicMaterial({color:0x4fe8c4,transparent:true,opacity:.07,blending:THREE.AdditiveBlending,depthWrite:false})));
+ const rp=pts.map(p=>new THREE.Vector3(p.x,-p.y,p.z));scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp),300,.012,6),new THREE.MeshBasicMaterial({color:0x4fe8c4,transparent:true,opacity:.22})))}
+// notes: Twinkle (pos: C=0 D=1 E=2 F=3 G=4 A=5)
+const tune=[0,0,4,4,5,5,4, 3,3,2,2,1,1,0, 4,4,3,3,2,2,1, 4,4,3,3,2,2,1];
+const NOW=7; // index of the note being played
+tune.forEach((pos,i)=>{const t=.275+i*.018;const p=staffPath(t);const y=BASE+pos*STEP;
+ const now=i===NOW,past=i<NOW;
+ const col=now?0xffe9a8:(past?0x2a9f90:0xffc46b);
+ const r=now?.27:.15;
+ const o=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),new THREE.MeshBasicMaterial({color:col,toneMapped:false}));o.position.set(p.x,y,p.z);scene.add(o);
+ if(!past||now){const st=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.62,6),new THREE.MeshBasicMaterial({color:col,toneMapped:false,transparent:true,opacity:now?1:.8}));st.position.set(p.x,y+.31,p.z);scene.add(st)}else{const st=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.62,6),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.5}));st.position.set(p.x,y+.31,p.z);scene.add(st)}
+ const hs=now?5.2:(past?1.1:2.0);sprite(now?0xffc46b:(past?0x2ee6c4:0xffb347),hs,p.x,y,p.z,now?1:(past?.35:.7));
+ const refl=new THREE.Mesh(new THREE.SphereGeometry(r,16,10),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.25}));refl.position.set(p.x,-y,p.z);scene.add(refl);
+ sprite(past?0x2ee6c4:0xffb347,hs*.7,p.x,-y,p.z,.18);
+ // ripple under passed notes
+ if(past||now){for(let k=0;k<(now?3:1);k++){const rg=new THREE.Mesh(new THREE.RingGeometry(.35+k*.35+ (past?(NOW-i)*.04:0),.37+k*.35+(past?(NOW-i)*.04:0),64),new THREE.MeshBasicMaterial({color:past?0x2ee6c4:0xffc46b,transparent:true,opacity:(now?.5:.18)/(k+1),blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));rg.rotation.x=-Math.PI/2;rg.position.set(p.x,.06,p.z);scene.add(rg)}}
+});
+// the "now" gate: a ring of light across the staff
+{const p=staffPath(.275+NOW*.018);const gate=new THREE.Mesh(new THREE.TorusGeometry(1.05,.014,8,96),new THREE.MeshBasicMaterial({color:0xffe9b8,transparent:true,opacity:.85}));
+ gate.position.set(p.x,BASE+.85,p.z);gate.rotation.y=Math.PI/2-.2;scene.add(gate);
+ const g2=gate.clone();g2.scale.set(1.12,1.12,1.12);g2.material=gate.material.clone();g2.material.opacity=.25;scene.add(g2)}
+// fireflies
+{const n=520,pos=new Float32Array(n*3),col=new Float32Array(n*3);for(let i=0;i<n;i++){const x=-12+rnd()*40,z=-24+rnd()*28,y=.2+Math.pow(rnd(),1.7)*4.6;pos.set([x,y,z],i*3);const c=new THREE.Color().setHSL(.1+rnd()*.28,.9,.62);col.set([c.r,c.g,c.b],i*3)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+ scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:.22,map:glowTex,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true,opacity:.95})))}
+// reeds
+const reedMat=new THREE.MeshStandardMaterial({color:0x031a17,roughness:.9,emissive:0x041f1c});
+function reeds(n,xr,zr,hr){for(let i=0;i<n;i++){const h=hr[0]+rnd()*(hr[1]-hr[0]);const m=new THREE.Mesh(new THREE.ConeGeometry(.012+rnd()*.012,h,5),reedMat);
+  m.position.set(xr[0]+rnd()*(xr[1]-xr[0]),h/2-.1,zr[0]+rnd()*(zr[1]-zr[0]));m.rotation.z=(rnd()-.5)*.35;m.rotation.x=(rnd()-.5)*.25;scene.add(m);
+  if(rnd()<.35&&zr[0]<-8){const t=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.38,8),new THREE.MeshStandardMaterial({color:0x1b0f08,roughness:.7}));t.position.set(m.position.x+m.rotation.z*-h*.5,h-.18,m.position.z);scene.add(t)}}}
+reeds(70,[-12,-7.5],[-2,6],[2.2,4.2]);reeds(120,[6,26],[-34,-12],[1.6,4.2]);reeds(80,[-14,-6],[-16,-4],[1.8,4.4]);reeds(36,[10,15],[-1,3],[1.2,2.4]);
+// mist
+for(let i=0;i<7;i++){sprite(0x6fd0c4,18+rnd()*14,-2+i*5+rnd()*4,.9+rnd()*.5,-10-i*3.5,.05)}
+cam.updateMatrixWorld();
+function groundAt(nx,ny){const v=new THREE.Vector3(nx,ny,.5).unproject(cam);const d=v.sub(cam.position).normalize();const t=-cam.position.y/d.y;return cam.position.clone().add(d.multiplyScalar(t))}
+function edgeReeds(n,xr,yr,hr){for(let i=0;i<n;i++){const g=groundAt(xr[0]+rnd()*(xr[1]-xr[0]),yr[0]+rnd()*(yr[1]-yr[0]));if(g.distanceTo(cam.position)>40)continue;
+  const h=hr[0]+rnd()*(hr[1]-hr[0]);const m=new THREE.Mesh(new THREE.ConeGeometry(.012+rnd()*.012,h,5),new THREE.MeshStandardMaterial({color:0x021412,roughness:.9,emissive:0x03231f}));
+  m.position.set(g.x,h/2-.1,g.z);m.rotation.z=(rnd()-.5)*.3;m.rotation.x=(rnd()-.5)*.3;scene.add(m);
+  if(rnd()<.4){const t=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.2,8),new THREE.MeshStandardMaterial({color:0x3a2412,roughness:.7,emissive:0x1a0d04}));t.position.set(g.x+Math.sin(m.rotation.z)*-h*.5,h*.9,g.z);t.rotation.z=m.rotation.z;scene.add(t)}}}
+edgeReeds(70,[-1,-.8],[-.95,-.35],[3,6.2]);edgeReeds(60,[.82,1],[-.95,-.3],[2.6,5.6]);edgeReeds(40,[-.8,-.5],[-.98,-.8],[1.5,3]);
+for(let i=0;i<22;i++){const g=groundAt(-.95+rnd()*1.9,-.58+rnd()*.3);const r=.3+rnd()*.45;const pad=new THREE.Mesh(new THREE.CircleGeometry(r,28,.3,5.7),new THREE.MeshStandardMaterial({color:0x062a20,roughness:.6,emissive:0x03130e,side:THREE.DoubleSide}));pad.rotation.x=-Math.PI/2;pad.position.set(g.x,.05,g.z);scene.add(pad)}
+renderer.render(scene,cam);
+document.fonts.ready.then(()=>{window.__ready=true});
+</script></body></html>
