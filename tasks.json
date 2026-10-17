@@ -454,7 +454,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Light version built and tested on generated drum mixes: when a song looks like many instruments, the drums are taken out (harmonic/percussive split) and the melody is read a second time; the second result is used only if clearly better, otherwise the first result and the full-mix warning stay. Drum-heavy mixes went from about 0.3-0.7 to about 1.0 precision. It does not help when a chord is as loud as the tune, and a real band mix still gets the warning. Real separation of instruments (a heavy model) is not built. Remaining: try real songs (a human with a few)."
     },
     {
       "id": "A4",
@@ -494,7 +495,7 @@
       "read_first": [
         "docs/music-notes.md"
       ],
-      "progress": "Built and tested on synthetic audio: melody from a single line (pYIN), octave and tuning fixes, quantized to beats, about 0.99 precision and recall. Remaining: real instruments and voices; a full band mix needs song separation (A3) and gets a warning."
+      "progress": "Built and tested on synthetic audio: melody from a single line (pYIN), octave and tuning fixes, quantized to beats, about 0.99 precision and recall. Remaining: real instruments and voices; a full band mix has its drums taken out first (A3 light) and still gets a warning when it looks like many instruments."
     },
     {
       "id": "A5",
