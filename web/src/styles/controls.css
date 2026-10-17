@@ -38,33 +38,205 @@
   font-size: 0.8rem;
 }
 
-/* Narrow window: the bar wraps to two rows, play button and song on top, the controls under them. */
+/* Narrow window (phones): a compact bar of three short rows, so it covers as little of the page as possible.
+   1. play button | title, then "time · key · metre · tempo" and the status on one line, then the progress line
+   2. Pause, Loop, Volume
+   3. Speed and Pitch
+   Every touch target stays at least 40px. Keep --dock-space in layout.css in step with the bar's height. */
 @media (max-width: 759px) {
   .player-bar {
-    bottom: 0.6rem;
-    width: calc(100vw - 1.25rem);
+    bottom: 0.5rem;
+    width: calc(100vw - 1rem);
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.5rem 0.9rem;
-    padding: 0.7rem 0.9rem;
+    gap: 0.25rem 0.75rem;
+    padding: 0.3rem 0.7rem 0.35rem;
+    border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--ink);
     transform: translateX(-50%);
   }
 
   .play-button,
   .play-button:hover:not(:disabled) {
-    width: 3.25rem;
-    height: 3.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    box-shadow: 3px 3px 0 var(--ink);
   }
 
-  .song-title {
-    font-size: 1.15rem;
+  .play-button::after {
+    margin-left: 0.25rem;
+    border-left-width: 0.95rem;
+    border-top-width: 0.6rem;
+    border-bottom-width: 0.6rem;
   }
 
+  /* the song's pieces sit in a small grid: title on top, facts and status side by side, progress under them */
+  .player-info {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 0.5rem;
+    align-items: center;
+  }
+
+  .player-info .song-facts {
+    display: contents;
+  }
+
+  .player-info .song-title {
+    grid-column: 1 / -1;
+    font-size: 1rem;
+  }
+
+  .player-info .song-meta {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* with a song, the time comes first so it is never cut off; the other facts shorten with "…" if needed */
+  [data-testid='analysis-summary'] .song-meta {
+    display: flex;
+  }
+
+  /* the last facts give way first: tempo, then metre, then key */
+  [data-testid='analysis-summary'] .song-meta > .fact {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  [data-testid='analysis-summary'] .song-meta > .fact:nth-child(2) {
+    flex-shrink: 20;
+  }
+
+  [data-testid='analysis-summary'] .song-meta > .fact:nth-child(3) {
+    flex-shrink: 400;
+  }
+
+  [data-testid='analysis-summary'] .song-meta > .fact:last-child {
+    order: -1;
+    flex-shrink: 0;
+  }
+
+  [data-testid='analysis-summary'] .song-meta > .fact:last-child::before {
+    content: none;
+  }
+
+  [data-testid='analysis-summary'] .song-meta > .fact:last-child::after {
+    content: '\00a0·\00a0';
+  }
+
+  .player-info .progress {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    margin-top: 0.15rem;
+    height: 0.5rem;
+    border-width: 2px;
+  }
+
+  .player-status {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: 8.5rem;
+    margin: 0;
+    font-size: 0.68rem;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* a problem is shown in full, on its own line */
+  .player-status[data-state='error'] {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    max-width: none;
+    white-space: normal;
+  }
+
+  /* the controls: two rows under the song, each control at least 40px tall */
   .player-controls {
     grid-column: 1 / -1;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.25rem;
   }
 
   .player-row {
+    flex-wrap: wrap;
     justify-content: flex-start;
+    gap: 0.3rem 0.4rem;
+  }
+
+  .player-controls .player-row > button {
+    height: 2.5rem;
+    padding: 0 0.8rem;
+    font-size: 0.85rem;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .player-label,
+  .player-label > span {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+  }
+
+  .player-label.volume {
+    flex: 1 1 7rem;
+    min-width: 0;
+  }
+
+  .player-label.volume input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 4rem;
+    height: 2.5rem;
+  }
+
+  #pitch-label {
+    margin-left: auto;
+  }
+
+  .player-bar .seg > button,
+  .player-bar .seg > button:hover:not(:disabled),
+  .player-bar .seg > button:active:not(:disabled) {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+  }
+
+  .player-bar .seg > output {
+    display: grid;
+    place-items: center;
+    min-width: 2.6rem;
+    padding: 0 0.3rem;
   }
 }
+
+/* Very narrow phones: Speed and Pitch each get their small label on top, side by side. */
+@media (max-width: 379px) {
+  .player-controls .player-row > button {
+    padding: 0 0.6rem;
+  }
+
+  .player-label.volume input {
+    min-width: 3rem;
+  }
+
+  .player-row:last-child {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    gap: 0.1rem 0.4rem;
+  }
+
+  #pitch-label {
+    margin-left: 0;
+  }
+}
+

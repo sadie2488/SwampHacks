@@ -193,7 +193,7 @@ h1.brand {
 
 @media (max-width: 759px) {
   .stage {
-    --dock-space: 15rem;
+    --dock-space: 11rem;
   }
 }
 
