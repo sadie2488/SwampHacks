@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from . import config, store
 from .feedback_api import router as feedback_router
+from .sessions_api import router as sessions_router
 
 log = logging.getLogger("music.server")
 
@@ -22,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(feedback_router)
+app.include_router(sessions_router)
 
 
 @app.get("/api/health")

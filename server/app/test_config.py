@@ -223,6 +223,18 @@ def test_importing_the_app_and_calling_every_route_never_leaks_a_value(tmp_path,
         ("/docs", client.get("/docs")),
         ("/docs/oauth2-redirect", client.get("/docs/oauth2-redirect")),
         ("/redoc", client.get("/redoc")),
+        # The saving routes. DATABASE_URL is set to a made-up value here, so psycopg.connect is blocked by
+        # conftest.py and these answer 503 (or 422 for bad input): nothing may leak either way.
+        ("/api/songs", client.get("/api/songs")),
+        ("/api/sessions", client.post("/api/sessions", json={"song_id": "demo-twinkle", "tempo_ratio": 1})),
+        ("/api/sessions", client.get("/api/sessions")),
+        ("/api/sessions", client.post("/api/sessions", json={})),
+        ("/api/sessions/{session_id}/samples", client.post("/api/sessions/s1/samples", json=[])),
+        ("/api/sessions/{session_id}/end", client.post("/api/sessions/s1/end", json={})),
+        ("/api/feedback-items", client.post("/api/feedback-items", json={})),
+        ("/api/creations", client.get("/api/creations")),
+        ("/api/creations", client.post("/api/creations", json={"name": "n", "tempo_bpm": 90, "layers": []})),
+        ("/api/creations/{creation_id}", client.get("/api/creations/c1")),
     ]
     monkeypatch.setattr(config, "MAX_UPLOAD_BYTES", 10)
     calls.append(("/api/songs", upload("big.wav", wav, "audio/wav")))
