@@ -12,3 +12,4 @@ paths:
 - Cache analysis results so repeat runs are instant
 - ML scoring: held-out split by piece and performer (no leakage), `mir_eval` note-onset F1 against basic-pitch, results logged to files. A leakage review comes before each training run
 - The Gemini key lives only on the server, never in the browser
+- Load keys from the repo-root `.env` (python-dotenv). Never print, log, or return a key or the connection string, not even in error messages. Add new key names to `.env.example` with no value (ask the lead; it is a root file)

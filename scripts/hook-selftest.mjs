@@ -81,6 +81,23 @@ check('read ssh key', read('C:/Users/x/.ssh/id_rsa'), 2);
 check('read aws creds', read('/home/x/.aws/credentials'), 2);
 check('read relay secrets', read('/proj/relay.private.json'), 2);
 check('read normal file', read('/proj/src/app.ts'), 0);
+const grep = (input) => run('secret-guard.mjs', { tool_name: 'Grep', tool_input: input });
+check('grep path .env', grep({ pattern: 'KEY', path: '/proj/server/.env' }), 2, 'secrets');
+check('grep glob .env*', grep({ pattern: 'KEY', glob: '**/.env*' }), 2);
+check('grep glob .env.local', grep({ pattern: 'KEY', glob: '.env.local' }), 2);
+check('grep ssh dir', grep({ pattern: 'x', path: 'C:/Users/x/.ssh' }), 2);
+check('grep normal path+glob', grep({ pattern: 'KEY', path: '/proj/src', glob: '*.ts' }), 0);
+check('grep .env.example ok', grep({ pattern: 'KEY', path: '/proj/.env.example' }), 0);
+check('grep glob .env.example ok', grep({ pattern: 'KEY', glob: '.env.example' }), 0);
+
+// ---------- nobody's Claude writes into secrets files ----------
+setLane(laneC);
+check('worker writes .env', edit(join(tmp, '.env'), 'Write'), 2, 'secrets file');
+check('worker writes server/.env.local', edit('server/.env.local', 'Write'), 2, 'secrets file');
+setLane(null);
+check('lead writes .env', edit(join(tmp, '.env'), 'Write'), 2, 'secrets file');
+check('lead writes web/.env', edit('web/.env', 'Edit'), 2, 'secrets file');
+check('lead writes .env.example', edit('.env.example', 'Write'), 0);
 
 // ---------- bash-guard ----------
 const bash = (command, tool = 'Bash') => run('bash-guard.mjs', { tool_name: tool, tool_input: { command } });
@@ -117,6 +134,9 @@ const mustBlock = [
   ['git add .env', 'secrets'],
   ['cat ~/.ssh/id_rsa', 'secrets'],
   ['head ~/.aws/credentials', 'secrets'],
+  ['sed -n 1p .env', 'secrets'],
+  ['grep -A 3 KEY .env', 'secrets'],
+  ['rg -i token server/.env.local', 'secrets'],
   ['echo KEY=1 > .env', 'secrets'],
   ['echo KEY=1 >> server/.env.local', 'secrets'],
   ['echo AIzaSyA1234567890abcdefghijklmnopqrstuv', 'key'],
@@ -129,6 +149,21 @@ const mustBlock = [
   ['git config user.name Claude', 'identity'],
   ['GIT_AUTHOR_NAME=Claude git commit -m x', 'identity'],
   ['git status && git push origin main', 'main'],
+  // secrets via interpreters, force-add, environment dumps
+  ['node -e "console.log(require(\'fs\').readFileSync(\'.env\',\'utf8\'))"', 'secrets'],
+  ['node -e "require(\'fs\').readFileSync(\'server/.env.local\')"', 'secrets'],
+  ['python -c "print(open(\'.env\').read())"', 'secrets'],
+  ['powershell -Command "Get-Content .env"', 'secrets'],
+  ['node scripts/show.mjs .env', 'secrets'],
+  ['python -c "open(\'relay.private.json\').read()"', 'secrets'],
+  ['git add -f web/dist/bundle.js', 'gitignore'],
+  ['git add --force notes.txt', 'gitignore'],
+  ['git add -fA', 'gitignore'],
+  ['printenv', 'environment'],
+  ['env', 'environment'],
+  ['Get-ChildItem Env:', 'environment'],
+  ['echo $GEMINI_API_KEY', 'environment'],
+  ['Write-Host $env:AUTH0_SECRET', 'environment'],
 ];
 for (const [cmd, text] of mustBlock) check(`block: ${cmd.split('\n')[0]}`, bash(cmd), 2, text);
 check('block via PowerShell tool name', bash('rm -rf x', 'PowerShell'), 2);
@@ -173,6 +208,19 @@ const mustAllow = [
   'ls -la',
   'echo hello > scratch/out.txt',
   'git config user.name "Sarah"',
+  'git check-ignore -v .env',
+  'git ls-files | grep -iE "env|secret|\\.pem|\\.key"',
+  'grep -rn "\\.env" docs',
+  'grep -iE "env|\\.key" notes.txt',
+  'git add -A',
+  'git add web/src/x.ts',
+  'node -e "console.log(1)"',
+  'node -e "JSON.parse(require(\'fs\').readFileSync(\'.claude/settings.json\',\'utf8\'))"',
+  'python -c "print(1)"',
+  'node -r dotenv/config server.js',
+  'env FOO=1 node x.js',
+  'ls env-docs',
+  'echo done',
 ];
 for (const cmd of mustAllow) check(`allow: ${cmd}`, bash(cmd), 0);
 

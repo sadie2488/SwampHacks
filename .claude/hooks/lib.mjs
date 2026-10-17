@@ -71,6 +71,43 @@ export function globToRegExp(glob) {
 
 export const matchesAny = (rel, globs) => (globs || []).some((g) => globToRegExp(g).test(rel));
 
+// Files that hold secrets: .env files (not the .example template), key folders, key files, the email relay secrets file.
+export function isSecretPath(token) {
+  const p = String(token).replace(/\\/g, '/').replace(/^[>]+/, '');
+  const base = p.split('/').pop() || '';
+  if (/^\.env(\..+)?$/i.test(base) && !/^\.env\.(example|sample|template)$/i.test(base)) return true;
+  if (/(^|\/)\.(ssh|aws|gnupg)(\/|$)/.test(p)) return true;
+  return /^id_(rsa|ed25519|ecdsa|dsa)$/i.test(base) || /\.(pem|key|p12|pfx)$/i.test(base) || /^relay\.private\.json$/i.test(base);
+}
+
+// A glob or pattern such as "**/.env*" that could match a secrets file.
+export function globTargetsSecret(glob) {
+  const base = String(glob).replace(/\\/g, '/').split('/').pop() || '';
+  if (/^\.env/i.test(base) && !/^\.env\.(example|sample|template)$/i.test(base)) return true;
+  return isSecretPath(glob) || /relay\.private|\.(pem|key)$|id_rsa|id_ed25519/i.test(base);
+}
+
+// Code passed inline to an interpreter (node -e, python -c, powershell -Command) that names a secrets file.
+export function codeMentionsSecret(code) {
+  const re = /(?:^|[\s'"`/\\=(,])(\.env(?:\.[A-Za-z0-9_-]+)?)(?=$|[\s'"`)\],;])/g;
+  for (const m of String(code).matchAll(re)) if (isSecretPath(m[1])) return true;
+  return /relay\.private\.json|[/\\]\.(ssh|aws|gnupg)[/\\]|id_(rsa|ed25519)\b/i.test(code);
+}
+
+// Wording that credits an AI in a commit or PR. Claude is never a contributor on GitHub.
+export const AI_CREDIT = [
+  /co-authored-by/i,
+  /generated (with|by)\b/i,
+  /🤖/,
+  /claude[- ]session/i,
+  /noreply@anthropic\.com/i,
+  /@anthropic\.com/i,
+  /\bclaude\s*</i,
+];
+// AI-specific only (used where a human co-author trailer is legitimate, e.g. a squash-merge on main).
+export const AI_CREDIT_STRICT = AI_CREDIT.filter((re) => !/co-authored-by/i.test(re.source));
+export const AI_IDENTITY = /claude|anthropic/i;
+
 // Throws on invalid JSON so callers can fail closed. Missing file -> fallback.
 export function loadJson(path, fallback = null) {
   if (!existsSync(path)) return fallback;

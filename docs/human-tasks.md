@@ -7,6 +7,7 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 | ☐ | Sponsor accounts + keys (Vultr first) | 🔴 |
 | ☐ | Record test clips | 🔴 |
 | ☐ | Sadie: Gmail app password for the email relay | 🔴 |
+| ☐ | Repo owner: turn on GitHub secret scanning + push protection (Settings → Code security) | 🔴 |
 | ☐ | Approve the first tests | 🟠 |
 | ☐ | Design inspiration | 🟠 |
 | ☐ | TouchDesigner visuals | 🟡 |
@@ -22,6 +23,23 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 - **Gemini** (coaching text): get an API key from Google AI Studio
 - **GoDaddy** (domain): claim/register the domain via the hackathon's GoDaddy offer
 - **Auth0** (login, added last): create a tenant and a "Single Page Application"; we'll add callback URLs later
+
+## 🔒 Your private `.env` file (`/explain env`)
+The safe place for API keys. Each laptop that needs keys makes its own.
+- **Make it once** (PowerShell, in the project folder): `Copy-Item .env.example .env`
+- **Fill it in yourself**: open `.env` in **Notepad**, type each key after its `=`, save. In Notepad's Save dialog choose "All files" so it stays `.env` and not `.env.txt`
+- **Why it's safe**
+  - Git ignores it, so it can't be committed by accident (this is tested automatically)
+  - Claude is blocked from reading it or writing to it; so are shell tricks like `cat .env` or `node -e`
+  - Every pull request is scanned for keys, and GitHub's push protection (owner turns it on once) stops a push that contains one
+- **Don't**
+  - Paste a key into chat, email, a commit, a pull request, or any other file
+  - Keep `.env` open or selected in VS Code while chatting with Claude (open files and selections can be shared with it as context). Close that tab first
+  - Screenshot or screen-share the file
+  - Put a key in a name that starts with `VITE_`: those are sent to every visitor's browser. Keys stay on the server
+- **Share keys** only in person or through a password manager, never by chat or email. Each person can also make their own keys at the provider
+- **If a key leaks** (even for a second): revoke or rotate it at the provider right away. Deleting the commit is not enough. Then tell the main laptop
+- The email relay password is not in `.env`. It goes in `relay.private.json` (also private)
 
 ## 🎥 Test clips (`/explain clips`)
 Short clips let the app test camera and mic features automatically, without someone standing in front of a camera.

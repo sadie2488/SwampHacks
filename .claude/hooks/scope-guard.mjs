@@ -3,7 +3,7 @@
 // Main laptop (no lane file): the lead may edit lead files, but never a folder someone has claimed.
 // This is an early warning; CI is the real gate. Fails closed: if unsure, it blocks and says why.
 import { join } from 'node:path';
-import { activeOverride, block, loadJson, matchesAny, readInput, repoRoot, toRepoRelative } from './lib.mjs';
+import { activeOverride, block, isSecretPath, loadJson, matchesAny, readInput, repoRoot, toRepoRelative } from './lib.mjs';
 
 try {
   const input = readInput();
@@ -11,6 +11,11 @@ try {
   const target = ti.file_path ?? ti.notebook_path ?? ti.path;
   if (!target) {
     block(`Stopped to be safe: I can't tell which file this ${input.tool_name || 'edit'} changes. Try again, or use /ask if it keeps happening.`);
+  }
+
+  // Nobody's Claude writes into a secrets file: people type their own keys into it.
+  if (isSecretPath(target)) {
+    block(`"${String(target).replace(/\\/g, '/').split('/').pop()}" is a secrets file, so I won't write to it. Type your keys into it yourself; never paste them into chat.`);
   }
 
   const root = repoRoot(input);

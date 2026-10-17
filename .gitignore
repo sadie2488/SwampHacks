@@ -3,6 +3,17 @@
 .env.*
 !.env.example
 *.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.ssh/
+.aws/
+credentials.json
+secrets.json
+service-account*.json
+*.private.json
 relay.private.json
 
 # Per-laptop identity (written by /start)

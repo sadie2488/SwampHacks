@@ -5,19 +5,11 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { activeOverride, block, readInput, repoRoot, ruleAllowed } from './lib.mjs';
+import { AI_CREDIT, activeOverride, block, codeMentionsSecret, isSecretPath, readInput, repoRoot, ruleAllowed } from './lib.mjs';
 
-const AI_CREDIT = [
-  /co-authored-by/i,
-  /generated (with|by)\b/i,
-  /🤖/,
-  /claude[- ]session/i,
-  /noreply@anthropic\.com/i,
-  /@anthropic\.com/i,
-  /\bclaude\s*</i,
-];
 const INLINE_SECRET = /(AKIA[0-9A-Z]{16}|\bsk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AIza[0-9A-Za-z_-]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)/;
 const READ_WORDS = new Set(['cat', 'type', 'head', 'tail', 'less', 'more', 'grep', 'egrep', 'fgrep', 'rg', 'sed', 'awk', 'cp', 'mv', 'copy', 'xcopy', 'source', '.', 'get-content', 'gc', 'select-string', 'sls', 'base64', 'xxd', 'od', 'strings', 'bat', 'findstr', 'tee', 'nano', 'vim', 'code']);
+const PATTERN_FIRST = new Set(['grep', 'egrep', 'fgrep', 'rg', 'sed', 'awk', 'findstr', 'select-string', 'sls']);
 const GIT_SECRET_SUBS = new Set(['add', 'stage', 'show', 'cat-file', 'diff', 'blame']);
 const MESSAGE_SUBS = new Set(['commit', 'tag', 'merge', 'notes']);
 const RM_WORDS = new Set(['rm', 'rmdir', 'del', 'erase', 'rd', 'remove-item', 'ri']);
@@ -25,13 +17,8 @@ const RM_WORDS = new Set(['rm', 'rmdir', 'del', 'erase', 'rd', 'remove-item', 'r
 const tokenize = (s) => [...s.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)].map((m) => m[1] ?? m[2] ?? m[3]);
 const wordOf = (t) => String(t || '').replace(/\\/g, '/').split('/').pop().replace(/\.exe$/i, '').toLowerCase();
 
-function isSecretPath(token) {
-  const p = String(token).replace(/\\/g, '/').replace(/^[>]+/, '');
-  const base = p.split('/').pop() || '';
-  if (/^\.env(\..+)?$/i.test(base) && !/^\.env\.(example|sample|template)$/i.test(base)) return true;
-  if (/(^|\/)\.(ssh|aws|gnupg)(\/|$)/.test(p)) return true;
-  return /^id_(rsa|ed25519|ecdsa|dsa)$/i.test(base) || /\.(pem|key|p12|pfx)$/i.test(base) || /^relay\.private\.json$/i.test(base);
-}
+const INTERPRETERS = new Set(['node', 'nodejs', 'python', 'python3', 'py', 'ruby', 'perl', 'php', 'pwsh', 'powershell', 'cmd', 'bash', 'sh', 'deno', 'bun']);
+const INLINE_FLAGS = new Set(['-e', '-c', '-p', '--eval', '--print', '-command', '/c', '-encodedcommand']);
 
 function parseGit(tokens, i) {
   let j = i + 1;
@@ -148,6 +135,9 @@ try {
           }
         }
       }
+      if (sub === 'add' && args.some((a) => a === '-f' || a === '--force' || (/^-[a-zA-Z]+$/.test(a) && a.includes('f')))) {
+        deny('force-add', 'Force-adding overrides .gitignore, which is what keeps keys out of git. Add the specific file without --force');
+      }
       if (GIT_SECRET_SUBS.has(sub) && args.some(isSecretPath)) {
         deny('read-secrets', 'That would put a secrets file into git or the chat. Keys stay in the private file');
       }
@@ -155,8 +145,34 @@ try {
 
     // reading or writing secret files from the shell
     const first = tokens.findIndex((t) => READ_WORDS.has(wordOf(t)));
-    if (first !== -1 && tokens.slice(first + 1).some((t) => !t.startsWith('-') && isSecretPath(t))) {
+    let operands = first === -1 ? [] : tokens.slice(first + 1);
+    if (first !== -1 && PATTERN_FIRST.has(wordOf(tokens[first])) && !operands.some((t) => ['-e', '-f', '--regexp', '--file'].includes(t))) {
+      // grep/rg/sed/awk: the first non-flag word is a search pattern or script, not a file
+      const p = operands.findIndex((t) => !t.startsWith('-'));
+      if (p !== -1) operands = operands.filter((_, k) => k !== p);
+    }
+    if (operands.some((t) => !t.startsWith('-') && isSecretPath(t))) {
       deny('read-secrets', 'That reads a file that holds secrets. Keys stay in the private file and never go into chat');
+    }
+    // interpreters: `node -e "...readFileSync('.env')..."`, `python -c ...`, `powershell -Command ...`, or a script handed a secret path
+    const ii = tokens.findIndex((t) => INTERPRETERS.has(wordOf(t)));
+    if (ii !== -1 && ii <= 3) {
+      const after = tokens.slice(ii + 1);
+      const inline = after.some((t) => INLINE_FLAGS.has(t.toLowerCase()));
+      if (after.some((t) => !t.startsWith('-') && isSecretPath(t)) || (inline && after.some((t) => codeMentionsSecret(t)))) {
+        deny('read-secrets', 'That runs code that opens a secrets file. Keys stay in the private file and never go into chat');
+      }
+    }
+    // dumping environment variables would print keys that were loaded into them
+    const w0 = wordOf(tokens.find((t) => !/^[A-Za-z_][A-Za-z0-9_]*=/.test(t)) ?? '');
+    const argsOnly = tokens.filter((t) => !t.startsWith('-')).slice(1);
+    if (
+      w0 === 'printenv' ||
+      (w0 === 'env' && argsOnly.length === 0) ||
+      (['get-childitem', 'gci', 'ls', 'dir'].includes(w0) && argsOnly.some((t) => /^env:/i.test(t))) ||
+      /\b(echo|write-host|write-output|printf)\b[^\n]*\$\{?(env:)?\w*(KEY|TOKEN|SECRET|PASSWORD|PASSWD)\w*/i.test(seg)
+    ) {
+      deny('read-secrets', 'That would print environment variables, which can hold keys. Ask the person to check it themselves');
     }
     for (let i = 0; i < tokens.length; i++) {
       const t = tokens[i];
