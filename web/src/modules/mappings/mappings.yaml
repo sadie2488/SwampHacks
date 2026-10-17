@@ -1,0 +1,11 @@
+# Starter mappings. Veda owns this file and may change anything in it.
+# "When [signal] happens in [mode], do [control], [this way]". Full guide: docs/commands-guide.md
+# Signals: contracts/signal-catalog.json   Controls: contracts/control-catalog.json
+# Changes apply instantly (no restart). A typo only skips that rule; the Command Lab shows what went wrong.
+
+- name: clap toggles play/pause
+  mode: play
+  when: audio.clap
+  do: playback.toggle
+  how: trigger
+  cooldown_ms: 600

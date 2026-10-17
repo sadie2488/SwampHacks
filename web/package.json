@@ -1,0 +1,33 @@
+{
+  "name": "swamphacks-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.1.1",
+    "opensheetmusicdisplay": "^2.2.1",
+    "pitchy": "^4.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "soundtouchjs": "^0.3.0",
+    "tone": "^15.1.22",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.4",
+    "vitest": "^3.2.7"
+  }
+}

@@ -14,6 +14,8 @@
     "ownership.json",
     "web/package.json",
     "web/tsconfig*.json",
+    "web/src/bus/**",
+    "web/src/contracts/**",
     "server/pyproject.toml",
     "**/package-lock.json",
     "**/pnpm-lock.yaml",
@@ -25,7 +27,7 @@
   ],
   "lanes": {
     "shell": {
-      "paths": ["web/src/app/**", "web/src/modules/sheet/**", "web/index.html", "web/vite.config.*"],
+      "paths": ["web/src/app/**", "web/src/modules/sheet/**", "web/index.html", "web/vite.config.*", "web/public/**"],
       "tasks": ["L3"]
     },
     "commands": {
