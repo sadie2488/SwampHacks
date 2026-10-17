@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "command": "playback.tempo",
+  "source": "gesture",
+  "how": "follow",
+  "value": 1.1,
+  "mode": "play",
+  "mapping": "hand height controls tempo",
+  "signal": "vision.hand.right.height",
+  "t_ms": 6100
+}

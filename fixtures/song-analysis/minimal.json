@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "song_id": "demo-minimal",
+  "duration_sec": 4,
+  "tempo_bpm": 120,
+  "key": {
+    "tonic": "C",
+    "mode": "major"
+  },
+  "time_signature": {
+    "numerator": 4,
+    "denominator": 4
+  },
+  "parts": [
+    {
+      "id": "melody",
+      "name": "Melody",
+      "notes": [
+        {
+          "pitch": 60,
+          "onset_sec": 0,
+          "duration_sec": 0.5
+        },
+        {
+          "pitch": 62,
+          "onset_sec": 0.5,
+          "duration_sec": 0.5
+        },
+        {
+          "pitch": 64,
+          "onset_sec": 1,
+          "duration_sec": 1
+        }
+      ]
+    }
+  ]
+}

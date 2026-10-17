@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "controls": [
+    { "id": "playback.play", "kind": "trigger", "modes": ["learn", "play"], "description": "Start playing." },
+    { "id": "playback.pause", "kind": "trigger", "modes": ["learn", "play"], "description": "Pause." },
+    { "id": "playback.toggle", "kind": "trigger", "modes": ["learn", "play"], "description": "Play if paused, pause if playing." },
+    { "id": "playback.tempo", "kind": "value", "modes": ["learn", "play"], "range": [0.5, 1.5], "default": 1, "step": 0.1, "unit": "x", "description": "Speed of the song without changing its pitch (1 = original)." },
+    { "id": "playback.pitch", "kind": "value", "modes": ["learn", "play"], "range": [-12, 12], "default": 0, "step": 1, "unit": "semitones", "description": "Shift the pitch up or down without changing the speed." },
+    { "id": "playback.volume", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.8, "step": 0.1, "description": "Overall volume." },
+    { "id": "playback.loop", "kind": "toggle", "modes": ["learn", "play"], "default": false, "description": "Loop on or off." },
+    { "id": "playback.loop_section", "kind": "value", "value_type": "range", "modes": ["learn", "play"], "unit": "seconds", "description": "Which part to loop, as [start, end] in song seconds." },
+    { "id": "create.layer.add", "kind": "trigger", "modes": ["create"], "description": "Add a new empty layer." },
+    { "id": "create.instrument", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["piano", "synth", "bass", "pluck", "drums"], "default": "piano", "description": "Choose the instrument sound for the current layer." },
+    { "id": "create.beat", "kind": "toggle", "modes": ["create"], "default": false, "description": "Beat on or off." },
+    { "id": "create.loop.record", "kind": "toggle", "modes": ["create"], "default": false, "description": "Start recording a loop; toggle again to stop." },
+    { "id": "create.loop.stop", "kind": "trigger", "modes": ["create"], "description": "Stop recording or playing the current loop." },
+    { "id": "create.layer.volume", "kind": "value", "modes": ["create"], "range": [0, 1], "default": 0.8, "step": 0.1, "description": "Volume of the current layer." },
+    { "id": "create.effects", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["none", "reverb", "delay", "filter"], "default": "none", "description": "Effect on the current layer." },
+    { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "command": "playback.pause",
+  "source": "voice",
+  "how": "trigger",
+  "mode": "play",
+  "mapping": "pause by voice",
+  "signal": "audio.keyword.pause",
+  "t_ms": 7200
+}

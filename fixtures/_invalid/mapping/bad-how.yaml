@@ -1,0 +1,4 @@
+- name: broken
+  when: audio.clap
+  do: playback.toggle
+  how: wiggle

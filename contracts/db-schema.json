@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "name": "songs",
+      "kind": "table",
+      "description": "Every song the app knows: uploads and pre-analyzed demo songs.",
+      "columns": [
+        { "name": "id", "type": "text", "primary_key": true },
+        { "name": "title", "type": "text" },
+        { "name": "source", "type": "text", "description": "upload, demo or fixture" },
+        { "name": "file_name", "type": "text", "nullable": true },
+        { "name": "duration_sec", "type": "double precision" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    },
+    {
+      "name": "analyses",
+      "kind": "table",
+      "description": "Cached song-analysis results, so a repeat upload is instant.",
+      "columns": [
+        { "name": "id", "type": "uuid", "primary_key": true },
+        { "name": "song_id", "type": "text", "references": "songs.id" },
+        { "name": "version", "type": "integer", "description": "song-analysis contract version" },
+        { "name": "analysis", "type": "jsonb" },
+        { "name": "created_at", "type": "timestamptz" }
+      ],
+      "indexes": [["song_id"]]
+    },
+    {
+      "name": "practice_sessions",
+      "kind": "table",
+      "description": "One practice run.",
+      "columns": [
+        { "name": "id", "type": "uuid", "primary_key": true },
+        { "name": "user_id", "type": "text", "nullable": true, "description": "Auth0 subject; empty when login is switched off." },
+        { "name": "song_id", "type": "text", "references": "songs.id" },
+        { "name": "started_at", "type": "timestamptz" },
+        { "name": "ended_at", "type": "timestamptz", "nullable": true },
+        { "name": "tempo_ratio", "type": "double precision", "description": "Playback tempo during the run (1 = original)." },
+        { "name": "latency_offset_ms", "type": "double precision", "nullable": true },
+        { "name": "summary", "type": "jsonb", "nullable": true }
+      ],
+      "indexes": [["user_id", "started_at"], ["song_id"]]
+    },
+    {
+      "name": "practice_samples",
+      "kind": "hypertable",
+      "time_column": "time",
+      "description": "Measurements during a practice run, stored as a time series (tempo, pitch accuracy, timing error).",
+      "columns": [
+        { "name": "time", "type": "timestamptz" },
+        { "name": "session_id", "type": "uuid", "references": "practice_sessions.id" },
+        { "name": "metric", "type": "text", "description": "e.g. played_bpm, pitch_cents_off, onset_error_ms" },
+        { "name": "value", "type": "double precision" },
+        { "name": "song_time_sec", "type": "double precision", "nullable": true }
+      ],
+      "indexes": [["session_id", "time"]]
+    },
+    {
+      "name": "feedback_items",
+      "kind": "table",
+      "description": "Feedback shown after a run (feedback contract).",
+      "columns": [
+        { "name": "id", "type": "uuid", "primary_key": true },
+        { "name": "session_id", "type": "uuid", "references": "practice_sessions.id" },
+        { "name": "source", "type": "text", "description": "rules, gemini or canned" },
+        { "name": "feedback", "type": "jsonb" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    },
+    {
+      "name": "creations",
+      "kind": "table",
+      "description": "Saved Create-mode tracks (layers of note events).",
+      "columns": [
+        { "name": "id", "type": "uuid", "primary_key": true },
+        { "name": "user_id", "type": "text", "nullable": true },
+        { "name": "name", "type": "text" },
+        { "name": "tempo_bpm", "type": "double precision" },
+        { "name": "layers", "type": "jsonb" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/feedback.schema.json",
+  "title": "feedback",
+  "description": "Coaching after a practice run. Rule-based feedback is sent first (source 'rules', instant). Gemini coaching follows (source 'gemini'). With no network, canned coaching is used (source 'canned'). Demo focus: tempo.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "song_id", "source", "summary"],
+  "properties": {
+    "version": { "const": 1 },
+    "session_id": { "type": "string" },
+    "song_id": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source": { "enum": ["rules", "gemini", "canned"] },
+    "pending": { "type": "boolean", "description": "True while Gemini coaching is still on its way." },
+    "summary": { "type": "string" },
+    "tempo": {
+      "type": "object",
+      "required": ["target_bpm", "played_bpm", "verdict"],
+      "properties": {
+        "target_bpm": { "type": "number", "exclusiveMinimum": 0 },
+        "played_bpm": { "type": "number", "minimum": 0 },
+        "ratio": { "type": "number", "minimum": 0 },
+        "verdict": { "enum": ["rushing", "dragging", "steady"] }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "message"],
+        "properties": {
+          "kind": { "enum": ["tempo", "pitch", "rhythm", "missed", "extra"] },
+          "start_sec": { "type": "number", "minimum": 0 },
+          "end_sec": { "type": "number", "minimum": 0 },
+          "bars": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2, "maxItems": 2 },
+          "severity": { "enum": ["low", "medium", "high"] },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "strengths": { "type": "array", "items": { "type": "string" } },
+    "next_step": { "type": "string" },
+    "coaching": { "type": "string", "description": "Friendly longer text written by Gemini (or canned)." }
+  }
+}

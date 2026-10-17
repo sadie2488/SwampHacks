@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/signal.schema.json",
+  "title": "signal",
+  "description": "One reading from something the app senses (camera, mic, UI). The id comes from signal-catalog.json. 'slider' signals carry a value from 0 to 1 that changes continuously. 'moment' signals fire when something happens (state 'start') and may report when it stops (state 'end'), so a held gesture can arm other commands with only_while.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "id", "kind", "t_ms"],
+  "properties": {
+    "version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^(vision|audio|ui)(\\.[a-z0-9_]+)+$", "description": "Dotted id from the signal catalog, e.g. vision.hand.right.height or audio.clap." },
+    "kind": { "enum": ["moment", "slider"] },
+    "value": { "type": "number", "minimum": 0, "maximum": 1, "description": "Slider position from 0 to 1." },
+    "raw": { "type": "number", "description": "The same reading in the signal's own units (see the catalog), e.g. MIDI pitch for audio.hum.pitch." },
+    "state": { "enum": ["start", "end"], "description": "For moments: 'start' when it happens, 'end' when a held gesture is released." },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "How sure the detector is." },
+    "t_ms": { "type": "number", "minimum": 0, "description": "Milliseconds on the page clock (performance.now())." }
+  },
+  "if": { "properties": { "kind": { "const": "slider" } } },
+  "then": { "required": ["value"] }
+}

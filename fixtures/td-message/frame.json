@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "t_ms": 12345.6,
+  "mode": "play",
+  "intensity": 0.6,
+  "audio": {
+    "rms": 0.35,
+    "onset": true,
+    "pitch_midi": 62.2,
+    "bpm": 100,
+    "beat_phase": 0.25,
+    "bands": [
+      0.8,
+      0.7,
+      0.6,
+      0.5,
+      0.4,
+      0.3,
+      0.2,
+      0.1
+    ]
+  },
+  "hands": {
+    "left": null,
+    "right": {
+      "x": 0.62,
+      "y": 0.3,
+      "height": 0.7,
+      "fist": false,
+      "open_palm": true,
+      "pinch": 0.1
+    },
+    "distance": 0.4
+  }
+}

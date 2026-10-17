@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/control-catalog.schema.json",
+  "title": "control-catalog",
+  "description": "Everything a command can change. Ids are unique. Veda picks from this list in mappings.yaml; if she needs a new control she asks the main laptop.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "controls"],
+  "properties": {
+    "version": { "const": 1 },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "modes", "description"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z]+(\\.[a-z0-9_]+)+$" },
+          "kind": { "enum": ["value", "trigger", "toggle"] },
+          "value_type": { "enum": ["number", "string", "range"], "description": "For kind 'value'. Default number. 'range' = [start_sec, end_sec]." },
+          "modes": { "type": "array", "items": { "enum": ["learn", "play", "create"] }, "minItems": 1 },
+          "range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+          "default": { "type": ["number", "boolean", "string", "array"] },
+          "step": { "type": "number", "description": "Default size of one nudge." },
+          "unit": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" }, "description": "Allowed values for string controls." },
+          "description": { "type": "string" },
+          "status": { "enum": ["planned", "fake", "live"] }
+        }
+      }
+    }
+  }
+}

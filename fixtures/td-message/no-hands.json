@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "t_ms": 100,
+  "audio": {
+    "rms": 0,
+    "onset": false,
+    "pitch_midi": null
+  },
+  "hands": {
+    "left": null,
+    "right": null
+  }
+}

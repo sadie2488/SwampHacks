@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "command": "playback.tempo",
+  "source": "button",
+  "how": "set",
+  "value": 0.8,
+  "mode": "play",
+  "t_ms": 5000
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/song-analysis.schema.json",
+  "title": "song-analysis",
+  "description": "What the server learned about an uploaded song: tempo, beats, key, time signature, sections and the separated parts as notes. Cached by song_id.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "song_id", "duration_sec", "tempo_bpm", "key", "time_signature", "parts"],
+  "properties": {
+    "version": { "const": 1 },
+    "song_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string" },
+    "source": {
+      "type": "object",
+      "properties": {
+        "kind": { "enum": ["upload", "demo", "fixture"] },
+        "file_name": { "type": "string" }
+      }
+    },
+    "analyzed_at": { "type": "string", "format": "date-time" },
+    "duration_sec": { "type": "number", "exclusiveMinimum": 0 },
+    "tempo_bpm": { "type": "number", "exclusiveMinimum": 0 },
+    "tempo_confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "beats": { "type": "array", "items": { "type": "number", "minimum": 0 }, "description": "Beat times in seconds at 1.0x tempo." },
+    "downbeats": { "type": "array", "items": { "type": "number", "minimum": 0 } },
+    "key": {
+      "type": "object",
+      "required": ["tonic", "mode"],
+      "properties": {
+        "tonic": { "enum": ["C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"] },
+        "mode": { "enum": ["major", "minor"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "time_signature": {
+      "type": "object",
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": { "type": "integer", "minimum": 1 },
+        "denominator": { "enum": [1, 2, 4, 8, 16] }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "start_sec", "end_sec"],
+        "properties": {
+          "label": { "type": "string" },
+          "start_sec": { "type": "number", "minimum": 0 },
+          "end_sec": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "notes"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string" },
+          "kind": { "enum": ["melody", "bass", "harmony", "drums", "vocals", "other"] },
+          "instrument": { "type": "string", "description": "Suggested instrument, e.g. clarinet, trombone, guitar." },
+          "notes": { "type": "array", "items": { "$ref": "note-event.schema.json#/$defs/Note" } }
+        }
+      }
+    }
+  }
+}

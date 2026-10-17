@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "type": "calibration",
+  "session_id": "fixture-session-1",
+  "time_sec": 3,
+  "latency_offset_ms": 120,
+  "confidence": 0.95
+}

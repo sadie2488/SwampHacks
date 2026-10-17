@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "command": "playback.tempo",
+  "source": "telepathy",
+  "t_ms": 1
+}

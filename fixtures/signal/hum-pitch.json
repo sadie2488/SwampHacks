@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "id": "audio.hum.pitch",
+  "kind": "slider",
+  "value": 0.45,
+  "raw": 62.3,
+  "confidence": 0.8,
+  "t_ms": 900
+}

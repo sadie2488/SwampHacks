@@ -1,0 +1,79 @@
+# Starter mappings. Veda owns this file and may change anything in it.
+# "When [signal] happens in [mode], do [control], [this way]". Full guide: docs/commands-guide.md
+
+- name: hand height controls tempo
+  mode: play
+  when: vision.hand.right.height
+  do: playback.tempo
+  how: follow
+  range: [0.5, 1.5]
+  smoothing: 0.3
+  min_confidence: 0.6
+
+- name: head tilt slows down        # switched off: it would fight with the hand-height rule above
+  enabled: false
+  mode: play
+  when: vision.head.tilt
+  do: playback.tempo
+  how: follow
+  range: [1.0, 0.5]
+  smoothing: 0.5
+
+- name: clap toggles play/pause
+  mode: play
+  when: audio.clap
+  do: playback.toggle
+  how: trigger
+  cooldown_ms: 600
+
+- name: say "pause" only while left fist is held
+  mode: play
+  when: audio.keyword.pause
+  only_while: vision.hand.left.fist
+  do: playback.pause
+  how: trigger
+
+- name: say "play" only while left fist is held
+  mode: play
+  when: audio.keyword.play
+  only_while: vision.hand.left.fist
+  do: playback.play
+  how: trigger
+
+- name: say "slower" only while left fist is held
+  mode: play
+  when: audio.keyword.slower
+  only_while: vision.hand.left.fist
+  do: playback.tempo
+  how: nudge
+  step: -0.1
+
+- name: say "faster" only while left fist is held
+  mode: play
+  when: audio.keyword.faster
+  only_while: vision.hand.left.fist
+  do: playback.tempo
+  how: nudge
+  step: 0.1
+
+- name: say "higher" only while left fist is held
+  mode: play
+  when: audio.keyword.higher
+  only_while: vision.hand.left.fist
+  do: playback.pitch
+  how: nudge
+  step: 1
+
+- name: snap adds a layer
+  mode: create
+  when: audio.snap
+  do: create.layer.add
+  how: trigger
+  cooldown_ms: 500
+
+- name: drum hit toggles the beat
+  mode: create
+  when: vision.hand.right.drum_hit
+  do: create.beat
+  how: toggle
+  cooldown_ms: 400

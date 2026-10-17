@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "id": "n1",
+  "pitch": 60,
+  "onset_sec": 0,
+  "duration_sec": 0.5,
+  "onset_beat": 0,
+  "duration_beat": 1,
+  "velocity": 0.8,
+  "part": "melody",
+  "confidence": 0.95
+}

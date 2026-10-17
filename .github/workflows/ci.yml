@@ -59,6 +59,28 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node ../base/scripts/ci/check-files.mjs
+      - name: Contracts only grow
+        if: github.event_name == 'pull_request'
+        working-directory: pr
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node ../base/scripts/ci/check-contract-changes.mjs
+
+  contracts:
+    name: Contracts and fake data
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check schemas, catalogs, fake data, and mappings
+        run: node scripts/validate-contracts.mjs
 
   secrets:
     name: Secret scan
@@ -83,6 +105,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Project tests
         run: node --test "tests/**/*.test.mjs"
       - name: Hook self-test

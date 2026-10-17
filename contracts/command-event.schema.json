@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/command-event.schema.json",
+  "title": "command-event",
+  "description": "One instruction to change the music. Buttons, voice, gestures and email all produce this same event, and the command system applies it. 'command' is a control id from control-catalog.json.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "command", "source", "t_ms"],
+  "properties": {
+    "version": { "const": 1 },
+    "command": { "type": "string", "pattern": "^[a-z]+(\\.[a-z0-9_]+)+$", "description": "Control id, e.g. playback.tempo." },
+    "source": { "enum": ["button", "voice", "gesture", "email"] },
+    "how": { "enum": ["set", "follow", "trigger", "toggle", "nudge"] },
+    "value": { "description": "New value (set/follow), or the step (nudge). Omit for trigger and toggle.", "type": ["number", "boolean", "string", "array"] },
+    "mode": { "enum": ["learn", "play", "create"] },
+    "mapping": { "type": "string", "description": "Name of the mapping rule that fired, if any." },
+    "signal": { "type": "string", "description": "Id of the signal that caused it, if any." },
+    "t_ms": { "type": "number", "minimum": 0 }
+  }
+}

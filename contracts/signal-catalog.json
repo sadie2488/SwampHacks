@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "signals": [
+    { "id": "vision.hand.right.height", "kind": "slider", "source": "vision", "description": "How high the right hand is (1 = top of the picture)." },
+    { "id": "vision.hand.left.height", "kind": "slider", "source": "vision", "description": "How high the left hand is (1 = top of the picture)." },
+    { "id": "vision.hand.right.x", "kind": "slider", "source": "vision", "description": "Left-to-right position of the right hand (0 = left edge)." },
+    { "id": "vision.hand.left.x", "kind": "slider", "source": "vision", "description": "Left-to-right position of the left hand (0 = left edge)." },
+    { "id": "vision.hands.distance", "kind": "slider", "source": "vision", "description": "How far apart the two hands are (0 = touching, 1 = far apart)." },
+    { "id": "vision.head.tilt", "kind": "slider", "source": "vision", "description": "Head tilt: 0 = tilted fully left, 0.5 = upright, 1 = tilted fully right.", "range": [-45, 45], "unit": "degrees" },
+    { "id": "vision.hand.right.fist", "kind": "moment", "source": "vision", "holdable": true, "description": "Right hand closes into a fist (end = opens again)." },
+    { "id": "vision.hand.left.fist", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand closes into a fist (end = opens again)." },
+    { "id": "vision.hand.right.open_palm", "kind": "moment", "source": "vision", "holdable": true, "description": "Right hand shows an open palm." },
+    { "id": "vision.hand.left.open_palm", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand shows an open palm." },
+    { "id": "vision.hand.right.raised", "kind": "moment", "source": "vision", "holdable": true, "description": "Right hand goes up above the head." },
+    { "id": "vision.hand.left.raised", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand goes up above the head." },
+    { "id": "vision.hand.right.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Right thumb and index finger pinch together." },
+    { "id": "vision.hand.left.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Left thumb and index finger pinch together." },
+    { "id": "vision.head.nod", "kind": "moment", "source": "vision", "description": "Head nods once." },
+    { "id": "vision.hand.right.drum_hit", "kind": "moment", "source": "vision", "description": "Right hand makes a quick downward hit, like hitting a drum (wrist speed)." },
+    { "id": "vision.hand.left.drum_hit", "kind": "moment", "source": "vision", "description": "Left hand makes a quick downward hit, like hitting a drum (wrist speed)." },
+    { "id": "audio.snap", "kind": "moment", "source": "audio", "description": "A finger snap." },
+    { "id": "audio.clap", "kind": "moment", "source": "audio", "description": "A hand clap." },
+    { "id": "audio.onset", "kind": "moment", "source": "audio", "description": "Any note attack heard by the mic." },
+    { "id": "audio.loudness", "kind": "slider", "source": "audio", "description": "How loud it is (0 = silent, 1 = very loud)." },
+    { "id": "audio.hum.pitch", "kind": "slider", "source": "audio", "description": "Pitch of the hum or voice. raw is the MIDI note.", "range": [36, 96], "unit": "MIDI note" },
+    { "id": "audio.keyword.play", "kind": "moment", "source": "audio", "description": "The word \"play\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.pause", "kind": "moment", "source": "audio", "description": "The word \"pause\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.slower", "kind": "moment", "source": "audio", "description": "The word \"slower\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.faster", "kind": "moment", "source": "audio", "description": "The word \"faster\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.higher", "kind": "moment", "source": "audio", "description": "The word \"higher\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.lower", "kind": "moment", "source": "audio", "description": "The word \"lower\" is spoken (only listens while armed)." }
+  ]
+}

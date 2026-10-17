@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "session_id": "fixture-session-1",
+  "song_id": "demo-twinkle",
+  "generated_at": "2026-10-17T09:05:00Z",
+  "source": "rules",
+  "pending": true,
+  "summary": "You played about 10% slower than the song and held steady notes. One note was a little sharp.",
+  "tempo": {
+    "target_bpm": 100,
+    "played_bpm": 90,
+    "ratio": 0.9,
+    "verdict": "dragging"
+  },
+  "issues": [
+    {
+      "kind": "tempo",
+      "start_sec": 0,
+      "end_sec": 4.8,
+      "bars": [
+        1,
+        2
+      ],
+      "severity": "medium",
+      "message": "You dragged in bars 1-2: try counting along with the metronome."
+    },
+    {
+      "kind": "pitch",
+      "start_sec": 1.8,
+      "end_sec": 2.4,
+      "severity": "low",
+      "message": "The 4th note was about 30 cents sharp."
+    }
+  ],
+  "strengths": [
+    "Every note was in the right order",
+    "Clean attacks"
+  ],
+  "next_step": "Play bars 1-2 at 80% speed, then bring it up to 100%."
+}

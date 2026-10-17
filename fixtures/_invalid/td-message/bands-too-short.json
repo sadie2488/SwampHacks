@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "t_ms": 1,
+  "audio": {
+    "rms": 0.1,
+    "onset": false,
+    "bands": [
+      0.1,
+      0.2
+    ]
+  },
+  "hands": {}
+}

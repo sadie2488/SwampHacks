@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/td-message.schema.json",
+  "title": "td-message",
+  "description": "One frame streamed to TouchDesigner (audio features + hand data). The browser sends it to a small local relay (bridge/), which forwards it to TouchDesigner, because browsers can't send UDP/OSC. About 30 frames per second.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "t_ms", "audio", "hands"],
+  "properties": {
+    "version": { "const": 1 },
+    "t_ms": { "type": "number", "minimum": 0 },
+    "mode": { "enum": ["learn", "play", "create"] },
+    "intensity": { "type": "number", "minimum": 0, "maximum": 1, "description": "Visual intensity control (create.visual.intensity)." },
+    "audio": {
+      "type": "object",
+      "required": ["rms", "onset"],
+      "properties": {
+        "rms": { "type": "number", "minimum": 0, "maximum": 1, "description": "Loudness." },
+        "onset": { "type": "boolean", "description": "True on the frame a note attack is heard." },
+        "pitch_midi": { "type": ["number", "null"] },
+        "bpm": { "type": "number", "minimum": 0 },
+        "beat_phase": { "type": "number", "minimum": 0, "maximum": 1, "description": "Position inside the current beat." },
+        "bands": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 8, "maxItems": 8, "description": "Eight frequency bands, low to high." }
+      }
+    },
+    "hands": {
+      "type": "object",
+      "properties": {
+        "left": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Hand" }] },
+        "right": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Hand" }] },
+        "distance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Distance between the two hands." }
+      }
+    }
+  },
+  "$defs": {
+    "Hand": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1, "description": "0 = left edge of the camera image." },
+        "y": { "type": "number", "minimum": 0, "maximum": 1, "description": "0 = top of the camera image." },
+        "height": { "type": "number", "minimum": 0, "maximum": 1, "description": "1 = hand at the top." },
+        "fist": { "type": "boolean" },
+        "open_palm": { "type": "boolean" },
+        "pinch": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

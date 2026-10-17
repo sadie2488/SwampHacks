@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "Hand Height",
+  "kind": "slider",
+  "value": 0.5,
+  "t_ms": 10
+}

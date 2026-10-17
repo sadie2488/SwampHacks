@@ -1,0 +1,98 @@
+[
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 0.12,
+    "pitch": 60,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 0.787,
+    "pitch": 60,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 1.453,
+    "pitch": 67,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 2.12,
+    "pitch": 67.3,
+    "cents_off": 30,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 2.787,
+    "pitch": 69,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 3.453,
+    "pitch": 69,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 4.12,
+    "pitch": 67,
+    "cents_off": 0,
+    "duration_sec": 1.267,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  },
+  {
+    "version": 1,
+    "type": "note",
+    "session_id": "fixture-session-1",
+    "time_sec": 5.453,
+    "pitch": 65,
+    "cents_off": 0,
+    "duration_sec": 0.633,
+    "loudness": 0.6,
+    "confidence": 0.9,
+    "latency_offset_ms": 120
+  }
+]

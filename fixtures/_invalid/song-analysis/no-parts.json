@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "song_id": "x",
+  "duration_sec": 3,
+  "tempo_bpm": 100,
+  "key": {
+    "tonic": "C",
+    "mode": "major"
+  },
+  "time_signature": {
+    "numerator": 4,
+    "denominator": 4
+  }
+}

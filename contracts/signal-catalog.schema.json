@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/signal-catalog.schema.json",
+  "title": "signal-catalog",
+  "description": "Everything the app can sense. Veda picks from this list in mappings.yaml. Ids are unique. Lanes B and C implement the detectors; if Veda needs a new signal she asks the main laptop.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "signals"],
+  "properties": {
+    "version": { "const": 1 },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "source", "description"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(vision|audio|ui)(\\.[a-z0-9_]+)+$" },
+          "kind": { "enum": ["moment", "slider"] },
+          "source": { "enum": ["vision", "audio", "ui"] },
+          "description": { "type": "string" },
+          "range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "Raw range of the 'raw' field, for sliders." },
+          "unit": { "type": "string" },
+          "holdable": { "type": "boolean", "description": "Moment that can be held and released (usable in only_while)." },
+          "status": { "enum": ["planned", "fake", "live"], "description": "planned = nobody built it yet, fake = replayed from fixtures, live = real detector." }
+        }
+      }
+    }
+  }
+}

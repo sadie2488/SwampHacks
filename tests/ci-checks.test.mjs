@@ -197,3 +197,69 @@ test('files: big files, media, weights, datasets and secrets are rejected; norma
     assert.equal(run('check-files', d, { ...e, PR_BODY: 'Override: data/songs.csv | approved by Lalitha' }).code, 0);
   } finally { cleanup(d); }
 });
+
+// ---------------- contracts only grow ----------------
+import { cpSync } from 'node:fs';
+
+function makeContractsRepo() {
+  const dir = makeRepo();
+  cpSync(join(REPO, 'contracts'), join(dir, 'contracts'), { recursive: true });
+  commit(dir, 'Add contracts', {});
+  return dir;
+}
+// returns { 'contracts/x.json': new text } after applying fn to the parsed JSON at base
+const modify = (dir, rel, fn) => ({ [rel]: `${JSON.stringify(fn(JSON.parse(readFileSync(join(dir, rel), 'utf8'))), null, 2)}\n` });
+
+test('contract changes: additions are fine when the version is raised', () => {
+  const d = makeContractsRepo();
+  try {
+    const f = modify(d, 'contracts/note-event.schema.json', (s) => { s.$defs.Note.properties.articulation = { type: 'string' }; s['x-contract-version'] = 2; return s; });
+    assert.equal(run('check-contract-changes', d, pr(d, 'lead/0.4', f)).code, 0);
+    const g = modify(d, 'contracts/signal-catalog.json', (c) => { c.signals.push({ id: 'audio.whistle', kind: 'moment', source: 'audio', description: 'A whistle.' }); return c; });
+    assert.equal(run('check-contract-changes', d, pr(d, 'lead/0.4', g)).code, 0);
+    const h = modify(d, 'contracts/db-schema.json', (s) => { s.tables[0].columns.push({ name: 'artist', type: 'text', nullable: true }); return s; });
+    assert.equal(run('check-contract-changes', d, pr(d, 'lead/0.4', h)).code, 0);
+    assert.equal(run('check-contract-changes', d, pr(d, 'lead/0.4', { 'contracts/brand-new.schema.json': '{"x-contract-version":1}' })).code, 0, 'a new contract');
+  } finally { cleanup(d); }
+});
+
+test('contract changes: an addition without raising the version is caught', () => {
+  const d = makeContractsRepo();
+  try {
+    const f = modify(d, 'contracts/note-event.schema.json', (s) => { s.$defs.Note.properties.articulation = { type: 'string' }; return s; });
+    const r = run('check-contract-changes', d, pr(d, 'lead/0.4', f));
+    assert.equal(r.code, 1); assert.match(r.out, /raise "x-contract-version"/);
+  } finally { cleanup(d); }
+});
+
+test('contract changes: removing or narrowing anything is caught', () => {
+  const d = makeContractsRepo();
+  try {
+    const cases = [
+      ['a removed field', 'contracts/note-event.schema.json', (s) => { delete s.$defs.Note.properties.velocity; return s; }, /was removed/],
+      ['a field that became required', 'contracts/note-event.schema.json', (s) => { s.$defs.Note.required.push('velocity'); return s; }, /became required/],
+      ['a changed type', 'contracts/note-event.schema.json', (s) => { s.$defs.Note.properties.pitch.type = 'string'; return s; }, /type at/],
+      ['a removed allowed value', 'contracts/command-event.schema.json', (s) => { s.properties.source.enum = ['button', 'voice']; return s; }, /allowed value/],
+      ['a changed fixed version', 'contracts/signal.schema.json', (s) => { s.properties.version.const = 2; return s; }, /fixed value/],
+      ['a removed signal', 'contracts/signal-catalog.json', (c) => { c.signals.pop(); return c; }, /was removed/],
+      ['a changed signal kind', 'contracts/signal-catalog.json', (c) => { c.signals[0].kind = 'moment'; return c; }, /changed its kind/],
+      ['a removed control', 'contracts/control-catalog.json', (c) => { c.controls.shift(); return c; }, /was removed/],
+      ['a removed database column', 'contracts/db-schema.json', (s) => { s.tables[0].columns.pop(); return s; }, /was removed/],
+      ['a changed column type', 'contracts/db-schema.json', (s) => { s.tables[0].columns[1].type = 'integer'; return s; }, /changed its type/],
+    ];
+    for (const [label, file, fn, pattern] of cases) {
+      const r = run('check-contract-changes', d, pr(d, 'lead/0.4', modify(d, file, fn)));
+      assert.equal(r.code, 1, `${label} should be caught`);
+      assert.match(r.out, pattern, label);
+    }
+  } finally { cleanup(d); }
+});
+
+test('contract changes: a person-approved override lets a breaking change through', () => {
+  const d = makeContractsRepo();
+  try {
+    const e = pr(d, 'lead/0.4', modify(d, 'contracts/signal-catalog.json', (c) => { c.signals.pop(); return c; }));
+    const r = run('check-contract-changes', d, { ...e, PR_BODY: 'Override: contracts/signal-catalog.json | approved by Lalitha' });
+    assert.equal(r.code, 0); assert.match(r.out, /Contract override/);
+  } finally { cleanup(d); }
+});

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/note-event.schema.json",
+  "title": "note-event",
+  "description": "One note. Pitch is CONCERT-PITCH MIDI everywhere; only the display transposes (B-flat clarinet written = concert + 2 semitones; guitar written an octave above sounding; trombone is concert pitch in bass clef). Times are song time at 1.0x tempo, in seconds from the start of the piece.",
+  "x-contract-version": 1,
+  "allOf": [
+    { "$ref": "#/$defs/Note" },
+    {
+      "type": "object",
+      "required": ["version"],
+      "properties": { "version": { "const": 1 } }
+    }
+  ],
+  "$defs": {
+    "Note": {
+      "type": "object",
+      "required": ["pitch", "onset_sec", "duration_sec"],
+      "properties": {
+        "id": { "type": "string" },
+        "pitch": { "type": "integer", "minimum": 0, "maximum": 127, "description": "Concert-pitch MIDI note number (60 = middle C)." },
+        "onset_sec": { "type": "number", "minimum": 0 },
+        "duration_sec": { "type": "number", "exclusiveMinimum": 0 },
+        "onset_beat": { "type": "number", "minimum": 0, "description": "Start in beats from the start of the piece, quantized to the tempo grid (1 = one quarter note)." },
+        "duration_beat": { "type": "number", "exclusiveMinimum": 0 },
+        "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "part": { "type": "string", "description": "Id of the part this note belongs to." },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

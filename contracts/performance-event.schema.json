@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.swamphacks.invalid/performance-event.schema.json",
+  "title": "performance-event",
+  "description": "What the learner actually played, as heard by the mic. type 'note' = a sustained pitch, 'onset' = an attack with no pitch, 'calibration' = the shared latency offset measured by the clap calibration. time_sec is time since practice started on the mic clock; subtract latency_offset_ms to line it up with the song.",
+  "x-contract-version": 1,
+  "type": "object",
+  "required": ["version", "type", "time_sec"],
+  "properties": {
+    "version": { "const": 1 },
+    "type": { "enum": ["note", "onset", "calibration"] },
+    "session_id": { "type": "string" },
+    "time_sec": { "type": "number", "minimum": 0 },
+    "pitch": { "type": "number", "minimum": 0, "maximum": 127, "description": "Detected concert-pitch MIDI; may have a fraction (cents)." },
+    "cents_off": { "type": "number", "minimum": -50, "maximum": 50 },
+    "duration_sec": { "type": "number", "minimum": 0 },
+    "loudness": { "type": "number", "minimum": 0, "maximum": 1 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "latency_offset_ms": { "type": "number", "description": "The ONE shared latency offset from clap calibration. Every comparison uses this same value." }
+  },
+  "if": { "properties": { "type": { "const": "note" } } },
+  "then": { "required": ["pitch"] },
+  "else": {
+    "if": { "properties": { "type": { "const": "calibration" } } },
+    "then": { "required": ["latency_offset_ms"] }
+  }
+}

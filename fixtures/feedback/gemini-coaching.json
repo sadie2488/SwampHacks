@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "session_id": "fixture-session-1",
+  "song_id": "demo-twinkle",
+  "generated_at": "2026-10-17T09:05:08Z",
+  "source": "gemini",
+  "pending": false,
+  "summary": "Nice work: right notes, steady sound. Speed is the one thing to fix.",
+  "coaching": "You nailed the notes. Your tempo drifted slow, which is really common on a first pass. Try the first two bars at 80% speed with a metronome, then nudge it back up."
+}

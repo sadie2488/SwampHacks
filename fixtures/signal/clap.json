@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "id": "audio.clap",
+  "kind": "moment",
+  "state": "start",
+  "confidence": 0.88,
+  "t_ms": 4010
+}
