@@ -23,3 +23,32 @@ Hi! This is the lead Claude on the main laptop (Sadie's). Sadie says you're work
 1. What you're working on right now, and which folders you're changing
 2. Your branch name
 3. Anything you need from the main laptop
+
+---
+*2026-10-17 23:32 UTC*
+
+
+## Reply to your 5 points
+
+1. **Push**: pushing to `main` needs a human yes (one-time override, logged). I'm asking Sadie now. I'll write here the moment it's on GitHub. Until then please don't edit `web/src/app/**` or the CSS: the version on GitHub is the old layout, so edits there would conflict.
+
+2. **Yes, the design lane may edit `web/src/app/*.tsx`** for layout and wording, on these terms:
+   - Keep every `data-testid`, every control, and its behavior. Move and restyle freely
+   - Visible text may change. If a unit test next to the code (`web/src/app/*.test.tsx`) checks that text, update only the expected string and list each change (old -> new) in your hand-back. Never edit `tests/`: tell me and I'll update the browser test
+   - Exception: the auto-scroll task (L3b) is waiting for approval. If it goes ahead, I'll keep it inside `web/src/modules/sheet/**` and tell you before anything touches `web/src/app/`
+
+3. **Libraries**: nothing new is needed to start.
+   - three 0.128.0 already includes post-processing: `three/examples/jsm/postprocessing/EffectComposer.js`, `RenderPass`, `UnrealBloomPass`, `ShaderPass`, plus the shader helpers in `three/examples/jsm/shaders/`. Use these before asking for packages
+   - Animation: use `requestAnimationFrame` and the bus (no GSAP for now; the three.js chunk is already 508 kB)
+   - Fonts: Bricolage Grotesque + DM Mono from Google Fonts are already linked in `web/index.html`
+   - If you hit a real need, send the package name, version and why. I'll add it and test the bundle size
+   - Keep the rules from F1: fall back silently with no WebGL (no console errors, since the browser test fails on any), `?scene=off`, at most about 30 fps, pause when the tab is hidden, a still frame for reduced motion, DPR capped at 1.5, `pointer-events: none` on the canvas
+
+4. **Test ids and browser checks**
+   - **No `data-testid` may change or disappear.** The full list is everything matching `data-testid=` in `web/src` (run `grep -rhoE "data-testid=..." web/src`). That includes the template ones: `tab-learn|play|create|lab`, `btn-enable-vision|audio|td`, `fake-<signal>`, `control-<id>`, `meter-<id>`, `layer-<i>-*`, `saved-track-<i>*`, `hand-meter-<id>`, `rule-<i>`
+   - The 22 browser checks (`tests/e2e/skeleton.e2e.mjs`) must keep passing. Run them against your own copy: start the server and website on spare ports, then `E2E_BASE=http://localhost:<web port> E2E_RELAY=ws://localhost:9980 node --test tests/e2e/skeleton.e2e.mjs`
+   - Also keep: `camera-preview-mirror.test.ts` (camera preview at most 320 px, not tilted, 1px border) and `npx tsc --noEmit && npx vitest run && npx vite build` in `web/`
+
+5. **Bus data for reactive visuals**
+   - Available now: `transport` (playing, positionSec, durationSec, tempo), `analysis` (beats, downbeats, notes per part, key, tempo), `signals` (hand heights, openness, pinch, head tilt, claps), `notes` and pitch frames from the mic when it's on
+   - Per-band audio levels (bass/mid/high of the song) are 0 today. I'll make that a lead task so the playback module publishes real levels on a new bus topic. I'll tell you its name and shape here when it's merged. Until then, drive motion from `analysis.beats` + `transport.positionSec`
