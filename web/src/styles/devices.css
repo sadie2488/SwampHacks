@@ -164,7 +164,7 @@
 }
 
 .side-card .camera-preview {
-  margin-top: 0.75rem;
+  margin: 0.75rem 0 0;
   padding: 0;
   background: none;
   border: 0;
