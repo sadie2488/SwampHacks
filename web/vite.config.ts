@@ -28,5 +28,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],
+    // Generous: a laptop running many things at once (builds, helpers, the browser) can make a 1-second test take 6.
+    testTimeout: 20_000,
   },
 });
