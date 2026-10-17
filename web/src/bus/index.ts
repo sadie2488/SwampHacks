@@ -166,6 +166,17 @@ export function sendSignal(s: Omit<Signal, 'version' | 't_ms'> & { t_ms?: number
   bus.emit('signal', { version: 1, t_ms: performance.now(), ...s });
 }
 
+// The "status" topic only replays the single latest message from ANY module, so keep the latest one per module here.
+// Buttons that show on/off for a device module (camera, microphone) should start from this and then follow "status".
+const latestStatus = new Map<string, ModuleStatus>();
+bus.on('status', (s) => void latestStatus.set(s.module, s));
+export const getStatus = (module: string): ModuleStatus | undefined => latestStatus.get(module);
+/** True while a module is starting or running (its device is on). */
+export const isModuleOn = (module: string): boolean => {
+  const s = latestStatus.get(module)?.state;
+  return s === 'starting' || s === 'running';
+};
+
 /** Tell the shell how a module is doing, in plain words. */
 export function reportStatus(module: string, state: ModuleStatus['state'], message?: string): void {
   bus.emit('status', { module, state, message });
