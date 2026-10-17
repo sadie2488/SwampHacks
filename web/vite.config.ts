@@ -26,6 +26,9 @@ export default defineConfig({
     proxy: { '/api': process.env.API_PROXY ?? 'http://localhost:8000' },
   },
   worker: { format: 'es' },
+  // Camera tracking is only imported inside its worker, which Vite's startup scan does not read. Without this line Vite
+  // finds it the first time the camera turns on and reloads every open page, which drops the loaded song.
+  optimizeDeps: { include: ['@mediapipe/tasks-vision'] },
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}'],

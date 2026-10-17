@@ -288,6 +288,10 @@ test('practice with a made-up slow player: calibrate, play along, get feedback, 
   if (!micOn) await $('btn-enable-audio').click();
   await until('microphone running', async () => /running|made-up/i.test((await $('status-audio-live').textContent()) ?? ''), 15_000);
   // make sure the demo song is loaded and paused at the start
+  if (!(await topic('transport'))?.loaded) {
+    await $('use-demo').click();
+    await until('demo loaded', async () => (await topic('transport'))?.loaded, 15_000);
+  }
   await $('btn-pause').click();
   await page.evaluate(() => window.__music.sendCommand('playback.tempo', 'button', { how: 'set', value: 1 }));
 
