@@ -1,4 +1,4 @@
-"""Server entry point: health, demo songs, upload, and song analysis."""
+"""Server entry point: health, public config, demo songs, upload, and song analysis."""
 import logging
 import re
 from pathlib import PurePosixPath
@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from . import config, store
 
@@ -24,6 +25,21 @@ app.add_middleware(
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+class Auth0Public(BaseModel):
+    domain: str | None
+    client_id: str | None
+
+
+class PublicConfig(BaseModel):
+    auth0: Auth0Public
+
+
+@app.get("/api/config", response_model=PublicConfig)
+def public_config() -> dict:
+    """What the website needs to start login. Only these two public values, never a key."""
+    return {"auth0": config.public_auth0()}
 
 
 @app.get("/api/demo-songs")
