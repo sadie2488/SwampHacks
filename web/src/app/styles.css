@@ -111,9 +111,12 @@ h1.brand {
 
 @media (min-width: 1000px) {
   .app-main {
-    grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
+    /* the sheet strip uses these two to find the middle of the window (see .sheet-strip-inner) */
+    --side-column: 19rem;
+    --column-gap: 2.25rem;
+    grid-template-columns: minmax(15rem, var(--side-column)) minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;
-    column-gap: 2.25rem;
+    column-gap: var(--column-gap);
   }
 
   .app-main > :not(.mode-panel) {
@@ -561,7 +564,26 @@ output {
   z-index: -2;
 }
 
-.sheet-strip > h2 {
+/* The strip's content (heading, controls, staff) is centred in the window, not in the right-hand column. */
+.sheet-strip-inner {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+/* Wide window: the strip lives in the right-hand column, whose middle sits half of (side column + gap) to the right
+   of the window's middle. Shift the content back by that much and let it reach as wide as the whole layout.
+   Skipped while the camera picture makes the left column tall enough to reach the strip, so it never covers the staff. */
+@media (min-width: 1000px) {
+  .app-main:not(:has(> .camera-preview, > .camera-preview-waiting)) .sheet-strip-inner {
+    --side: calc(var(--side-column) + var(--column-gap));
+    --inner-width: min(72rem, 100% + var(--side));
+    width: var(--inner-width);
+    margin-left: calc((100% - var(--inner-width)) / 2 - var(--side) / 2);
+    margin-right: 0;
+  }
+}
+
+.sheet-strip-inner > h2 {
   margin-bottom: 0.4rem;
 }
 
