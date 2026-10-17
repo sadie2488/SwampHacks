@@ -80,6 +80,7 @@ beforeEach(async () => {
   resetControls();
   // the bus remembers the last status of every module: start each test with everything off
   for (const module of ['vision', 'audio-live', 'touchdesigner', 'playback']) bus.emit('status', { module, state: 'idle' });
+  bus.emit('cameraStream', null);
   vi.stubGlobal('fetch', vi.fn(async () => json(twinkle)));
   unwatch = watch();
   container = document.createElement('div');
@@ -366,6 +367,46 @@ describe('devices', () => {
       { level: 'warning', where: 'rule 2', message: 'Very short cooldown.' },
     ]);
     expect(text('issues-count')).toBe('2');
+  });
+});
+
+describe('camera preview', () => {
+  const stream = { id: 'cam', getTracks: () => [] } as unknown as MediaStream;
+  let restoreCanvas: () => void;
+  // jsdom has no canvas: give the overlay a do-nothing one
+  beforeEach(() => {
+    const spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ clearRect() {} } as unknown as CanvasRenderingContext2D);
+    restoreCanvas = () => spy.mockRestore();
+  });
+  afterEach(() => restoreCanvas());
+
+  it('shows "waiting" when the camera is switched on, then the picture, on every tab', async () => {
+    await click('btn-enable-vision');
+    await emit('status', { module: 'vision', state: 'starting', message: 'Asking for the camera...' });
+    expect(text('camera-preview-waiting')).toBe('Waiting for the camera...');
+    await emit('cameraStream', stream);
+    expect($('camera-preview-waiting')).toBeNull();
+    for (const tab of ['tab-learn', 'tab-play', 'tab-create', 'tab-lab']) {
+      await click(tab);
+      expect($('camera-preview'), tab).not.toBeNull();
+      expect($('camera-preview-video'), tab).not.toBeNull();
+      expect($('camera-preview-overlay'), tab).not.toBeNull();
+    }
+  });
+
+  it('sits right under the Devices panel and goes away when the camera stops', async () => {
+    await emit('cameraStream', stream);
+    const devices = container.querySelector('[aria-labelledby="devices-heading"]')!;
+    expect(devices.nextElementSibling).toBe($('camera-preview'));
+    await emit('cameraStream', null);
+    expect($('camera-preview')).toBeNull();
+  });
+
+  it('leaves the problem text to the Devices panel when the camera cannot start', async () => {
+    await emit('status', { module: 'vision', state: 'error', message: 'Camera permission was blocked.' });
+    expect($('camera-preview')).toBeNull();
+    expect($('camera-preview-waiting')).toBeNull();
+    expect(text('status-vision')).toBe('Problem: Camera permission was blocked.');
   });
 });
 

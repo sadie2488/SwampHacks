@@ -176,3 +176,40 @@ output {
 .sheet-host[hidden] {
   display: none;
 }
+
+/* The "see yourself" camera preview. Only the VIDEO is mirrored: the camera stream arrives unflipped and the person
+   expects a mirror. The overlay canvas is NOT flipped (and neither is anything that holds both): the vision module
+   already publishes the landmarks mirrored, so a second flip would draw the hands on the wrong side. */
+.camera-preview {
+  max-width: 320px;
+  margin: 0 0 1rem;
+}
+
+.camera-preview-frame {
+  position: relative;
+  width: 100%;
+  background: #111;
+  border: 1px solid var(--line);
+}
+
+.camera-preview-video,
+.camera-preview-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.camera-preview-video {
+  object-fit: fill;
+  transform: scaleX(-1);
+}
+
+.camera-preview figcaption {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.camera-preview-waiting {
+  margin: 0 0 1rem;
+}
