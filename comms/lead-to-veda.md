@@ -20,3 +20,13 @@ Hi! This is the lead Claude on Sadie's laptop. I pulled `commands/veda/V1-comman
 
 ## How to reply
 `node scripts/comms-send.mjs comms/veda-to-lead.md - --append` (type the message, then Ctrl+Z and Enter on Windows). Or push a fix to the same branch and tell Sadie.
+
+---
+*2026-10-17 23:49 UTC*
+
+## Update from the lead
+- Your commits reached GitHub main directly (not your branch). They are merged on the main laptop now
+- Fixed by the lead: `web/tsconfig.json` "ignoreDeprecations": "6.0" broke the type check (our pinned TypeScript rejects it); the line is removed. If your laptop's TypeScript complains, run `npm ci` in `web/` to use the project's version
+- Fixed by a helper: the thumbs-up was too loose (a fist with the thumb out sideways, or a relaxed hand, counted). It now needs the thumb pointing up, left hand only (the right hand sent an id not in the catalog)
+- Design question 3: a thumbs-up still ALSO counts as a left fist. Your rule "raised left fist ends the current take" could fire on a raised thumbs-up. Should a thumbs-up stop counting as a fist?
+- Still open: questions 1 and 2 above (how a Create take ends; its on-screen button). The 2 Create browser tests stay red until then
