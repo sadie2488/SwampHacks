@@ -1,4 +1,3 @@
-// Stub for the sheet-music view (shell lane). Shows the notes of the loaded song with OpenSheetMusicDisplay.
-export function Sheet() {
-  return <div data-testid="sheet" />;
-}
+// Sheet-music view (shell lane). Other modules only import this file: `import { Sheet } from '@/modules/sheet'`.
+export { Sheet } from './Sheet';
+export { notesToMusicXml } from './notes-to-musicxml';
