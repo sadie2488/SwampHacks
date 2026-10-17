@@ -7,8 +7,8 @@
 // Everything arrives over the bus. The one exception: the rule list is read from mappings.yaml itself (same lane as the engine),
 // because the bus has no topic for "the loaded rules".
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { bus, isFakeMode, sendSignal, type ControlState, type EngineIssue, type Landmarks, type Topics } from '@/bus';
-import { controlCatalog, signalCatalog } from '@/contracts/catalogs';
+import { bus, getStatus, isFakeMode, isModuleOn, sendSignal, type ControlState, type EngineIssue, type Landmarks, type Topics } from '@/bus';
+import { controlCatalog, signalCatalog, signalInfo } from '@/contracts/catalogs';
 import type { CommandEvent, ControlInfo, ControlValue, Mode, SignalInfo } from '@/contracts';
 import { loadMappings, type Rule } from '../commands/engine';
 import { getMappingsText, onMappingsText } from '../mappings';
@@ -103,8 +103,9 @@ function CameraPanel() {
   const stream = useTopic('cameraStream', null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [cameraOn, setCameraOn] = useState(() => !!bus.last('cameraStream'));
-  const [message, setMessage] = useState('');
+  // the button follows what the vision module says it is doing (the same source as the camera button in the app header)
+  const [cameraOn, setCameraOn] = useState(() => isModuleOn('vision'));
+  const [message, setMessage] = useState(() => getStatus('vision')?.message ?? '');
   const [aspect, setAspect] = useState(4 / 3);
 
   useEffect(() => {
@@ -180,7 +181,8 @@ function SignalMeters() {
       } else if (s.state === 'end') {
         next.held = false;
       } else {
-        next.held = true;
+        // only a holdable moment (a fist) stays "on" until its end; a clap or a spoken word never sends an end, so it just flashes
+        next.held = signalInfo(s.id)?.holdable === true;
         next.count += 1;
         flash(s.id);
       }
