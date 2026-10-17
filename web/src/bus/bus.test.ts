@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { bus, createBus, resetControls, sendCommand, type ControlState } from './index';
+import { bus, createBus, getStatus, isModuleOn, reportStatus, resetControls, sendCommand, type ControlState } from './index';
 import { nextControlValue } from './controls';
 import type { CommandEvent } from '@/contracts';
 
@@ -37,6 +37,21 @@ describe('bus', () => {
     b.on('n', (v) => seen.push(v));
     b.emit('n', 3);
     expect(seen).toEqual([3]);
+  });
+});
+
+describe('per-module status', () => {
+  it('remembers the latest status of each module separately', () => {
+    reportStatus('vision', 'running', 'Camera tracking is on');
+    reportStatus('audio-live', 'starting');
+    expect(getStatus('vision')?.message).toBe('Camera tracking is on');
+    expect(isModuleOn('vision')).toBe(true);
+    expect(isModuleOn('audio-live')).toBe(true);
+    reportStatus('vision', 'idle');
+    reportStatus('audio-live', 'error', 'blocked');
+    expect(isModuleOn('vision')).toBe(false);
+    expect(isModuleOn('audio-live')).toBe(false);
+    expect(isModuleOn('never-heard-of-it')).toBe(false);
   });
 });
 
