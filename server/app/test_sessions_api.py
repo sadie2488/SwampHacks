@@ -81,7 +81,7 @@ def test_the_song_list_includes_known_uploads_newest_first_and_the_demo_only_onc
     }
 
 
-def test_uploads_on_disk_that_were_never_recorded_are_found_and_remembered(client, memory, data_dir):
+def test_uploads_on_disk_that_were_never_recorded_are_found_and_remembered(client, memory, data_dir, fake_analysis):
     saved = store.save_upload("Hum One.wav", make_wav())
     (data_dir / "analyses" / "upload-deadbeef.json").write_text("{ not json", encoding="utf-8")
     (data_dir / "analyses" / "upload-zzzzzzzz.json").write_text("{}", encoding="utf-8")
@@ -115,7 +115,7 @@ def test_the_latency_offset_is_optional(client, memory):
     assert memory.get_session(session_id)["latency_offset_ms"] is None
 
 
-def test_a_run_can_use_an_upload_that_is_only_on_disk(client, memory, data_dir):
+def test_a_run_can_use_an_upload_that_is_only_on_disk(client, memory, data_dir, fake_analysis):
     saved = store.save_upload("my song.wav", make_wav())
     session_id = new_session(client, song_id=saved["song_id"])
     assert memory.get_session(session_id)["song_id"] == saved["song_id"]
@@ -542,7 +542,7 @@ def test_starting_a_run_against_a_database_saves_the_demo_song_first(monkeypatch
 
 # --- wiring ---------------------------------------------------------------------------------------------------------------
 
-def test_the_routes_are_part_of_the_server_and_the_upload_still_works(memory, data_dir):
+def test_the_routes_are_part_of_the_server_and_the_upload_still_works(memory, data_dir, fake_analysis):
     from .main import app
 
     client = TestClient(app)

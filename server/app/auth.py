@@ -21,10 +21,7 @@ import httpx
 import jwt
 from fastapi import Header, HTTPException
 
-from . import config
-
-# These two names are not in config.ENV_VAR_NAMES, so ask the same loader to pick them up from the env files.
-config.load_env_files(config.ENV_FILES, names=("AUTH_ENABLED", "AUTH0_AUDIENCE"))
+from . import config  # noqa: F401  (loads server/.env, which can set AUTH_ENABLED, AUTH0_DOMAIN and AUTH0_AUDIENCE)
 
 log = logging.getLogger("music.server.auth")
 

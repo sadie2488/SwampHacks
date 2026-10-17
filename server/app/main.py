@@ -1,6 +1,8 @@
 """Server entry point: health, public config, demo songs, upload, and song analysis."""
 import logging
 import re
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import PurePosixPath
 from typing import Annotated
 
@@ -9,13 +11,20 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import config, store
+from . import analyzer, config, db, repository, store
 from .feedback_api import router as feedback_router
 from .sessions_api import router as sessions_router
 
 log = logging.getLogger("music.server")
 
-app = FastAPI(title="SwampHacks Music")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    analyzer.start_warm_up()  # compiles the analysis code in the background; the server does not wait for it
+    yield
+
+
+app = FastAPI(title="SwampHacks Music", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
@@ -74,6 +83,15 @@ async def _read_limited(file: UploadFile) -> bytes:
     return bytes(data)
 
 
+async def _remember(analysis: dict) -> None:
+    """Save the song in the database when one is set up. `record_analysis` never raises; this is a second guard."""
+    try:
+        await run_in_threadpool(repository.record_analysis, analysis)
+    except Exception as exc:  # noqa: BLE001 - an upload must never fail because saving it did
+        # No traceback here: it could name private values. `describe_error` hides them.
+        log.warning("Could not remember the uploaded song: %s", db.describe_error(exc))
+
+
 @app.post("/api/songs")
 async def upload_song(file: Annotated[UploadFile | None, File()] = None) -> dict:
     if file is None:
@@ -86,7 +104,11 @@ async def upload_song(file: Annotated[UploadFile | None, File()] = None) -> dict
     if not data:
         raise HTTPException(400, "That file is empty. Choose a different audio file.")
     try:
-        return await run_in_threadpool(store.save_upload, file_name, data)
+        analysis = await run_in_threadpool(store.save_upload, file_name, data)
+    except analyzer.AnalysisFailed as err:
+        raise HTTPException(422, str(err)) from None
     except Exception:
         log.exception("Analysis failed for %s", file_name)
         raise HTTPException(500, "We could not analyze that song. Please try another file.") from None
+    await _remember(analysis)
+    return analysis
