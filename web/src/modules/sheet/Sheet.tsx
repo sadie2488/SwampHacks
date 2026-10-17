@@ -4,6 +4,7 @@ import type { OpenSheetMusicDisplay } from 'opensheetmusicdisplay';
 import { bus } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { buildScore, INSTRUMENT_CHOICES, type Score } from './notes-to-musicxml';
+import { emptySheetMessage } from './sheet-empty';
 
 type DrawState =
   | { status: 'empty' }
@@ -189,6 +190,8 @@ export function Sheet() {
   );
 
   const hasNotes = !!score && score.noteCount > 0;
+  // A song with no notes in any part gets the server's own explanation (or a plain default) instead of an empty sheet.
+  const songMessage = analysis ? emptySheetMessage(analysis) : undefined;
   return (
     <div className="sheet" data-testid="sheet">
       <div className="sheet-toolbar">
@@ -220,7 +223,11 @@ export function Sheet() {
       </div>
 
       {!analysis && <p className="muted" data-testid="sheet-empty">Load a song to see its sheet music.</p>}
-      {analysis && !hasNotes && <p className="muted" data-testid="sheet-empty">This part has no notes to show.</p>}
+      {analysis && !hasNotes && (
+        <p className="muted" data-testid="sheet-empty">
+          {songMessage ?? 'This part has no notes to show.'}
+        </p>
+      )}
       {draw.status === 'drawing' && <p className="muted" role="status">Drawing the sheet music...</p>}
       {draw.status === 'error' && (
         <p className="error" role="alert" data-testid="sheet-error">
