@@ -17,9 +17,12 @@ node scripts/dev.mjs
 ```
 Then open <http://localhost:5173/>. No camera or microphone handy? Use <http://localhost:5173/?fake=1> (made-up camera and microphone data). Keys go in `server/.env` (copy `.env.example`; never commit or share it).
 
+The first `uv sync` downloads the audio analysis libraries (a few hundred MB) and the first upload of a song takes a little longer while they warm up. Uploaded songs get a real tempo, key and (for a single instrument playing alone) real sheet music.
+
 ## Check that it works
 | What | Command |
 |---|---|
+| **Everything quick, all at once (about a minute)** | `node scripts/check.mjs` (add `--build`, or `--e2e` to also run the browser test) |
 | The whole app in a real Chrome (starts everything itself) | `node scripts/e2e.mjs` |
 | Website: types, unit tests, build | `cd web && npx tsc --noEmit && npx vitest run && npx vite build` |
 | Server | `cd server && uv run ruff check . && uv run pytest -q` |

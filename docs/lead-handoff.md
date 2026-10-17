@@ -22,7 +22,10 @@ Read this when starting or restarting the lead session. Everything the lead need
 - `node scripts/claim.mjs claim|release <person> <task>`: records a claim in `tasks.json`, `ownership.json` and `docs/team.md`
 - `node scripts/comms-send.mjs` / `comms-read.mjs`: messages on the `comms` branch (`--append`, `--wait`, `--changed`)
 - `node scripts/branch-scope.mjs <branch> <lane>...`: did a helper's branch stay inside its folders? Run before merging
-- `node scripts/e2e.mjs`: starts the server, website and relay and runs the browser test in real Chrome (made-up camera/mic data)
+- `node scripts/check.mjs [--build] [--e2e]`: runs every quick check at the same time (about a minute); the first thing to run before merging
+- `node scripts/dev.mjs`: starts the server, website and relay for people to try the app
+- `node scripts/vultr-budget.mjs --watch`: the Vultr budget watcher (see `docs/vultr.md`)
+- `node scripts/e2e.mjs`: starts the server, website and relay and runs the browser test in real Chrome (made-up camera/mic data). If someone already runs `dev.mjs`, run `node --test tests/e2e/skeleton.e2e.mjs` against their servers instead
 - `node scripts/hook-selftest.mjs`, `node --test "tests/**/*.test.mjs"`, `node scripts/validate-contracts.mjs`: the safety nets. Run all three before merging anything
 - `node scripts/make-fixtures.mjs`: rewrites the fake data in `fixtures/` (they must stay valid)
 - Email relay (needs Sadie's app password, see `docs/email-relay.md`): start `node scripts/relay/daemon.mjs` in the background; ask questions with `node scripts/ask-human.mjs`
