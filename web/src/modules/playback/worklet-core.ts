@@ -59,6 +59,7 @@ export function defineWorkletCore(createEngine: CreateEngine): CreateWorkletCore
     let sinceReport = 0;
     let reportNow = false;
     let broken = false;
+    let warmedUp = false;
 
     function report(frames: number): void {
       if (!engine) return;
@@ -67,11 +68,45 @@ export function defineWorkletCore(createEngine: CreateEngine): CreateWorkletCore
       host.post({ type: 'pos', epoch, sec: engine.positionSec, playing: engine.running, t: host.time() + frames / host.sampleRate });
     }
 
+    /**
+     * Play a second of made-up sound through the engine, speeding up and back to neutral, before the first real song.
+     * The first time the engine switches routes the script engine is still "cold" and the switch can take a few
+     * times longer than it ever will again, which a busy audio thread could turn into a hiccup. This is cheap (about
+     * 10 ms, once, while nothing is playing) and takes that first-time cost out of the song.
+     */
+    function warmUp(): void {
+      const rate = host.sampleRate;
+      const made = new Float32Array(rate);
+      let seed = 1;
+      for (let i = 0; i < made.length; i++) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        made[i] = 0.3 * ((seed / 0xffffffff) * 2 - 1);
+      }
+      const engine = createEngine({ sampleRate: rate, channels: [made] }, rate);
+      const l = new Float32Array(128);
+      const r = new Float32Array(128);
+      engine.seek(0);
+      engine.play();
+      for (let b = 0; b < 30; b++) engine.render(l, r, 128);
+      engine.setTempo(1.25);
+      for (let b = 0; b < 40; b++) engine.render(l, r, 128);
+      engine.setTempo(1);
+      for (let b = 0; b < 160; b++) engine.render(l, r, 128);
+    }
+
     function handle(message: ToWorklet): void {
       if (broken) return;
       try {
         switch (message.type) {
           case 'load': {
+            if (!warmedUp) {
+              warmedUp = true;
+              try {
+                warmUp();
+              } catch {
+                // only a speed-up; the real song does not depend on it
+              }
+            }
             epoch = message.epoch;
             const channels = message.right ? [message.left, message.right] : [message.left];
             engine = createEngine({ sampleRate: message.sampleRate, channels }, host.sampleRate);

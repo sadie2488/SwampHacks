@@ -26,7 +26,7 @@ export interface OutputOptions {
 /** Which backend is active, for the on-screen status and the browser checks. 'starting' = the worklet is still loading. */
 export type SoundPath = 'none' | 'starting' | 'worklet' | 'script';
 
-const WATCHDOG_MS = 2000;
+const WATCHDOG_MS = 2500;
 
 /** Loading a processor name twice in one AudioContext is an error, so remember the load per context (as audio-live/capture.ts does). */
 const loaded = new WeakMap<BaseAudioContext, Promise<void>>();
@@ -198,6 +198,7 @@ export class WebAudioOutput implements AudioOutput {
     if (!this.gain) return;
     this.backend = new ScriptBackend(ctx, this.gain, this.snapshot(), this.events());
     this.path = 'script';
+    console.info('[playback] sound path: script node');
     this.applyVolume();
   }
 
@@ -206,8 +207,8 @@ export class WebAudioOutput implements AudioOutput {
     node.connect(this.gain);
     this.backend = new WorkletBackend(node, ctx, this.snapshot(), this.events(), { watchdogMs: this.options.watchdogMs ?? WATCHDOG_MS });
     this.path = 'worklet';
+    console.info('[playback] sound path: audio worklet');
     this.applyVolume();
-    if (ctx.state === 'running') this.backend.contextRunning();
   }
 
   /** Give up on the worklet: carry on from the same song, place and settings with the script node. */

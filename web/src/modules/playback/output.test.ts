@@ -107,6 +107,11 @@ function pumpScript(ctx: FakeContext, blocks: number): Float32Array {
 }
 
 const flush = () => vi.advanceTimersByTimeAsync(0);
+/** Time passes on the page AND on the audio clock (the device keeps running while the worklet says nothing). */
+const tick = async (ms: number) => {
+  ctx.currentTime += ms / 1000;
+  await vi.advanceTimersByTimeAsync(ms);
+};
 const tone = () => ({ sampleRate: SR, channels: [sine(440, 20, SR)] });
 
 let ctx: FakeContext;
@@ -325,25 +330,25 @@ describe('falling back to the script node', () => {
     out.play();
     await flush();
     expect(out.soundPath).toBe('worklet');
-    await vi.advanceTimersByTimeAsync(900);
+    await tick(900);
     expect(out.soundPath).toBe('worklet');
-    await vi.advanceTimersByTimeAsync(200);
+    await tick(200);
     expect(out.soundPath).toBe('script');
     expect(w.node.disconnect).toHaveBeenCalled();
     const a = pumpScript(ctx, 3);
     expect(rms(a, BLOCK, a.length)).toBeGreaterThan(0.25);
   });
 
-  it('but not while the audio device is still asleep (waiting for the first click): the clock starts when it wakes', async () => {
+  it('but not while the audio device is asleep or stuck (its clock is not moving): so the worklet is not at fault', async () => {
     ctx.state = 'suspended';
     const w = inProcessWorklet(ctx, { deaf: true });
     const out = makeOutput(async () => w.node, 1000);
     out.load(tone());
     await flush();
-    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersByTimeAsync(5000); // the audio clock stays at 0
     expect(out.soundPath).toBe('worklet');
-    await out.wake();
-    await vi.advanceTimersByTimeAsync(1100);
+    await out.wake(); // the first click: the device starts and its clock runs, and the worklet still says nothing
+    await tick(1100);
     expect(out.soundPath).toBe('script');
   });
 
@@ -387,8 +392,8 @@ describe('falling back to the script node', () => {
     out.play();
     w.pump(1);
     expect(out.soundPath).toBe('worklet');
-    // no more pumping: the worklet stops reporting while the clock of the page goes on
-    await vi.advanceTimersByTimeAsync(2000);
+    // no more pumping: the worklet stops reporting while the audio clock goes on
+    await tick(2000);
     expect(out.soundPath).toBe('script');
   });
 
@@ -400,6 +405,7 @@ describe('falling back to the script node', () => {
     out.play();
     w.pump(1);
     vi.setSystemTime(Date.now() + 10_000); // the page was frozen for 10 seconds: timers fire late, messages are still queued
+    ctx.currentTime += 10;
     await vi.advanceTimersByTimeAsync(600);
     expect(out.soundPath).toBe('worklet');
   });

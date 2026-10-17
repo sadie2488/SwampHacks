@@ -38,6 +38,8 @@ export class WorkletBackend implements Backend {
   private alive = false;
   private disposed = false;
   private lastHeard = Date.now();
+  /** The audio clock when we last heard from the worklet: if the clock moved on and the worklet said nothing, it is not working. */
+  private clockAtHeard = 0;
   private lastTick = Date.now();
   private startTimer: ReturnType<typeof setTimeout> | undefined;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
@@ -52,6 +54,8 @@ export class WorkletBackend implements Backend {
     this.tempo = snapshot.tempo;
     node.port.onmessage = (e) => this.onMessage(e.data as FromWorklet);
     node.onprocessorerror = (e) => this.problem('The audio worklet crashed', e);
+    this.heard();
+    this.armStartTimer();
     this.send({ type: 'tempo', value: snapshot.tempo });
     this.send({ type: 'pitch', value: snapshot.pitch });
     this.send({ type: 'volume', value: snapshot.volume });
@@ -107,13 +111,12 @@ export class WorkletBackend implements Backend {
     this.send({ type: 'volume', value: v });
   }
 
+  /** The audio device just woke up: time spent asleep does not count against the worklet. */
   contextRunning(): void {
-    if (this.alive || this.startTimer !== undefined || this.disposed) return;
-    this.lastHeard = Date.now();
-    this.startTimer = setTimeout(() => {
-      this.startTimer = undefined;
-      if (!this.alive) this.problem('The audio worklet did not answer');
-    }, this.options.watchdogMs);
+    if (this.alive || this.disposed) return;
+    this.heard();
+    clearTimeout(this.startTimer);
+    this.armStartTimer();
   }
 
   dispose(): void {
@@ -137,9 +140,28 @@ export class WorkletBackend implements Backend {
     this.node.port.postMessage(message, transfer);
   }
 
+  /** The worklet is silent for the watchdog time while the audio clock kept moving. (A stopped clock means the device is stuck, not the worklet.) */
+  private silent(): boolean {
+    return Date.now() - this.lastHeard >= this.options.watchdogMs && this.ctx.currentTime - this.clockAtHeard >= (this.options.watchdogMs / 1000) * 0.5;
+  }
+
+  private heard(): void {
+    this.lastHeard = Date.now();
+    this.clockAtHeard = this.ctx.currentTime;
+  }
+
+  private armStartTimer(): void {
+    this.startTimer = setTimeout(() => {
+      this.startTimer = undefined;
+      if (this.alive || this.disposed) return;
+      if (this.silent()) this.problem('The audio worklet did not answer');
+      else this.armStartTimer();
+    }, this.options.watchdogMs);
+  }
+
   private onMessage(m: FromWorklet): void {
     if (this.disposed) return;
-    this.lastHeard = Date.now();
+    this.heard();
     switch (m.type) {
       case 'ready':
         this.alive = true;
@@ -168,7 +190,7 @@ export class WorkletBackend implements Backend {
   /** While playing, the worklet must keep reporting; if it goes quiet for too long (and the device is running) it is not working. */
   private startPolling(): void {
     if (this.pollTimer !== undefined) return;
-    this.lastHeard = Date.now();
+    this.heard();
     this.lastTick = Date.now();
     this.pollTimer = setInterval(() => {
       const now = Date.now();
@@ -176,10 +198,10 @@ export class WorkletBackend implements Backend {
       const stalled = now - this.lastTick > POLL_MS * 3;
       this.lastTick = now;
       if (stalled) {
-        this.lastHeard = now;
+        this.heard();
         return;
       }
-      if (this.alive && this.ctx.state === 'running' && now - this.lastHeard > this.options.watchdogMs) this.problem('The audio worklet stopped answering');
+      if (this.alive && this.silent()) this.problem('The audio worklet stopped answering');
     }, POLL_MS);
   }
 

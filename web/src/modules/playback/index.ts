@@ -3,9 +3,12 @@
 // mode (switching to Create pauses the song, so it does not play over a hum being recorded).
 // Publishes: transport (immediately on any change, and about 15 times a second while playing), status.
 //
-//   index.ts       wires the bus to the controller            controller.ts   the transport logic (no Web Audio)
-//   output.ts      Web Audio: script node + gain              stretch-engine.ts  the sound engine (pure, tested in Node)
-//   render-notes.ts  demo song from note events               beats.ts        beat phase
+//   index.ts            wires the bus to the controller       controller.ts      the transport logic (no Web Audio)
+//   output.ts           Web Audio: sound path and volume      stretch-engine.ts  the sound engine (pure, tested in Node)
+//   worklet-backend.ts  engine in an AudioWorklet (preferred) engine-core.ts     the engine's code (also copied into the worklet)
+//   script-backend.ts   engine in a script node (fallback)    worklet-source.ts  the worklet script, built as text
+//   render-notes.ts     demo song from note events            beats.ts           beat phase
+// If the worklet cannot be used, output.ts quietly switches to the script node and carries on from the same place.
 import { bus, reportStatus, type Stop } from '@/bus';
 import type { Mode } from '@/contracts';
 import { PlaybackController } from './controller';
