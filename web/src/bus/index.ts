@@ -173,3 +173,6 @@ export function reportStatus(module: string, state: ModuleStatus['state'], messa
 
 /** True when the page was opened with ?fake=1: modules replay fixtures instead of using the camera or mic. */
 export const isFakeMode = (): boolean => typeof location !== 'undefined' && new URLSearchParams(location.search).has('fake');
+
+// Handy for the browser console and the lead's browser tests, e.g. window.__music.bus.last('transport')
+if (typeof window !== 'undefined') (window as unknown as { __music?: unknown }).__music = { bus, sendCommand, sendSignal };
