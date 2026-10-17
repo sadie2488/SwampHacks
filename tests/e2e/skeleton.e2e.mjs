@@ -187,8 +187,8 @@ test('a typo in the mapping file gives a friendly message and the other rules ke
     assert.match((await $('lab-issues').textContent()) ?? '', /clapp/);
     const before = (await topic('transport')).playing;
     await sleep(700);
-    await $('fake-audio.clap').click();
-    await until('the good clap rule still works', async () => (await topic('transport')).playing === !before);
+    await $('fake-audio.clap.double').click();
+    await until('the good clap rule still works',async () => (await topic('transport')).playing === !before);
   } finally {
     writeFileSync(MAPPINGS, original);
   }
