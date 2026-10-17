@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { bus, sendCommand, type ControlState } from '@/bus';
-import { afterAudioWakes, useBusValue } from './hooks';
+import { afterAudioWakes, useBusValue, useModuleStatus } from './hooks';
 
 const mmss = (sec: number) => {
   const s = Math.max(0, Math.floor(Number.isFinite(sec) ? sec : 0));
@@ -15,6 +15,7 @@ export function Transport() {
   // Only the text is kept in state, so the page does not redraw 60 times a second while playing.
   const [stateText, setStateText] = useState('no song');
   const [positionText, setPositionText] = useState('00:00 / 00:00');
+  const playback = useModuleStatus('playback');
 
   useEffect(
     () =>
@@ -42,6 +43,11 @@ export function Transport() {
       <p>
         Now: <strong data-testid="transport-state">{stateText}</strong>, at <span data-testid="transport-position">{positionText}</span>
       </p>
+      {playback?.message && (
+        <p data-testid="status-playback" data-state={playback.state} role={playback.state === 'error' ? 'alert' : 'status'}>
+          {playback.state === 'error' ? `Problem: ${playback.message}` : playback.message}
+        </p>
+      )}
       <div className="row">
         <button type="button" data-testid="btn-play" onClick={press('playback.play', { how: 'trigger' })}>
           Play
