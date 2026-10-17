@@ -14,6 +14,7 @@
     { "id": "create.beat", "kind": "toggle", "modes": ["create"], "default": false, "description": "Beat on or off." },
     { "id": "create.loop.record", "kind": "toggle", "modes": ["create"], "default": false, "description": "Start recording a loop; toggle again to stop." },
     { "id": "create.loop.stop", "kind": "trigger", "modes": ["create"], "description": "Stop recording or playing the current loop." },
+    { "id": "create.loop.play", "kind": "trigger", "modes": ["create"], "description": "Play the recorded loop (all layers together)." },
     { "id": "create.layer.volume", "kind": "value", "modes": ["create"], "range": [0, 1], "default": 0.8, "step": 0.1, "description": "Volume of the current layer." },
     { "id": "create.effects", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["none", "reverb", "delay", "filter"], "default": "none", "description": "Effect on the current layer." },
     { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." }
