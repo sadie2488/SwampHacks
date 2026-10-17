@@ -13,6 +13,7 @@ import { start as startVision } from '@/modules/vision';
 import { AnalysisSummary } from './AnalysisSummary';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
+import { LoginButton } from './LoginButton';
 import { PanelBoundary } from './PanelBoundary';
 import { Practice } from './Practice';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
@@ -101,6 +102,7 @@ export function App() {
             </button>
           ))}
         </div>
+        <LoginButton />
       </header>
 
       <main>

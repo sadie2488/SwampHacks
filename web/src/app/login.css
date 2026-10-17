@@ -1,0 +1,13 @@
+/* Plain on purpose: a designer restyles this later. */
+.login-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.login-problem {
+  color: var(--error, #b3261e);
+}
