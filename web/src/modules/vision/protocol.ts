@@ -34,4 +34,5 @@ export type FromWorker =
       timing?: { hand: number; face: number };
     };
 
-export const MODEL_DOWNLOAD_MESSAGE = "Couldn't download the tracking model. Check your internet; you can still test with ?fake=1";
+/** The reasons the worker sends in its "error" messages are short phrases: index.ts wraps them in a full sentence for the person. */
+export const MODEL_DOWNLOAD_MESSAGE = 'the tracking model could not be downloaded';
