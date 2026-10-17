@@ -11,6 +11,11 @@ export interface Layer {
   kind: 'hum' | 'beat';
   instrument: InstrumentId;
   volume: number;
+  pitchSemitones?: number;
+  handPitchEnabled?: boolean;
+  pitchConfirmed?: boolean;
+  instrumentVoiceEnabled?: boolean;
+  loopBeats?: number;
   effects: EffectId;
   muted: boolean;
   notes: Note[];
@@ -39,11 +44,16 @@ export type Action =
   | { type: 'selectLayer'; id: string }
   | { type: 'setInstrument'; value: InstrumentId }
   | { type: 'setVolume'; value: number }
+  | { type: 'setPitch'; id: string; value: number }
+  | { type: 'setHandPitchEnabled'; id: string; enabled: boolean }
+  | { type: 'confirmPitch'; id: string }
+  | { type: 'setInstrumentVoiceEnabled'; id: string; enabled: boolean }
+  | { type: 'advanceLayer' }
   | { type: 'setEffects'; value: EffectId }
   | { type: 'setMuted'; id: string; muted: boolean }
   | { type: 'recordStart' }
   | { type: 'recordGo' }
-  | { type: 'recordEnd'; notes: Note[]; message?: string }
+  | { type: 'recordEnd'; notes: Note[]; loopBeats?: number; message?: string }
   | { type: 'recordCancel' }
   | { type: 'play' }
   | { type: 'stop' }
@@ -83,7 +93,7 @@ function withLayer(s: CreateState, id: string, change: (l: Layer) => Layer): Cre
 
 function newLayer(s: CreateState): CreateState {
   const n = s.counter + 1;
-  const layer: Layer = { id: `layer-${n}`, name: `Layer ${n}`, kind: 'hum', instrument: s.newLayerInstrument, volume: DEFAULT_LAYER_VOLUME, effects: DEFAULT_EFFECT, muted: false, notes: [] };
+  const layer: Layer = { id: `layer-${n}`, name: `Layer ${n}`, kind: 'hum', instrument: s.newLayerInstrument, volume: DEFAULT_LAYER_VOLUME, pitchSemitones: 0, handPitchEnabled: false, pitchConfirmed: false, instrumentVoiceEnabled: currentLayer(s)?.instrumentVoiceEnabled ?? false, effects: DEFAULT_EFFECT, muted: false, notes: [] };
   // keep the beat layer last in the list so the numbered hum layers stay in the order they were added
   const beatAt = s.layers.findIndex((l) => l.kind === 'beat');
   const layers = beatAt === -1 ? [...s.layers, layer] : [...s.layers.slice(0, beatAt), layer, ...s.layers.slice(beatAt)];
@@ -110,6 +120,36 @@ export function reduce(s: CreateState, a: Action): CreateState {
       return cur ? withLayer(s, cur.id, (l) => ({ ...l, volume: clamp01(a.value) })) : s;
     }
 
+    case 'setPitch':
+      return withLayer(s, a.id, (l) => (l.handPitchEnabled ? { ...l, pitchSemitones: Math.min(6, Math.max(-6, a.value)), pitchConfirmed: false } : l));
+
+    case 'setHandPitchEnabled':
+      return withLayer(s, a.id, (l) => ({ ...l, handPitchEnabled: a.enabled, pitchSemitones: a.enabled ? (l.pitchSemitones ?? 0) : 0, pitchConfirmed: a.enabled ? (l.pitchConfirmed ?? false) : false }));
+
+    case 'confirmPitch':
+      return withLayer(s, a.id, (l) => (l.kind === 'hum' && l.notes.length > 0 ? {
+        ...l,
+        notes: l.notes.map((note) => ({ ...note, pitch: Math.max(0, Math.min(127, note.pitch + (l.pitchSemitones ?? 0))) })),
+        pitchSemitones: 0,
+        handPitchEnabled: false,
+        pitchConfirmed: true,
+      } : l));
+
+    case 'setInstrumentVoiceEnabled':
+      return withLayer(s, a.id, (l) => (l.kind === 'hum' ? { ...l, instrumentVoiceEnabled: a.enabled } : l));
+
+    case 'advanceLayer': {
+      const cur = currentLayer(s);
+      const instrumentVoiceEnabled = cur?.instrumentVoiceEnabled ?? false;
+      const layers = cur?.kind === 'hum' && cur.pitchConfirmed !== true
+        ? s.layers.map((l) => l.id === cur.id ? { ...l, pitchSemitones: 0, handPitchEnabled: false, pitchConfirmed: false } : l)
+        : s.layers;
+      const next = newLayer({ ...s, layers });
+      return next.currentId && instrumentVoiceEnabled
+        ? withLayer(next, next.currentId, (l) => ({ ...l, instrumentVoiceEnabled: true }))
+        : next;
+    }
+
     case 'setEffects': {
       const cur = currentLayer(s);
       return cur ? withLayer(s, cur.id, (l) => ({ ...l, effects: a.value })) : s;
@@ -132,7 +172,7 @@ export function reduce(s: CreateState, a: Action): CreateState {
     case 'recordEnd': {
       if (!isRecording(s) || !s.recordingId) return s;
       // A take with no notes leaves the layer as it was
-      const next = a.notes.length > 0 ? withLayer(s, s.recordingId, (l) => ({ ...l, notes: a.notes })) : s;
+      const next = a.notes.length > 0 ? withLayer(s, s.recordingId, (l) => ({ ...l, notes: a.notes, loopBeats: a.loopBeats ?? l.loopBeats, pitchSemitones: 0, handPitchEnabled: true, pitchConfirmed: false, instrumentVoiceEnabled: true })) : s;
       // the loop carries on with the new notes, unless there is still nothing to hear
       return { ...next, phase: hasAnyNotes(next) ? 'playing' : 'idle', recordingId: null, message: a.message ?? '' };
     }
@@ -150,7 +190,7 @@ export function reduce(s: CreateState, a: Action): CreateState {
       if (hasBeat(s)) return s;
       return {
         ...s,
-        layers: [...s.layers, { id: BEAT_ID, name: 'Beat', kind: 'beat', instrument: 'drums', volume: DEFAULT_LAYER_VOLUME, effects: DEFAULT_EFFECT, muted: false, notes: buildBeatNotes(s.bpm, s.bars) }],
+        layers: [...s.layers, { id: BEAT_ID, name: 'Beat', kind: 'beat', instrument: 'drums', volume: DEFAULT_LAYER_VOLUME, pitchSemitones: 0, handPitchEnabled: false, pitchConfirmed: false, instrumentVoiceEnabled: false, effects: DEFAULT_EFFECT, muted: false, notes: buildBeatNotes(s.bpm, s.bars) }],
       };
 
     case 'loadTrack': {

@@ -15,6 +15,7 @@
     { "id": "vision.hand.left.raised", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand goes up above the head." },
     { "id": "vision.hand.right.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Right thumb and index finger pinch together." },
     { "id": "vision.hand.left.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Left thumb and index finger pinch together." },
+    { "id": "vision.hand.left.thumbs_up", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand gives a thumbs-up." },
     { "id": "vision.head.nod", "kind": "moment", "source": "vision", "description": "Head nods once." },
     { "id": "vision.hand.right.drum_hit", "kind": "moment", "source": "vision", "description": "Right hand makes a quick downward hit, like hitting a drum (wrist speed)." },
     { "id": "vision.hand.left.drum_hit", "kind": "moment", "source": "vision", "description": "Left hand makes a quick downward hit, like hitting a drum (wrist speed)." },
@@ -28,6 +29,18 @@
     { "id": "audio.keyword.slower", "kind": "moment", "source": "audio", "description": "The word \"slower\" is spoken (only listens while armed)." },
     { "id": "audio.keyword.faster", "kind": "moment", "source": "audio", "description": "The word \"faster\" is spoken (only listens while armed)." },
     { "id": "audio.keyword.higher", "kind": "moment", "source": "audio", "description": "The word \"higher\" is spoken (only listens while armed)." },
-    { "id": "audio.keyword.lower", "kind": "moment", "source": "audio", "description": "The word \"lower\" is spoken (only listens while armed)." }
+    { "id": "audio.keyword.lower", "kind": "moment", "source": "audio", "description": "The word \"lower\" is spoken (only listens while armed)." },
+    { "id": "audio.keyword.start", "kind": "moment", "source": "audio", "description": "The word \"start\" is spoken in Create mode." },
+    { "id": "audio.keyword.next", "kind": "moment", "source": "audio", "description": "The word \"next\" is spoken." },
+    { "id": "audio.keyword.piano", "kind": "moment", "source": "audio", "description": "The word \"piano\" is spoken." },
+    { "id": "audio.keyword.synth", "kind": "moment", "source": "audio", "description": "The word \"synth\" is spoken." },
+    { "id": "audio.keyword.bass", "kind": "moment", "source": "audio", "description": "The word \"bass\" is spoken." },
+    { "id": "audio.keyword.pluck", "kind": "moment", "source": "audio", "description": "The word \"pluck\" is spoken." },
+    { "id": "audio.keyword.drums", "kind": "moment", "source": "audio", "description": "The word \"drums\" is spoken." },
+    { "id": "audio.keyword.none", "kind": "moment", "source": "audio", "description": "The word \"none\" is spoken." },
+    { "id": "audio.keyword.reverb", "kind": "moment", "source": "audio", "description": "The word \"reverb\" is spoken." },
+    { "id": "audio.keyword.delay", "kind": "moment", "source": "audio", "description": "The word \"delay\" is spoken." },
+    { "id": "audio.keyword.filter", "kind": "moment", "source": "audio", "description": "The word \"filter\" is spoken." },
+    { "id": "audio.keyword.beat", "kind": "moment", "source": "audio", "description": "The word \"beat\" is spoken in Create mode." }
   ]
 }

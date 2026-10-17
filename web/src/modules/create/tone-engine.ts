@@ -32,12 +32,13 @@ interface Voice {
   id: string;
   instrumentId: InstrumentId;
   instrument: InstrumentVoice;
+  pitchShift: Tone.PitchShift;
   effectId: EffectId;
   effect: Tone.ToneAudioNode | null;
   gain: Tone.Gain;
   part: Tone.Part<PartEvent> | null;
   /** What the part was built from, to know when it has to be rebuilt. */
-  builtFrom: { notes: readonly Note[]; bars: number; bpm: number } | null;
+  builtFrom: { notes: readonly Note[]; loopBeats: number; bpm: number } | null;
 }
 
 export function createToneEngine(): LoopEngine {
@@ -80,34 +81,33 @@ class ToneLoopEngine implements LoopEngine {
     // If the browser still has the audio paused this needs a click; it will not throw, the clock just waits
     void resumeAudio().catch(() => {});
     const transport = Tone.getTransport();
-    transport.stop();
+    const wasRunning = transport.state === 'started';
+    if (!wasRunning) {
+      transport.stop();
+      this.silenceAll();
+    }
     this.clearMarks();
-    this.silenceAll();
     this.apply();
+
+    const positionBar = Number(String(transport.position).split(':')[0]) || 0;
+    const countInBar = wasRunning ? Math.floor(positionBar) + 1 : 0;
 
     if (opts.countIn) {
       for (let beat = 0; beat < BEATS_PER_BAR; beat++) {
-        this.markIds.push(transport.schedule((time) => this.clickAt(time, beat === 0), `0:${beat}:0`));
+        this.markIds.push(transport.schedule((time) => this.clickAt(time, beat === 0), `${countInBar}:${beat}:0`));
       }
     }
     if (hooks) {
-      // The hooks change the layers, which touches Tone; do that after the transport callback, not inside it
+      // The hook changes layer state, which touches Tone; do it after the transport callback.
       const later = (fn: () => void) => void setTimeout(fn, 0);
-      const loopEndTicks = Math.round((1 + this.want.bars) * BEATS_PER_BAR * transport.PPQ);
       this.markIds.push(
         transport.scheduleOnce((time) => {
           const at = this.heardAtMs(time);
           later(() => hooks.onGo(at));
-        }, '1m'),
-      );
-      this.markIds.push(
-        transport.scheduleOnce((time) => {
-          const at = this.heardAtMs(time);
-          later(() => hooks.onPassEnd(at));
-        }, `${loopEndTicks - 1}i`),
+        }, `${countInBar + (opts.countIn ? 1 : 0)}:0:0`),
       );
     }
-    transport.start('+0.05', opts.countIn ? 0 : '1m');
+    if (!wasRunning) transport.start('+0.05', opts.countIn ? '0:0:0' : '1m');
   }
 
   stopLoop(): void {
@@ -161,9 +161,7 @@ class ToneLoopEngine implements LoopEngine {
     const transport = Tone.getTransport();
     if (Math.abs(transport.bpm.value - bpm) > 1e-6) transport.bpm.value = bpm;
     transport.timeSignature = BEATS_PER_BAR;
-    transport.loop = true;
-    transport.loopStart = '1m';
-    transport.loopEnd = `${1 + bars}m`;
+    transport.loop = false;
 
     const seen = new Set<string>();
     for (const layer of layers) {
@@ -185,9 +183,11 @@ class ToneLoopEngine implements LoopEngine {
         v.effectId = layer.effects;
         this.wire(v);
       }
+      v.pitchShift.pitch = layer.pitchSemitones ?? 0;
       v.gain.gain.rampTo(layer.muted ? 0 : layer.volume, 0.03);
+      const loopBeats = layer.loopBeats ?? bars * BEATS_PER_BAR;
       const b = v.builtFrom;
-      if (!b || b.notes !== layer.notes || b.bars !== bars || b.bpm !== bpm) this.buildPart(v, layer.notes, bars, bpm);
+      if (!b || b.notes !== layer.notes || b.loopBeats !== loopBeats || b.bpm !== bpm) this.buildPart(v, layer.notes, loopBeats, bpm);
     }
     for (const [id, v] of this.voices) {
       if (seen.has(id)) continue;
@@ -201,6 +201,7 @@ class ToneLoopEngine implements LoopEngine {
       id: layer.id,
       instrumentId: layer.instrument,
       instrument: createInstrument(layer.instrument),
+      pitchShift: new Tone.PitchShift({ pitch: layer.pitchSemitones ?? 0, windowSize: 0.05, wet: 1 }),
       effectId: layer.effects,
       effect: createEffect(layer.effects),
       gain: new Tone.Gain(layer.muted ? 0 : layer.volume).connect(this.master),
@@ -211,39 +212,49 @@ class ToneLoopEngine implements LoopEngine {
     return v;
   }
 
-  /** instrument -> (effect) -> volume -> master */
+  /** instrument -> pitch shift -> (effect) -> volume -> master */
   private wire(v: Voice) {
     v.instrument.node.disconnect();
+    v.pitchShift.disconnect();
     v.effect?.disconnect();
+    v.instrument.node.connect(v.pitchShift);
     if (v.effect) {
-      v.instrument.node.connect(v.effect);
+      v.pitchShift.connect(v.effect);
       v.effect.connect(v.gain);
     } else {
-      v.instrument.node.connect(v.gain);
+      v.pitchShift.connect(v.gain);
     }
   }
 
-  private buildPart(v: Voice, notes: readonly Note[], bars: number, bpm: number) {
+  private buildPart(v: Voice, notes: readonly Note[], loopBeats: number, bpm: number) {
     v.part?.dispose();
     v.part = null;
-    v.builtFrom = { notes, bars, bpm };
-    const ppq = Tone.getTransport().PPQ;
+    v.builtFrom = { notes, loopBeats, bpm };
+    const transport = Tone.getTransport();
+    const ppq = transport.PPQ;
     const events: PartEvent[] = [];
     for (const n of notes) {
       const onsetBeat = n.onset_beat ?? (n.onset_sec * bpm) / 60;
-      if (onsetBeat < 0 || onsetBeat >= bars * BEATS_PER_BAR) continue;
+      if (onsetBeat < 0 || onsetBeat >= loopBeats) continue;
       events.push({ time: `${Math.round(onsetBeat * ppq)}i`, pitch: n.pitch, beats: n.duration_beat ?? (n.duration_sec * bpm) / 60, velocity: n.velocity ?? 0.8 });
     }
     if (events.length === 0) return;
-    v.part = new Tone.Part<PartEvent>((time, ev) => {
+    const positionBar = Number(String(transport.position).split(':')[0]) || 0;
+    const startBar = transport.state === 'started' ? Math.floor(positionBar) + 1 : 1;
+    const part = new Tone.Part<PartEvent>((time, ev) => {
       const secPerBeat = 60 / Tone.getTransport().bpm.value;
       v.instrument.play(ev.pitch, ev.beats * secPerBeat, time, ev.velocity);
-    }, events).start('1m');
+    }, events);
+    part.loop = true;
+    part.loopStart = 0;
+    part.loopEnd = `${Math.round(loopBeats * ppq)}i`;
+    v.part = part.start(`${startBar}:0:0`);
   }
 
   private disposeVoice(v: Voice) {
     v.part?.dispose();
     v.instrument.dispose();
+    v.pitchShift.dispose();
     v.effect?.dispose();
     v.gain.dispose();
   }

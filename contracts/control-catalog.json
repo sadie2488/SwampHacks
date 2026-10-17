@@ -15,7 +15,11 @@
     { "id": "create.loop.record", "kind": "toggle", "modes": ["create"], "default": false, "description": "Start recording a loop; toggle again to stop." },
     { "id": "create.loop.stop", "kind": "trigger", "modes": ["create"], "description": "Stop recording or playing the current loop." },
     { "id": "create.loop.play", "kind": "trigger", "modes": ["create"], "description": "Play the recorded loop (all layers together)." },
+    { "id": "create.layer.confirm_pitch", "kind": "trigger", "modes": ["create"], "description": "Keep the current pitch edit for the current layer." },
+    { "id": "create.layer.next", "kind": "trigger", "modes": ["create"], "description": "Keep or discard the current pitch edit and record the next layer." },
     { "id": "create.layer.volume", "kind": "value", "modes": ["create"], "range": [0, 1], "default": 0.8, "step": 0.1, "description": "Volume of the current layer." },
+    { "id": "create.layer.pitch", "kind": "value", "modes": ["create"], "range": [-6, 6], "default": 0, "step": 0.1, "unit": "semitones", "description": "Pitch shift of the current layer." },
+    { "id": "create.instrument.voice", "kind": "toggle", "modes": ["create"], "default": false, "description": "Enable spoken instrument and effect selection for the current layer." },
     { "id": "create.effects", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["none", "reverb", "delay", "filter"], "default": "none", "description": "Effect on the current layer." },
     { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." }
   ]

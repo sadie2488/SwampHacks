@@ -104,16 +104,132 @@
 
 # --- Create mode -------------------------------------------------------------------------------------------------
 
-- name: snap adds a layer
+- name: right hand height pitches the enabled layer
   mode: create
-  when: audio.snap
-  do: create.layer.add
-  how: trigger
-  cooldown_ms: 500
+  when: vision.hand.right.height
+  do: create.layer.pitch
+  how: follow
+  range: [-6, 6]
+  smoothing: 0.4
+  min_confidence: 0.6
 
-- name: drum hit toggles the beat
+- name: start begins recording a layer
   mode: create
-  when: vision.hand.right.drum_hit
+  when: audio.keyword.start
+  do: create.loop.record
+  how: trigger
+  value: true
+
+- name: raised left fist ends the current take
+  mode: create
+  when: vision.hand.left.raised
+  only_while: vision.hand.left.fist
+  do: create.loop.record
+  how: trigger
+  value: false
+
+- name: fist closes while raised ends the current take
+  mode: create
+  when: vision.hand.left.fist
+  only_while: vision.hand.left.raised
+  do: create.loop.record
+  how: trigger
+  value: false
+
+- name: right hand position controls layer volume
+  mode: create
+  when: vision.hand.right.x
+  do: create.layer.volume
+  how: follow
+  range: [0, 1]
+  smoothing: 0.35
+  min_confidence: 0.6
+
+- name: left thumbs-up keeps the current pitch
+  mode: create
+  when: vision.hand.left.thumbs_up
+  do: create.layer.confirm_pitch
+  how: trigger
+
+- name: say next to record another layer
+  mode: create
+  when: audio.keyword.next
+  do: create.layer.next
+  how: trigger
+
+- name: say piano for this layer
+  mode: create
+  when: audio.keyword.piano
+  do: create.instrument
+  how: trigger
+  value: piano
+
+- name: say synth for this layer
+  mode: create
+  when: audio.keyword.synth
+  do: create.instrument
+  how: trigger
+  value: synth
+
+- name: say bass for this layer
+  mode: create
+  when: audio.keyword.bass
+  do: create.instrument
+  how: trigger
+  value: bass
+
+- name: say pluck for this layer
+  mode: create
+  when: audio.keyword.pluck
+  do: create.instrument
+  how: trigger
+  value: pluck
+
+- name: say drums for this layer
+  mode: create
+  when: audio.keyword.drums
+  do: create.instrument
+  how: trigger
+  value: drums
+
+- name: say none for this layer
+  mode: create
+  when: audio.keyword.none
+  do: create.effects
+  how: trigger
+  value: none
+
+- name: say reverb for this layer
+  mode: create
+  when: audio.keyword.reverb
+  do: create.effects
+  how: trigger
+  value: reverb
+
+- name: say delay for this layer
+  mode: create
+  when: audio.keyword.delay
+  do: create.effects
+  how: trigger
+  value: delay
+
+- name: say filter for this layer
+  mode: create
+  when: audio.keyword.filter
+  do: create.effects
+  how: trigger
+  value: filter
+
+- name: say beat to turn on the beat
+  mode: create
+  when: audio.keyword.beat
   do: create.beat
-  how: toggle
-  cooldown_ms: 400
+  how: trigger
+  value: true
+
+- name: right fist finishes the composition
+  mode: create
+  when: vision.hand.right.fist
+  do: create.loop.stop
+  how: trigger
+
