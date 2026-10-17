@@ -1,7 +1,51 @@
-# Starter mappings. Veda owns this file and may change anything in it.
-# "When [signal] happens in [mode], do [control], [this way]". Full guide: docs/commands-guide.md
-# Signals: contracts/signal-catalog.json   Controls: contracts/control-catalog.json
-# Changes apply instantly (no restart). A typo only skips that rule; the Command Lab shows what went wrong.
+# MAPPINGS: the rules that connect what the app senses to what it does to the music.
+# This file is Veda's. Change anything in it. Save the file and the app picks it up instantly (no restart, no reload).
+#
+# Every rule says, in plain words:
+#     "When [signal] happens in [mode], do [control], [this way]."
+#
+#   name            any label you like (it shows up in the Command Lab)
+#   mode            play | create | learn | any     (any = in every mode)
+#   when            what the app senses            list: contracts/signal-catalog.json
+#   do              what gets changed              list: contracts/control-catalog.json
+#   how             follow  = the control follows a slider signal (hand goes up -> tempo goes up)
+#                   trigger = fires once per moment (clap -> play/pause)
+#                   toggle  = flips something on/off
+#                   nudge   = moves a control one step (say "faster" -> tempo +0.1)
+#
+# Optional fine-tuning:
+#   range           [low, high] how far a follow rule moves the control; [1.0, 0.5] runs backwards
+#   smoothing       0 = jumpy ... 1 = very smooth (steadies shaky hand tracking)
+#   min_confidence  0 to 1: ignore readings the app is not sure about
+#   cooldown_ms     ignore repeats for this long (stops one clap counting twice)
+#   only_while      a held gesture (like a fist) that must be active for the rule to work
+#   step            how far one nudge moves (negative = down)
+#   value           the fixed value a trigger sets
+#   enabled         false = switch the rule off without deleting it
+#
+# A typo never breaks the app: that one rule is skipped and the Command Lab explains what to fix.
+# The Command Lab (the test page) shows every signal and control name, and lights up each rule when it fires.
+# Full guide: docs/commands-guide.md
+
+# --- Play mode ---------------------------------------------------------------------------------------------------
+
+- name: hand height controls tempo
+  mode: play
+  when: vision.hand.right.height
+  do: playback.tempo
+  how: follow
+  range: [0.5, 1.5]
+  smoothing: 0.3
+  min_confidence: 0.6
+
+- name: head tilt slows down        # switched off: it would fight with the hand-height rule above
+  enabled: false
+  mode: play
+  when: vision.head.tilt
+  do: playback.tempo
+  how: follow
+  range: [1.0, 0.5]
+  smoothing: 0.5
 
 - name: clap toggles play/pause
   mode: play
@@ -9,3 +53,59 @@
   do: playback.toggle
   how: trigger
   cooldown_ms: 600
+
+# Voice commands only work while the left fist is held, so the instrument you are playing does not set them off.
+
+- name: say "pause" only while left fist is held
+  mode: play
+  when: audio.keyword.pause
+  only_while: vision.hand.left.fist
+  do: playback.pause
+  how: trigger
+
+- name: say "play" only while left fist is held
+  mode: play
+  when: audio.keyword.play
+  only_while: vision.hand.left.fist
+  do: playback.play
+  how: trigger
+
+- name: say "slower" only while left fist is held
+  mode: play
+  when: audio.keyword.slower
+  only_while: vision.hand.left.fist
+  do: playback.tempo
+  how: nudge
+  step: -0.1
+
+- name: say "faster" only while left fist is held
+  mode: play
+  when: audio.keyword.faster
+  only_while: vision.hand.left.fist
+  do: playback.tempo
+  how: nudge
+  step: 0.1
+
+- name: say "higher" only while left fist is held
+  mode: play
+  when: audio.keyword.higher
+  only_while: vision.hand.left.fist
+  do: playback.pitch
+  how: nudge
+  step: 1
+
+# --- Create mode -------------------------------------------------------------------------------------------------
+
+- name: snap adds a layer
+  mode: create
+  when: audio.snap
+  do: create.layer.add
+  how: trigger
+  cooldown_ms: 500
+
+- name: drum hit toggles the beat
+  mode: create
+  when: vision.hand.right.drum_hit
+  do: create.beat
+  how: toggle
+  cooldown_ms: 400
