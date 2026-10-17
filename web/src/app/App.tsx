@@ -11,6 +11,7 @@ import { Sheet } from '@/modules/sheet';
 import { start as startTouchDesigner } from '@/modules/touchdesigner';
 import { start as startVision } from '@/modules/vision';
 import { AnalysisSummary } from './AnalysisSummary';
+import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
 import { PanelBoundary } from './PanelBoundary';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
@@ -98,6 +99,7 @@ export function App() {
 
       <main>
         <Devices fake={isFakeMode()} />
+        <CameraPreview />
         <div role="tabpanel" id="mode-panel" aria-labelledby={`tab-${tab}`}>
           {(tab === 'learn' || tab === 'play') && <SongView loader={loader} setLoader={setLoader} />}
           {tab === 'create' && (
