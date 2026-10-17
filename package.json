@@ -10,7 +10,8 @@
     "test": "node --test \"tests/**/*.test.mjs\"",
     "validate:contracts": "node scripts/validate-contracts.mjs",
     "fixtures": "node scripts/make-fixtures.mjs",
-    "hooks:selftest": "node scripts/hook-selftest.mjs"
+    "hooks:selftest": "node scripts/hook-selftest.mjs",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
     "ajv": "^8.20.0",

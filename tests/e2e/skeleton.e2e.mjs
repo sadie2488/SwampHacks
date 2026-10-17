@@ -193,6 +193,56 @@ test('made-up camera data flows into signals and the Lab meters', T, async () =>
   assert.doesNotMatch(text ?? '', /no data yet/i, 'the meter should show live values');
 });
 
+// Real camera mode (no ?fake=1), using Chrome's built-in fake camera device, so a person can always see themselves.
+async function withRealCameraPage(blockTrackingModels, fn) {
+  const context = await browser.newContext({ permissions: ['camera'], viewport: { width: 1280, height: 900 } });
+  const p = await context.newPage();
+  const pageProblems = [];
+  p.on('pageerror', (e) => pageProblems.push(e.message));
+  if (blockTrackingModels) await p.route(/jsdelivr|storage\.googleapis/, (route) => route.abort());
+  try {
+    await p.goto(`${BASE}/`);
+    await fn(p);
+    assert.deepEqual(pageProblems, []);
+  } finally {
+    await context.close();
+  }
+}
+const previewState = (p) =>
+  p.evaluate(() => {
+    const v = document.querySelector('[data-testid="camera-preview-video"]');
+    return v ? { width: v.videoWidth, playing: !v.paused && v.readyState >= 2, live: v.srcObject?.getVideoTracks().every((t) => t.readyState === 'live') } : null;
+  });
+
+test('real camera: you can see yourself on the Learn tab, without opening the Command Lab', T, async () => {
+  await withRealCameraPage(false, async (p) => {
+    await p.getByTestId('btn-enable-vision').click();
+    const s = await until('the preview shows live camera pictures', async () => {
+      const x = await previewState(p);
+      return x && x.width > 0 && x.playing && x.live ? x : null;
+    }, 20_000);
+    assert.ok(s.width >= 320);
+    await p.getByTestId('camera-preview-overlay').waitFor({ state: 'attached' });
+    // the picture stays when you switch tabs
+    await p.getByTestId('tab-create').click();
+    assert.ok((await previewState(p))?.playing, 'the preview should stay on every tab');
+    await p.getByTestId('tab-learn').click();
+    await p.getByTestId('btn-enable-vision').click(); // turn it off again
+    await until('the preview disappears when the camera is off', async () => (await previewState(p)) === null, 8_000);
+  });
+});
+
+test('real camera: if hand tracking cannot load, you still see yourself and are told why', T, async () => {
+  await withRealCameraPage(true, async (p) => {
+    await p.getByTestId('btn-enable-vision').click();
+    await until('a plain-words message that tracking could not start', async () => /tracking could not start/i.test((await p.getByTestId('status-vision').textContent()) ?? ''), 40_000);
+    const s = await previewState(p);
+    assert.ok(s && s.width > 0 && s.playing && s.live, `the camera picture must stay on screen, got ${JSON.stringify(s)}`);
+    await p.getByTestId('btn-enable-vision').click();
+    await until('turning it off really stops the camera', async () => (await previewState(p)) === null, 8_000);
+  });
+});
+
 test('made-up microphone data produces pitch frames and notes', T, async () => {
   await $('btn-enable-audio').click();
   await until('audio status running', async () => /running|fake|made-up/i.test((await $('status-audio-live').textContent()) ?? ''), 15_000);

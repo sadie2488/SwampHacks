@@ -10,7 +10,10 @@
 //   landmarks       vision       -> command lab (tracking overlay)
 //   cameraStream    vision       -> command lab (shows the live camera; null when the camera is off)
 //   pitch           audio-live   -> create, touchdesigner, command lab     frame-by-frame pitch of the mic (about 50 per second)
-//   performance     audio-live   -> (feedback, later)                     detected notes and onsets
+//   performance     audio-live   -> audio-live's own practice scoring      detected notes and onsets
+//   practiceControl shell        -> audio-live                            calibrate | start | stop practice
+//   practice        audio-live   -> shell                                 what practice is doing, in plain words
+//   feedback        audio-live   -> shell                                 rule-based feedback after a practice run
 //   command         buttons (shell), commands engine, email -> everybody who reacts to a control
 //   controls        the bus itself (see below) -> playback, create, touchdesigner, command lab   latest value of every control
 //   fired           commands     -> command lab                          a mapping rule just fired (light it up)
@@ -25,7 +28,7 @@
 //
 // Autoplay rule: browsers only start audio after a click. Call resumeAudio() inside a click or key handler.
 import { controlCatalog } from '@/contracts/catalogs';
-import type { CommandEvent, CommandHow, CommandSource, Mode, PerformanceEvent, Signal, SongAnalysis, TdMessage } from '@/contracts';
+import type { CommandEvent, CommandHow, CommandSource, Feedback, Mode, PerformanceEvent, Signal, SongAnalysis, TdMessage } from '@/contracts';
 import { defaultControls, nextControlValue, type ControlState } from './controls';
 
 export type { ControlState } from './controls';
@@ -91,6 +94,12 @@ export interface Topics {
   pitch: PitchFrame;
   performance: PerformanceEvent;
   command: CommandEvent;
+  /** Practice mode (Learn): the shell's buttons ask, the audio-live module does the work. */
+  practiceControl: { action: 'calibrate' | 'start' | 'stop' };
+  /** What practice mode is doing right now, in plain words (published by audio-live). */
+  practice: { state: 'idle' | 'calibrating' | 'listening' | 'done' | 'error'; message?: string; latencyOffsetMs?: number };
+  /** Rule-based feedback computed in the browser right after a practice run (source "rules"). */
+  feedback: Feedback;
   controls: ControlState;
   fired: { mapping: string; command: CommandEvent };
   issues: EngineIssue[];

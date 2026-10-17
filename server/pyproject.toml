@@ -9,6 +9,9 @@ dependencies = [
   "python-multipart>=0.0.9",
   "pydantic>=2.7",
   "python-dotenv>=1.0",
+  "httpx>=0.28.1",
+  "psycopg[binary]>=3.2",
+  "pyjwt[crypto]>=2.8",
 ]
 
 [dependency-groups]
