@@ -28,7 +28,7 @@ When they pick a task:
 3. Commit the changes to `tasks.json`, `ownership.json`, `docs/team.md` on a `lead/claim-<taskId>` branch and merge by pull request
 
 ## 5. Brief
-1. Fill `docs/templates/brief.md` from the task card, the contracts it names, `fixtures/`, and the relevant lines of `docs/assumptions.md`. Plain words, bullets, numbered items. Keep the ⭐ box near the top. Keep "First time? Type /start" and "Get further information by typing /explain + item number" at the very top. End with "bigger picture". Section 4.1 repeats the task's `intent` word for word. Section 4.4 "Read these first" lists the task's `read_first` files (for example `docs/music-notes.md`) plus the contracts it names. Add the glossary line "Unknown word? Type `/explain glossary`"
+1. Fill `docs/templates/brief.md` from the task card, the contracts it names, `fixtures/`, and the relevant lines of `docs/assumptions.md`. Plain words, bullets, numbered items. Keep the ⭐ box near the top. Keep "First time? Type /start" and "Get further information by typing /explain + item number" at the very top. End with "bigger picture". Section 4.1 repeats the task's `intent` word for word. Section 4.4 "Read these first" lists the task's `read_first` files (for example `docs/music-notes.md`) plus the contracts it names. Add the glossary line "Unknown word? Type `/explain glossary`". If the task card has a `progress` note, put it in section 1 ("what already exists") so the person builds on the skeleton instead of starting over
 2. No getting-started steps in the brief; `/start` does that
 3. Nothing private in a brief (briefs may be committed or emailed)
 4. Save: `node scripts/comms-send.mjs briefs/<person>-<taskId>.md <file>`. Show it to the person; offer to email it

@@ -1,5 +1,5 @@
 {
-  "_readme": "Task cards. Only the lead writes this file. \"passes\" is set by CI or the lead, never by a worker. Flags: star = demo path, purple = needed for Veda by 9:30 AM. Intent is copied word for word from docs/plan.md section 7. read_first lists docs a worker should read before starting (shown in section 4.4 of the brief).",
+  "_readme": "Task cards. Only the lead writes this file. \"passes\" is set by CI or the lead, never by a worker. Flags: star = demo path, purple = needed for Veda by 9:30 AM. Intent is copied word for word from docs/plan.md section 7. read_first lists docs a worker should read before starting (shown in section 4.4 of the brief). progress says what already exists from the walking skeleton.",
   "tasks": [
     {
       "id": "0.1",
@@ -164,9 +164,9 @@
         "🟣"
       ],
       "merge_gate": "lead",
-      "status": "in_progress",
+      "status": "done",
       "claimed_by": "lead",
-      "passes": false,
+      "passes": true,
       "read_first": []
     },
     {
@@ -274,7 +274,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged and tested (rules, smoothing, cooldown, arming, friendly errors, instant reload, conflict warnings). Remaining: tuning with real camera and mic, and Veda's final command list."
     },
     {
       "id": "L6",
@@ -316,7 +317,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged and tested (live camera with tracking overlay, a meter per signal, controls, rules that light up, and a no-camera test panel). Remaining: look and layout, real-device checks."
     },
     {
       "id": "V1",
@@ -350,7 +352,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Not started. The starter mappings are in web/src/modules/mappings/mappings.yaml and the Command Lab lets her try them with no camera."
     },
     {
       "id": "A1",
@@ -596,7 +599,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Skeleton merged: mic, pitch (pitchy), notes, onsets, loudness, fake mode. Remaining: check with a real mic."
     },
     {
       "id": "B2",
@@ -707,7 +711,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: snap and clap classifier, keywords armed by left fist (Web Speech). Remaining: tune thresholds with real snaps and claps."
     },
     {
       "id": "C1",
@@ -745,7 +750,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: MediaPipe hands and face in a worker at about 15 fps, signals and landmarks, fake mode. Remaining: check with a real webcam (left/right labels, thresholds)."
     },
     {
       "id": "C2",
@@ -780,7 +786,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: fist, open palm, raised, pinch, nod, drum hit, head tilt, hand distance (tested on synthetic landmarks). Remaining: tune on real people."
     },
     {
       "id": "C3",
@@ -819,7 +826,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: sender at 30 fps and a local relay to TouchDesigner (OSC and WebSocket, origin check). Remaining: test in TouchDesigner, the visuals themselves (human)."
     },
     {
       "id": "D1",
@@ -854,7 +862,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Skeleton merged: hum to notes (smoothing, quantize). Remaining: octave-jump fix, running tuning offset, optional key snapping (docs/music-notes.md section 8)."
     },
     {
       "id": "D2",
@@ -886,7 +895,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: piano, synth, bass, pluck, drums and effects (Tone.js). Remaining: listen and polish."
     },
     {
       "id": "D3",
@@ -920,7 +930,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Skeleton merged: layers, count-in, 2-bar loop, beat, volume and effects. Remaining: listen, timing offset with a real mic."
     },
     {
       "id": "D4",
@@ -991,7 +1002,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Skeleton merged: tempo 0.5-1.5 and pitch +-12 measured independent (soundtouchjs), loop, volume, demo song synthesized from notes. Remaining: listen on real speakers, AudioWorklet instead of ScriptProcessor, loop-wrap click."
     },
     {
       "id": "L3",
@@ -1030,7 +1042,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Skeleton merged: shell, song loader with offline fallback, analysis summary, sheet music (OSMD) with note letters and display transposition. Remaining: the real design (F1)."
     },
     {
       "id": "L4",
@@ -1063,7 +1076,8 @@
       "status": "open",
       "claimed_by": null,
       "passes": false,
-      "read_first": []
+      "read_first": [],
+      "progress": "Server skeleton merged (upload, fake analysis, demo song, public config route, env loading). Remaining: Tiger Data, Auth0, real analysis hook-up."
     },
     {
       "id": "L5",
