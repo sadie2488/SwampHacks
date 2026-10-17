@@ -4,14 +4,18 @@ import { bus, reportStatus, sendCommand, type PitchFrame, type Stop } from '@/bu
 import { controlInfo } from '@/contracts/catalogs';
 import type { CommandEvent } from '@/contracts';
 import type { LoopEngine } from './engine';
+import { fitTakeToKey } from './key';
 import { currentLayer, describeState, hasAnyNotes, hasBeat, isRecording, type CreateState } from './layers';
 import { isEffect, isInstrument, loopSeconds } from './music';
 import { segmentNotes } from './segment-notes';
+import { applyAnalysis, createSettings, type SettingsStore } from './settings';
 import type { CreateStore } from './store';
 
 export interface ControllerOptions {
   engine: LoopEngine;
   store: CreateStore;
+  /** Snap-to-key choice and the line about the last take. The screen reads the same object. Default: a private one. */
+  settings?: SettingsStore;
   /** The page clock in milliseconds. Tests pass a fake one. */
   now?: () => number;
   /** How late (ms) a hummed note reaches us after it is sung; the take is shifted earlier by this much. */
@@ -24,6 +28,7 @@ const MODULE = 'create';
 
 export function startController(opts: ControllerOptions): Stop {
   const { engine, store } = opts;
+  const settings = opts.settings ?? createSettings();
   const now = opts.now ?? (() => performance.now());
   const inputLatencyMs = opts.inputLatencyMs ?? 30;
   const tailMs = opts.tailMs ?? 60;
@@ -94,6 +99,7 @@ export function startController(opts: ControllerOptions): Stop {
     clearFinishTimer();
     heard = [];
     framesSeen = 0;
+    settings.set({ take: undefined });
     const id = ++takeId;
     store.dispatch({ type: 'recordStart' });
     const ok = safe(() =>
@@ -130,7 +136,9 @@ export function startController(opts: ControllerOptions): Stop {
     const s = state();
     if (s.phase !== 'recording') return;
     const take = heard.map(({ at, frame }) => ({ ...frame, t_ms: at - takeStartMs - inputLatencyMs }));
-    const notes = segmentNotes(take, { bpm: s.bpm, quantize: true, lengthSec: loopSeconds(s.bars, s.bpm) });
+    const heardNotes = segmentNotes(take, { bpm: s.bpm, quantize: true, lengthSec: loopSeconds(s.bars, s.bpm) });
+    const { notes, key, moved } = fitTakeToKey(heardNotes, { snap: settings.getState().snap, songKey: settings.getState().songKey });
+    settings.set({ take: { notes: notes.length, key, moved } });
     const message =
       notes.length > 0
         ? `Recorded ${notes.length} note${notes.length === 1 ? '' : 's'}`
@@ -244,6 +252,7 @@ export function startController(opts: ControllerOptions): Stop {
   const stops: Stop[] = [
     bus.on('command', onCommand),
     bus.on('pitch', onPitch),
+    bus.on('analysis', (a) => applyAnalysis(settings, a), { replay: true }),
     bus.on('mode', (mode) => {
       if (mode !== 'create' && state().phase !== 'idle') stopAll();
     }),

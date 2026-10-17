@@ -8,14 +8,17 @@ import { startController } from './controller';
 import { playFakeHum } from './fake-hum';
 import { currentLayer, describeState, hasBeat, initialState, isRecording } from './layers';
 import { EFFECT_IDS, INSTRUMENT_IDS, midiToName } from './music';
+import { applyAnalysis, createSettings, takeSummaryText } from './settings';
 import { createStore } from './store';
 import { createToneEngine } from './tone-engine';
 
 /** The one store of layers for the running app. The screen reads it; the controller changes it. */
 const store = createStore(initialState());
+/** Snap-to-key choice and the line about the last take, shared by the screen and the controller. */
+const settings = createSettings();
 
 export function start(): Stop {
-  return startController({ engine: createToneEngine(), store });
+  return startController({ engine: createToneEngine(), store, settings });
 }
 
 // ---- small helpers for the screen ----
@@ -56,6 +59,9 @@ const label = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
 export function CreatePanel() {
   const state = useSyncExternalStore(store.subscribe, store.getState);
+  const options = useSyncExternalStore(settings.subscribe, settings.getState);
+  // the controller also listens, but the screen must show the right default even when it is drawn first
+  useEffect(() => bus.on('analysis', (a) => applyAnalysis(settings, a), { replay: true }), []);
   const humNote = useHumNote();
   const mode = useMode();
   const [faking, setFaking] = useState(false);
@@ -107,6 +113,16 @@ export function CreatePanel() {
           {faking ? 'Humming…' : 'Simulate humming'}
         </button>
       </div>
+
+      <p>
+        <label>
+          <input type="checkbox" data-testid="toggle-snap" checked={options.snap} onChange={(e) => settings.set({ snap: e.target.checked })} /> Snap to the key
+        </label>
+        {!options.songKey && options.snap && <span> (no song key is loaded, so the key is guessed from your hum)</span>}
+      </p>
+      {options.take && (
+        <p data-testid="take-summary">{takeSummaryText(options.take)}</p>
+      )}
 
       <p>
         <label>
