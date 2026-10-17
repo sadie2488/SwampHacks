@@ -8,6 +8,7 @@ relay.private.json
 # Per-laptop identity (written by /start)
 .claude/lane.local.json
 .claude/settings.local.json
+.claude/override.local.json
 
 # Scratch space
 scratch/

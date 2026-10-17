@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Send a file to the `comms` branch (commit -> pull --rebase -> push, with retry).
-// Usage: node scripts/comms-send.mjs <path-on-comms> <local-file | -> [--message "text"]
+// Usage: node scripts/comms-send.mjs <path-on-comms> <local-file | -> [--append] [--message "text"]
+//   --append adds to the end of the file (with a timestamp) instead of replacing it.
 //   <path-on-comms> is one of:
 //     comms/<person>-to-lead.md      comms/lead-to-<person>.md
 //     briefs/<person>-<task>.md      updates/<person>-<task>-<time>.md
@@ -42,6 +43,9 @@ const tryGit = (cwd, ...args) => {
 const argv = process.argv.slice(2);
 const mi = argv.indexOf('--message');
 const message = mi >= 0 ? argv.splice(mi, 2)[1] : null;
+const ai = argv.indexOf('--append');
+const append = ai >= 0;
+if (append) argv.splice(ai, 1);
 const [target, source] = argv;
 if (!target || !source) fail('missing arguments', 'node scripts/comms-send.mjs <path-on-comms> <local-file|-> [--message "text"]');
 if (!ALLOWED.some((re) => re.test(target)) || target.includes('..')) {
@@ -92,7 +96,21 @@ ensureWorktree();
 const dest = resolve(wt, target);
 if (!dest.startsWith(resolve(wt))) fail('path escapes the comms folder');
 mkdirSync(dirname(dest), { recursive: true });
-writeFileSync(dest, content.endsWith('\n') ? content : `${content}\n`);
+if (append && remoteHas()) {
+  // Get the latest copy first so an append never overwrites newer messages.
+  const p = tryGit(wt, 'pull', '--rebase', '-q', REMOTE, 'comms');
+  if (!p.ok) {
+    tryGit(wt, 'rebase', '--abort');
+    fail(`could not get the latest comms: ${p.out}`, 'check your internet and try again');
+  }
+}
+const body = content.endsWith('\n') ? content : `${content}\n`;
+if (append && existsSync(dest)) {
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  writeFileSync(dest, `${readFileSync(dest, 'utf8').replace(/\n*$/, '\n')}\n---\n*${stamp} UTC*\n\n${body}`);
+} else {
+  writeFileSync(dest, body);
+}
 git(wt, 'add', '--', target);
 
 const status = git(wt, 'status', '--porcelain', '--', target);

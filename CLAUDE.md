@@ -13,6 +13,7 @@
 
 ## Hard rules
 - **No AI attribution anywhere**: no "Co-Authored-By", no "Generated with ...", no tool credits in commits, PRs, docs, or code comments
+- **Claude is never a contributor on GitHub**: no AI co-author trailers, no `noreply@anthropic.com`, no `Claude-Session` link, and no AI name as a commit author. Commits use the person's own git identity. CI rejects any commit or PR that breaks this
 - Work only inside your owned folders (see `ownership.json`). Lead only: `contracts/`, `tests/`, `docs/`, `.claude/`, `.github/`, `setup/`, `scripts/`, `tasks.json`, `ownership.json`, root config, package/dependency files
 - Never write or edit the tests that grade your own work
 - Never push to `main`. Work on your branch; open a pull request
