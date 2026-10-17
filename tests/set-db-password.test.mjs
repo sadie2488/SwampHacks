@@ -44,6 +44,8 @@ test('says why it did nothing, and changes nothing', () => {
     ['DATABASE_URL=mysql://u@h/db\n', 'x', 'postgres://'],
     ['DATABASE_URL=postgres://host:1/db\n', 'x', 'no user name'],
     [FILE, '', 'No password'],
+    [FILE, 'postgres://u@h:1/db', 'whole web address'],
+    [FILE, 'abc def', 'space or line break'],
   ]) {
     const r = insertPassword(text, pw);
     assert.equal(r.changed, false);

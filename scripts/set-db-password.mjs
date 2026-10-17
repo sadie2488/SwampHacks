@@ -30,6 +30,10 @@ export function insertPassword(text, password) {
   if (!/^postgres(ql)?:$/.test(url.protocol)) return { text, changed: false, reason: 'DATABASE_URL should start with postgres://.' };
   if (!url.username) return { text, changed: false, reason: 'The DATABASE_URL line has no user name after postgres://.' };
   if (!password) return { text, changed: false, reason: 'No password was typed.' };
+  if (password.includes('://')) {
+    return { text, changed: false, reason: 'That looks like a whole web address, not a password. Type only the password itself (in the Tiger Data console it is shown once when the service is made; you can reset it there).' };
+  }
+  if (/\s/.test(password)) return { text, changed: false, reason: 'The password has a space or line break in it. Type only the password itself, with nothing around it.' };
   url.password = encodeURIComponent(password); // the URL class leaves "%" alone, so encode it ourselves
   lines[index] = `${lines[index].slice(0, eq + 1)}${quote}${url.toString()}${quote}`;
   return { text: lines.join(text.includes('\r\n') ? '\r\n' : '\n'), changed: true, reason: '' };
