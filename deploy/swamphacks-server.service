@@ -1,0 +1,58 @@
+# systemd unit: keeps the Python server running, starts it at boot, restarts it if it crashes.
+# setup.sh copies this to /etc/systemd/system/swamphacks-server.service.
+#
+# The server listens only on this computer (127.0.0.1:8000). The outside world reaches it through Caddy.
+# The keys are read from /etc/swamphacks/server.env (a private file made by setup.sh, filled in by hand).
+
+[Unit]
+Description=SwampHacks music server
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=swamphacks
+Group=swamphacks
+WorkingDirectory=/opt/swamphacks/app/server
+EnvironmentFile=/etc/swamphacks/server.env
+
+# Uploaded songs and saved analyses (the only place the server writes). Made by StateDirectory below.
+Environment=MUSIC_DATA_DIR=/var/lib/swamphacks/data
+# The audio library compiles code the first time it runs and keeps the result here.
+Environment=NUMBA_CACHE_DIR=/var/cache/swamphacks/numba
+Environment=PYTHONUNBUFFERED=1
+
+ExecStart=/opt/swamphacks/app/server/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+SyslogIdentifier=swamphacks-server
+
+# systemd makes these folders and gives them to the user above: /var/lib/swamphacks and /var/cache/swamphacks
+StateDirectory=swamphacks
+StateDirectoryMode=0750
+CacheDirectory=swamphacks
+
+# If song analysis ever eats all the memory, stop only this service (it restarts by itself)
+# instead of letting the whole computer, including your SSH login, freeze. Sized for a 2 GB server:
+# raise it if you pick a bigger plan.
+MemoryMax=1500M
+
+# Safety limits. All of these are safe for this app (it only needs its own folders and the network).
+# MemoryDenyWriteExecute is deliberately NOT set: the audio library (numba) needs it off.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
