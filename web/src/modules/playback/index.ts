@@ -1,11 +1,13 @@
 // The playback module: plays the song with tempo (0.5x to 1.5x) and pitch (-12 to +12 semitones) changing on their own.
-// Listens to: songAudio (decoded upload), analysis (demo songs get sound made from their notes), controls, command.
+// Listens to: songAudio (decoded upload), analysis (demo songs get sound made from their notes), controls, command,
+// mode (switching to Create pauses the song, so it does not play over a hum being recorded).
 // Publishes: transport (immediately on any change, and about 15 times a second while playing), status.
 //
 //   index.ts       wires the bus to the controller            controller.ts   the transport logic (no Web Audio)
 //   output.ts      Web Audio: script node + gain              stretch-engine.ts  the sound engine (pure, tested in Node)
 //   render-notes.ts  demo song from note events               beats.ts        beat phase
 import { bus, reportStatus, type Stop } from '@/bus';
+import type { Mode } from '@/contracts';
 import { PlaybackController } from './controller';
 import { WebAudioOutput } from './output';
 import type { PcmSource } from './stretch-engine';
@@ -33,12 +35,26 @@ export function start(): Stop {
   reportStatus('playback', 'idle', 'Waiting for a song');
   bus.emit('transport', controller.state());
 
+  // The mode we saw last. The first value (the replay) only sets it: pausing is for a real switch into Create.
+  let lastMode: Mode | undefined;
+
   const stops: Stop[] = [
     // "replay" so a song or setting that arrived before this module started is not missed
     bus.on('songAudio', (a) => controller.setSongAudio(a.songId, toPcm(a.buffer)), { replay: true }),
     bus.on('analysis', (a) => controller.setAnalysis(a), { replay: true }),
     bus.on('controls', (c) => controller.applyControls(c), { replay: true }),
     bus.on('command', (cmd) => controller.command(cmd.command)),
+    // Create has no transport to stop the song with, and the song would bleed into the microphone.
+    // The position is kept and nothing resumes by itself when the user leaves Create.
+    bus.on(
+      'mode',
+      (mode) => {
+        const switchedToCreate = lastMode !== undefined && lastMode !== mode && mode === 'create';
+        lastMode = mode;
+        if (switchedToCreate) controller.pause();
+      },
+      { replay: true },
+    ),
   ];
 
   return () => {

@@ -216,3 +216,101 @@ describe('playback module on the bus', () => {
     stop = start(); // so afterEach has something to stop
   });
 });
+
+describe('playback module and the mode', () => {
+  afterEach(() => bus.emit('mode', 'learn')); // the bus keeps the last mode between tests
+
+  /** Start a song playing in the given mode and let it run for a moment. */
+  async function playingIn(mode: 'learn' | 'play' | 'create') {
+    bus.emit('mode', mode);
+    bus.emit('analysis', twinkle);
+    sendCommand('playback.play', 'button');
+    await flush();
+    pump(4);
+    expect(livePos()).toBeGreaterThan(0.5);
+    expect(now().playing).toBe(true);
+  }
+
+  it('pauses a playing song when the mode switches to create, and keeps the position', async () => {
+    await playingIn('learn');
+    seen.length = 0;
+    bus.emit('mode', 'create');
+    expect(now().playing).toBe(false); // the new state was published right away
+    const frozen = now().positionSec;
+    expect(frozen).toBeGreaterThan(0.5);
+    pump(1);
+    expect(rms(pump(3))).toBe(0); // quiet, so nothing bleeds into the microphone
+    vi.advanceTimersByTime(1000);
+    expect(seen.every((t) => !t.playing && t.positionSec === frozen)).toBe(true);
+
+    // back in Learn: still paused at the same place, and play carries on from there
+    bus.emit('mode', 'learn');
+    expect(now()).toMatchObject({ playing: false, positionSec: frozen });
+    sendCommand('playback.play', 'button');
+    pump(2);
+    expect(now().playing).toBe(true);
+    expect(now().positionSec).toBeGreaterThan(frozen);
+    expect(now().positionSec).toBeLessThan(frozen + 2);
+  });
+
+  it('also pauses when the switch to create comes from play mode', async () => {
+    await playingIn('play');
+    bus.emit('mode', 'create');
+    expect(now().playing).toBe(false);
+  });
+
+  it('does nothing when the song is already paused', async () => {
+    bus.emit('mode', 'learn');
+    bus.emit('analysis', twinkle);
+    seek(3);
+    const count = seen.length;
+    bus.emit('mode', 'create');
+    expect(seen).toHaveLength(count); // no pause, no extra transport message
+    expect(now()).toMatchObject({ playing: false, positionSec: 3 });
+  });
+
+  it('keeps playing when the mode moves between learn and play', async () => {
+    await playingIn('learn');
+    bus.emit('mode', 'play');
+    expect(now().playing).toBe(true);
+    bus.emit('mode', 'learn');
+    expect(now().playing).toBe(true);
+    pump(2);
+    expect(rms(pump(2))).toBeGreaterThan(0.02);
+  });
+
+  it('does not start the song again when the user leaves create', async () => {
+    await playingIn('learn');
+    bus.emit('mode', 'create');
+    expect(now().playing).toBe(false);
+    for (const mode of ['learn', 'play', 'learn'] as const) {
+      bus.emit('mode', mode);
+      await flush();
+      expect(now().playing).toBe(false);
+    }
+    pump(1);
+    expect(rms(pump(3))).toBe(0);
+  });
+
+  it('ignores the mode it is told about when it starts, and a repeat of the mode it is already in', async () => {
+    stop();
+    bus.emit('mode', 'create'); // the shell was already in Create before this module started
+    stop = start();
+    bus.emit('analysis', twinkle);
+    expect(now().playing).toBe(false);
+    sendCommand('playback.play', 'button'); // e.g. a play command in Create from somewhere else
+    await flush();
+    expect(now().playing).toBe(true); // the replayed mode did not pause anything
+    bus.emit('mode', 'create'); // still Create: not a change
+    expect(now().playing).toBe(true);
+  });
+
+  it('stops listening to the mode after it is stopped', async () => {
+    await playingIn('learn');
+    stop();
+    seen.length = 0;
+    bus.emit('mode', 'create');
+    expect(seen).toHaveLength(0);
+    stop = start(); // so afterEach has something to stop
+  });
+});
