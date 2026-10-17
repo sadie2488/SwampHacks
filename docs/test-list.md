@@ -41,7 +41,7 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 ## 4. Visuals
 | # | What should happen | How |
 |---|---|---|
-| 23 | Turning on "Send to TouchDesigner" streams about 30 frames a second to the relay | Auto |
+| 23 | Switching "TouchDesigner" on streams about 30 frames a second to the relay | Auto |
 | 24 | In TouchDesigner, the numbers move when you clap or move your hand | By hand (needs TouchDesigner) |
 
 ## 5. The safety rules

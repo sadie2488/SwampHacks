@@ -39,7 +39,7 @@ Fake data for all of these is built in: open the app at `http://localhost:5173/?
 
 ## TouchDesigner
 - `touchdesigner/README.md` explains how the numbers reach TouchDesigner (a small relay program) and lists the channels
-- Quick start: `node bridge/relay.mjs --log`, open the app, press "Send to TouchDesigner", then in TouchDesigner add an OSC In CHOP on port `7000`
+- Quick start: `node bridge/relay.mjs --log`, open the app, switch "TouchDesigner" on (in the "What's on the stand?" card), then in TouchDesigner add an OSC In CHOP on port `7000`
 - You can make visuals that match the website look (same colors and mood), so the two feel like one product
 
 ## Getting set up on your own computer
