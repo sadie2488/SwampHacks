@@ -53,8 +53,9 @@ function formatValue(v: ControlValue | undefined, info: ControlInfo): string {
 }
 
 // ---- camera -----------------------------------------------------------------------------------------------------
-// The picture is mirrored (like a mirror) so moving your right hand moves it on the right of the screen.
-// The wrapper is flipped with CSS, so the video AND the overlay flip together and the points can be drawn as they are.
+// The video is mirrored with CSS (command-lab.css) so it behaves like a mirror: your right hand shows on the right.
+// The landmarks already arrive mirrored from the vision module, so the canvas is NOT flipped (not in CSS, not here):
+// a point at x = 0.2 is drawn at 0.2 * width. Flipping it again would draw the hands on the wrong side.
 const HAND_LINES = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
 /** Draw hands (lines and dots) and face (small dots) over the camera picture. Pass null to clear. */

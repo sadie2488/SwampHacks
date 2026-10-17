@@ -8,10 +8,12 @@
 .lab-reading { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
 .lab-reading meter { width: 12rem; }
 
-/* the camera picture is mirrored, with the tracking drawn on top (both flip together) */
-.lab-camera { position: relative; width: 100%; max-width: 640px; background: #111; transform: scaleX(-1); }
+/* Only the VIDEO is mirrored: the camera stream arrives unflipped, and the user expects a mirror.
+   The overlay canvas is NOT flipped: the vision module already publishes the landmarks mirrored, so flipping the
+   canvas (or the wrapper that holds both) would flip the drawing twice and put it on the wrong side of the picture. */
+.lab-camera { position: relative; width: 100%; max-width: 640px; background: #111; }
 .lab-camera video, .lab-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.lab-camera video { object-fit: fill; }
+.lab-camera video { object-fit: fill; transform: scaleX(-1); }
 
 /* lamps and flashes */
 .lab-lamp { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 50%; background: #8886; }

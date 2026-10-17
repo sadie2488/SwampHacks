@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bus, resetControls, sendCommand, sendSignal, type Landmarks } from '@/bus';
 import { controlCatalog, signalCatalog } from '@/contracts/catalogs';
 import type { Signal } from '@/contracts';
-import { CommandLab } from './index';
+import { CommandLab, drawLandmarks } from './index';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -152,6 +152,19 @@ describe('Command Lab', () => {
     expect(calls.arc).toBe(21 + 2);
     expect(calls.moveTo).toBeGreaterThan(0);
     expect((q('lab-overlay') as HTMLCanvasElement).width).toBe(640);
+  });
+
+  it('draws points exactly where they arrive (x * width): the landmarks are already mirrored, so the canvas never flips them', () => {
+    const arcs: Array<[number, number]> = [];
+    const ctx = { clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, fill() {}, arc: (x: number, y: number) => void arcs.push([x, y]) };
+    const canvas = { width: 640, height: 480, getContext: () => ctx } as unknown as HTMLCanvasElement;
+    // a "Right" hand (the user's own right hand) whose first point is at x = 0.2, the rest at x = 0.9
+    const points = Array.from({ length: 21 }, (_, i) => ({ x: i === 0 ? 0.2 : 0.9, y: 0.5, z: 0 }));
+    drawLandmarks(canvas, { t_ms: 1, width: 640, height: 480, hands: [{ handedness: 'Right', points }] });
+    expect(arcs).toHaveLength(21);
+    expect(arcs[0][0]).toBeCloseTo(0.2 * 640); // 128, not 512 (which would be 1 - 0.2 flipped in JS)
+    expect(arcs[0][1]).toBeCloseTo(0.5 * 480);
+    expect(arcs[1][0]).toBeCloseTo(0.9 * 640);
   });
 
   describe('Test without a camera', () => {
