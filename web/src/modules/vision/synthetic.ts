@@ -6,8 +6,11 @@ type Curl = number | [number, number, number, number];
 export interface HandSpec {
   /** 0 = finger straight, 1 = fully curled. One number for all four fingers, or [index, middle, ring, pinky]. */
   curl?: Curl;
-  /** 'out' = thumb held away from the palm, 'tucked' = folded across a fist, 'pinch' = thumb tip on the index tip. */
-  thumb?: 'out' | 'tucked' | 'pinch';
+  /**
+   * 'out' = thumb held away from the palm, 'tucked' = folded across a fist, 'pinch' = thumb tip on the index tip,
+   * 'up' = thumb pointing straight up beside the fingers (with curl 1 this is a thumbs-up).
+   */
+  thumb?: 'out' | 'tucked' | 'pinch' | 'up';
   /** Where the wrist is (0-1 in the mirrored picture). */
   wrist?: Pt;
   /** Wrist-to-middle-knuckle length, in picture heights. */
@@ -46,7 +49,8 @@ export function makeHand(spec: HandSpec = {}): Pt[] {
   });
 
   const indexTip = local[8];
-  const tip: [number, number] = thumb === 'out' ? [-0.9, 0.78] : thumb === 'tucked' ? [-0.15, 0.62] : [indexTip[0] + 0.03, indexTip[1]];
+  const THUMB_TIPS: Record<NonNullable<HandSpec['thumb']>, [number, number]> = { out: [-0.9, 0.78], tucked: [-0.15, 0.62], up: [-0.5, 1.05], pinch: [indexTip[0] + 0.03, indexTip[1]] };
+  const tip = THUMB_TIPS[thumb];
   const cmc: [number, number] = [-0.2, 0.2];
   local[1] = cmc;
   local[2] = [cmc[0] + (tip[0] - cmc[0]) * 0.45, cmc[1] + (tip[1] - cmc[1]) * 0.45];

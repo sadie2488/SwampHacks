@@ -40,7 +40,7 @@ export const THRESHOLDS = {
   /** Fist: even the least curled finger has its tip closer to the wrist than (this x) its middle joint. */
   fistOn: 0.85,
   fistOff: 1.05,
-  /** Thumb extension relative to hand size for a thumbs-up; lower release threshold provides hysteresis. */
+  /** Thumbs-up: thumb tip above its middle joint by this share of hand size to start, and to stay on (hysteresis). */
   thumbUpOn: 0.12,
   thumbUpOff: 0.08,
   /** Thumb tip rises this share of hand size above its middle joint for a thumbs-up. */
@@ -106,11 +106,19 @@ export function pinchRatio(hand: Pt[], aspect = DEFAULT_ASPECT): number {
 export const isFist = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMax(hand, aspect) < THRESHOLDS.fistOn;
 export const isOpenPalm = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMin(hand, aspect) > THRESHOLDS.openOn;
 export const isPinch = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => pinchRatio(hand, aspect) < THRESHOLDS.pinchOn && !isFist(hand, aspect);
-export const isThumbsUp = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => {
-  const size = handSize(hand, aspect);
-  const rise = hand[HAND.THUMB_IP].y - hand[HAND.THUMB_TIP].y;
-  return curlMax(hand, aspect) < THRESHOLDS.fistOff && rise / Math.max(1e-6, size) >= THRESHOLDS.thumbUpOn;
-};
+/** How far the thumb tip is above its middle (IP) joint, as a fraction of hand size. Negative = the tip is lower. */
+export function thumbRise(hand: Pt[], aspect = DEFAULT_ASPECT): number {
+  return (hand[HAND.THUMB_IP].y - hand[HAND.THUMB_TIP].y) / Math.max(1e-6, handSize(hand, aspect));
+}
+/** The thumb's last bone points more up than sideways (so a thumb sticking out to the side is not a thumbs-up). */
+export function thumbPointsUp(hand: Pt[], aspect = DEFAULT_ASPECT): boolean {
+  const ip = hand[HAND.THUMB_IP];
+  const tip = hand[HAND.THUMB_TIP];
+  return ip.y - tip.y > Math.abs(tip.x - ip.x) * aspect;
+}
+/** Fingers curled (like a fist, thumb not counted) with the thumb pointing up, its tip clearly above its middle joint. */
+export const isThumbsUp = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean =>
+  curlMax(hand, aspect) < THRESHOLDS.fistOff && thumbPointsUp(hand, aspect) && thumbRise(hand, aspect) >= THRESHOLDS.thumbUpOn;
 
 /** The height (0 = top of picture) a palm has to be above to count as "raised above the head". */
 export function raisedLine(face?: Pt[] | null): number {
@@ -375,10 +383,9 @@ export class GestureTracker {
       open_palm: bandAbove(curlMin(pts, aspect), THRESHOLDS.openOn, THRESHOLDS.openOff),
       raised: bandBelow(palmY, line, line + THRESHOLDS.raisedOffMargin),
       pinch: bandBelow(pinchRatio(pts, aspect), THRESHOLDS.pinchOn, THRESHOLDS.pinchOff),
-      thumbs_up: curlMax(pts, aspect) < THRESHOLDS.fistOff &&
-        (s.holds.thumbs_up.active
-          ? (pts[HAND.THUMB_IP].y - pts[HAND.THUMB_TIP].y) / Math.max(1e-6, handSize(pts, aspect)) >= THRESHOLDS.thumbUpOff
-          : isThumbsUp(pts, aspect)),
+      // Only the left thumbs-up is in the signal catalog. Once on, it stays on until the thumb drops below thumbUpOff.
+      thumbs_up: side === 'left' && curlMax(pts, aspect) < THRESHOLDS.fistOff &&
+        (s.holds.thumbs_up.active ? thumbRise(pts, aspect) >= THRESHOLDS.thumbUpOff : isThumbsUp(pts, aspect)),
     };
     // A fist often tucks the thumb against the index finger: while the fist is on (or about to be), it is not a pinch.
     if (s.holds.fist.active || wants.fist === true) wants.pinch = false;
