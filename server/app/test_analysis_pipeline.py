@@ -266,6 +266,55 @@ def test_a_tune_buried_in_drum_hits_gets_its_notes_back_and_no_warning(client, c
     assert "second try without drums" in caplog.text
 
 
+def test_a_tune_hidden_by_very_loud_drums_is_found_once_the_drums_are_out(client, caplog):
+    caplog.set_level(logging.INFO)
+    mix = drums.drum_mix(every=0.25, drums=2.0)  # drum hits twice as loud as the tune, on every sixteenth
+    with pytest.raises(melody.AnalysisError):
+        melody.extract_melody(mix, SR, drums.BPM)  # with the drums left in there is no melody to be found
+
+    response = upload(client, wav_bytes(mix))
+    assert response.status_code == 200
+    doc = response.json()
+    assert_valid_analysis(doc)
+    assert doc["parts"], "the melody comes back instead of 'no melody'"
+    found = doc["parts"][0]["notes"]
+    p, r = drums.score(found, drums.TRUTH)
+    print(f"[analyzer] very loud drums: no melody before; now {len(found)} notes, precision {p:.2f} recall {r:.2f}")
+    assert r >= 0.9 and p >= 0.5
+    confidence = analyzer._melody_stats(found)[0]
+    print(f"[analyzer] very loud drums: pitch confidence {confidence:.2f}")
+    # notes that were found only without the drums keep the warning until the tracker is clearly sure (0.6)
+    assert doc["warnings"] == [analyzer.WARNING_FULL_MIX]
+    assert "Second try without drums for a song with no melody" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "what",
+    ["white noise", "pulsing noise", "random clicks", "drums alone on every beat", "drums alone on every sixteenth"],
+)
+def test_noise_and_drums_alone_never_become_a_melody(client, what):
+    rng = np.random.default_rng(0)
+    length = 20 * SR
+    noise = rng.normal(0, 0.3, length)
+    clicks = np.zeros(length)
+    clicks[rng.integers(0, length, 400)] = rng.normal(0, 1, 400)
+    samples = {
+        "white noise": noise,
+        "pulsing noise": noise * (0.5 + 0.5 * np.sin(2 * np.pi * 2 * np.arange(length) / SR)),
+        "random clicks": clicks,
+        "drums alone on every beat": drums.drum_hits(length, loudness=1.0),
+        "drums alone on every sixteenth": drums.drum_hits(length, loudness=1.0, every=0.25),
+    }[what]
+    response = upload(client, wav_bytes(samples.astype(np.float32)))
+    if response.status_code == 422:  # nothing that sounds like music: turned down, as before
+        assert response.json() == {"detail": analyzer.ERROR_NO_MUSIC}
+        assert files_left_behind() == []
+    else:  # a steady beat but no melody: the tempo is kept, with no sheet music
+        assert response.status_code == 200
+        doc = response.json()
+        assert doc["parts"] == [] and doc["warnings"] == [analyzer.WARNING_NO_MELODY]
+
+
 def test_a_long_song_says_that_only_the_first_part_was_analyzed(client, monkeypatch):
     monkeypatch.setattr(tempo_key, "MAX_SECONDS", 6)  # stands in for the real six minutes
     y, _ = song(bars=6)  # 12.6 seconds

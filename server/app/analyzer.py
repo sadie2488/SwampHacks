@@ -9,6 +9,8 @@ The steps, using the building blocks in `server/analysis/`:
 3. `melody.extract_melody` with that tempo and those beats, wrapped into one `melody` part. When the
    result looks like many instruments at once, the step runs a second time on the sound with the
    drums taken out (`separation.harmonic_part`), and keeps that result only if it is clearly better.
+   The same second run happens when the first one finds no melody at all, and its notes are used if
+   they clear a few bars that keep noise from becoming a melody.
 `sections` is left out: nothing cheap and trustworthy produces it yet.
 
 Honest failures, all in plain words:
@@ -85,6 +87,16 @@ DRUMS_OUT_MAX_RATE_SHARE = 0.9  # ...with at most this share of the first try's 
 DRUMS_OUT_KEEP_SOUND_SHARE = 0.5  # ...and it must still cover this share of the first try's note time
 DRUMS_OUT_CLEAR_CONFIDENCE = FULL_MIX_MAX_CONFIDENCE + 0.1  # the warning goes only above this, not just past the line
 
+# The same second try when the first one found no melody at all (very loud drums can hide it). Nothing
+# is there to compare with, so the notes must stand on their own, and noise must never become a melody:
+# without a part, a recording of noise is turned down for having no music (NO_MUSIC_MAX_TEMPO_CONFIDENCE).
+# Measured with the drums taken out: white, pink, brown and pulsing noise, a 50 Hz hum, filtered noise
+# and drums alone gave no notes at all. Random clicks gave 4 notes (confidence 0.72) covering 5% of the
+# recording. Loud drum mixes whose first try found nothing gave 40 to 50 notes, confidence 0.23 to 0.47,
+# covering 90% or more. So, beyond FULL_MIX_MIN_NOTES notes:
+NO_MELODY_RETRY_MIN_CONFIDENCE = 0.2  # twice the melody step's own floor of 0.1, under the weakest real mix seen (0.23)
+NO_MELODY_RETRY_MIN_SOUND_SHARE = 0.25  # the notes must cover this share of the analyzed sound; scattered clicks do not
+
 
 class AnalysisFailed(Exception):
     """The upload cannot be analyzed. `str(error)` is plain words that are safe to show."""
@@ -156,15 +168,76 @@ def _melody_part(melody, y, sr: int, result: dict) -> tuple[list[dict], list[str
         notes = melody.extract_melody(y, sr, result["tempo_bpm"], result["beats"])
     except melody.AnalysisError as err:
         log.info("No melody found: %s", err)
-        return [], [WARNING_NO_MELODY]
+        notes = []
     except Exception:
         log.exception("Melody extraction failed")
         return [], [WARNING_NO_MELODY]
-    mixed = looks_like_full_mix(notes)
-    if mixed:
-        notes, mixed = _without_drums(melody, y, sr, result, notes)
+    if notes:
+        mixed = looks_like_full_mix(notes)
+        if mixed:
+            notes, mixed = _without_drums(melody, y, sr, result, notes)
+    else:
+        notes = _melody_when_drums_hid_it(melody, y, sr, result)
+        if notes is None:
+            return [], [WARNING_NO_MELODY]
+        mixed = _unsure_after_drums_out(notes)
     part = melody.melody_to_part(notes)  # also suggests an instrument when the range fits one
     return [part], [WARNING_FULL_MIX] if mixed else []
+
+
+def _unsure_after_drums_out(notes: list[dict]) -> bool:
+    """Do notes found on the drums-out sound still get the full-mix warning? Yes, unless they are clearly one line."""
+    stats = _melody_stats(notes)
+    return stats is None or stats[0] < DRUMS_OUT_CLEAR_CONFIDENCE or looks_like_full_mix(notes)
+
+
+def _drums_out_melody(melody, y, sr: int, result: dict) -> list[dict] | None:
+    """The melody step run on the sound with the drums taken out, or None when that gave no melody. Never raises.
+
+    Says why in the log when there is no melody. Everything that can go wrong (the drum removal, the melody
+    step, a missing library, running out of memory) ends in None, so the caller keeps what it had.
+    """
+    try:
+        separation = importlib.import_module("analysis.separation")
+        try:
+            quieter = separation.harmonic_part(y, sr)
+        except separation.SeparationError as err:  # silence, or too short: nothing to separate
+            log.info("Could not take the drums out (%s).", err)
+            return None
+        return melody.extract_melody(quieter, sr, result["tempo_bpm"], result["beats"])
+    except melody.AnalysisError as err:
+        log.info("Second try without drums found no melody (%s).", err)
+    except Exception:
+        log.info("Second try without drums failed.", exc_info=True)
+    return None
+
+
+def _melody_when_drums_hid_it(melody, y, sr: int, result: dict) -> list[dict] | None:
+    """Notes found only after taking the drums out, for a song whose first try found no melody. None if still nothing.
+
+    Noise must not turn into a melody (the caller turns down a recording with no music because no part
+    was found), so the notes have to clear three bars; see the NO_MELODY_RETRY_* notes above.
+    """
+    started = time.monotonic()
+    notes = _drums_out_melody(melody, y, sr, result)
+    if notes is None:
+        return None
+    stats = _melody_stats(notes)
+    analyzed = min(result.get("duration_sec") or 0.0, getattr(melody, "MAX_SECONDS", 360.0))
+    if stats is None:
+        verdict = f"only {len(notes)} notes, not enough"
+    elif stats[0] < NO_MELODY_RETRY_MIN_CONFIDENCE:
+        verdict = f"pitch confidence {stats[0]:.2f}, too unsure"
+    elif stats[2] < NO_MELODY_RETRY_MIN_SOUND_SHARE * analyzed:
+        verdict = f"notes cover {stats[2]:.1f} s of {analyzed:.1f} s, too little"
+    else:
+        verdict = None
+    log.info(
+        "Second try without drums for a song with no melody took %.1f s: %s.",
+        time.monotonic() - started,
+        f"not used ({verdict})" if verdict else f"used ({len(notes)} notes)",
+    )
+    return None if verdict else notes
 
 
 def _clearly_better(first: list[dict], second: list[dict]) -> bool:
@@ -185,17 +258,12 @@ def _without_drums(melody, y, sr: int, result: dict, notes: list[dict]) -> tuple
     The second result is used only when it is clearly better; any failure keeps the first result.
     The outcome goes to the log only, never to the person's warnings.
     """
-    try:
-        started = time.monotonic()
-        separation = importlib.import_module("analysis.separation")
-        again = melody.extract_melody(separation.harmonic_part(y, sr), sr, result["tempo_bpm"], result["beats"])
-        seconds = time.monotonic() - started
-    except melody.AnalysisError as err:
-        log.info("Full-mix second try without drums found no melody (%s); the first result stays.", err)
+    started = time.monotonic()
+    again = _drums_out_melody(melody, y, sr, result)
+    if again is None:
+        log.info("Full-mix second try without drums gave nothing; the first result stays.")
         return notes, True
-    except Exception:
-        log.info("Full-mix second try without drums failed; the first result stays.", exc_info=True)
-        return notes, True
+    seconds = time.monotonic() - started
     before, after = _melody_stats(notes), _melody_stats(again)
     better = _clearly_better(notes, again)
     log.info(
@@ -209,7 +277,7 @@ def _without_drums(melody, y, sr: int, result: dict, notes: list[dict]) -> tuple
     )
     if not better:
         return notes, True
-    return again, looks_like_full_mix(again) or after[0] < DRUMS_OUT_CLEAR_CONFIDENCE
+    return again, _unsure_after_drums_out(again)
 
 
 def analyze_audio(path: Path) -> dict:

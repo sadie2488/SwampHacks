@@ -245,8 +245,11 @@ def test_too_few_notes_to_judge_gives_no_warning():
 # and the drum removal are pretend here: the first answers with the notes the test hands it, so only the choice is tested.
 # The real audio is in test_separation.py and test_analysis_pipeline.py.
 
-def melody_step(monkeypatch, first, second=None, *, separation_error=None, second_error=None):
-    """Run the analyzer's melody step. Returns (the notes of the part, the warnings, whether each call got the quieter sound)."""
+def melody_step(monkeypatch, first, second=None, *, first_error=None, separation_error=None, second_error=None):
+    """Run the analyzer's melody step on a pretend 10 second song.
+
+    Returns (the notes of the part, or None when there is no part; the warnings; whether each call got the quieter sound).
+    """
     quieter = object()
     calls = []
 
@@ -258,6 +261,8 @@ def melody_step(monkeypatch, first, second=None, *, separation_error=None, secon
     def extract_melody(y, sr, tempo_bpm, beats):
         calls.append(y is quieter)
         if y is not quieter:
+            if first_error:
+                raise first_error
             return first
         if second_error:
             raise second_error
@@ -267,8 +272,9 @@ def melody_step(monkeypatch, first, second=None, *, separation_error=None, secon
         AnalysisError=melody.AnalysisError, extract_melody=extract_melody, melody_to_part=lambda notes: {"notes": notes}
     )
     monkeypatch.setattr(separation, "harmonic_part", harmonic_part)
-    parts, warnings = analyzer._melody_part(fake, "the song", 22050, {"tempo_bpm": 100.0, "beats": [0.0]})
-    return parts[0]["notes"], warnings, calls
+    result = {"tempo_bpm": 100.0, "beats": [0.0], "duration_sec": 10.0}
+    parts, warnings = analyzer._melody_part(fake, "the song", 22050, result)
+    return parts[0]["notes"] if parts else None, warnings, calls
 
 
 def test_a_full_mix_that_comes_out_clean_without_the_drums_uses_the_clean_notes_and_drops_the_warning(monkeypatch, caplog):
@@ -347,3 +353,98 @@ def test_the_second_try_is_only_ever_logged_never_shown_as_a_warning(monkeypatch
     assert warnings == []
     _, warnings, _ = melody_step(monkeypatch, tune(20, 0.3), tune(20, 0.35))
     assert warnings == [analyzer.WARNING_FULL_MIX]
+
+
+# --- the second try when the first one found no melody at all ------------------------------------------------------------------
+# Loud drums can hide a melody completely. The drums-out notes are used then, but must clear the NO_MELODY_RETRY_* bars so that
+# noise does not become a melody. The song here is 10 seconds long, so the notes must cover 2.5 s.
+
+NO_MELODY = melody.AnalysisError("no clear melody")
+
+
+def test_a_melody_that_only_shows_up_without_the_drums_is_used(monkeypatch, caplog):
+    caplog.set_level(logging.INFO)
+    second = tune(20, 0.85)
+    notes, warnings, calls = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+    assert notes is second and warnings == []
+    assert calls == [False, True]
+    assert "Second try without drums for a song with no melody" in caplog.text and "used (20 notes)" in caplog.text
+
+
+def test_such_a_melody_that_looks_like_a_full_mix_comes_with_the_warning(monkeypatch):
+    second = tune(20, 0.3)
+    notes, warnings, _ = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+    assert notes is second and warnings == [analyzer.WARNING_FULL_MIX]
+
+
+@pytest.mark.parametrize(
+    ("confidence", "warned"),
+    [(0.3, True), (0.49, True), (0.55, True), (0.59, True), (0.61, False), (0.85, False)],
+)
+def test_the_warning_goes_only_when_the_tracker_is_clearly_sure_of_such_a_melody(monkeypatch, confidence, warned):
+    second = tune(20, confidence)
+    notes, warnings, _ = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+    assert notes is second  # the melody is shown either way
+    assert warnings == ([analyzer.WARNING_FULL_MIX] if warned else [])
+
+
+def test_such_a_melody_with_far_too_many_notes_a_second_is_warned_about_even_when_sure(monkeypatch):
+    busy = [note(i * 0.1, 0.9, length=0.09) for i in range(100)]  # ten notes a second all through the 10 second song
+    notes, warnings, _ = melody_step(monkeypatch, None, busy, first_error=NO_MELODY)
+    assert notes is busy and warnings == [analyzer.WARNING_FULL_MIX]
+
+
+def test_a_first_try_that_returns_an_empty_list_counts_as_no_melody_too(monkeypatch):
+    second = tune(20, 0.85)
+    notes, warnings, calls = melody_step(monkeypatch, [], second)
+    assert notes is second and warnings == [] and calls == [False, True]
+
+
+@pytest.mark.parametrize(
+    "second",
+    [
+        tune(3, 0.9),  # too few notes to be a melody
+        [],
+        tune(20, 0.15),  # the pitch tracker is hardly sure of any of it
+        tune(5, 0.9, gap=2.0),  # five notes scattered over the song: 2 s of sound in 10 s
+    ],
+    ids=["too few notes", "nothing", "too unsure", "scattered"],
+)
+def test_drums_out_notes_that_could_be_noise_are_not_a_melody(monkeypatch, caplog, second):
+    caplog.set_level(logging.INFO)
+    notes, warnings, calls = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+    assert notes is None and warnings == [analyzer.WARNING_NO_MELODY]
+    assert calls == [False, True]
+    assert "not used" in caplog.text or "found no melody" in caplog.text
+
+
+def test_notes_just_over_each_bar_are_used(monkeypatch):
+    four_notes = [note(i * 0.8, 0.9, length=0.7) for i in range(4)]  # the fewest that count, 2.8 s of sound
+    just_sure_enough = tune(20, 0.21)
+    just_enough_sound = [note(i * 2.5, 0.9, length=0.625) for i in range(4)]  # exactly 2.5 s of sound
+    for second in (four_notes, just_sure_enough, just_enough_sound):
+        notes, _, _ = melody_step(monkeypatch, None, second, first_error=NO_MELODY)
+        assert notes is second
+
+
+@pytest.mark.parametrize(
+    "trouble",
+    [
+        {"separation_error": RuntimeError("out of memory")},
+        {"separation_error": separation.SeparationError("too quiet")},
+        {"separation_error": ImportError("no librosa")},
+        {"second_error": melody.AnalysisError("no melody in the quiet sound either")},
+        {"second_error": RuntimeError("a bug")},
+    ],
+    ids=["separation fails", "nothing to separate", "separation missing", "no melody the second time", "bug the second time"],
+)
+def test_any_trouble_in_the_second_try_keeps_the_no_melody_answer(monkeypatch, trouble):
+    notes, warnings, _ = melody_step(monkeypatch, None, tune(20, 0.9), first_error=NO_MELODY, **trouble)
+    assert notes is None and warnings == [analyzer.WARNING_NO_MELODY]
+
+
+def test_a_bug_in_the_first_try_is_not_retried(monkeypatch):
+    notes, warnings, calls = melody_step(
+        monkeypatch, None, tune(20, 0.9), first_error=RuntimeError("a bug"), separation_error=AssertionError("must not run")
+    )
+    assert notes is None and warnings == [analyzer.WARNING_NO_MELODY] and calls == [False]
