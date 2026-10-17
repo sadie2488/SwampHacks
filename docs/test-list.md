@@ -53,5 +53,23 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 | 28 | A pull request that edits another lane's folders, a lead-only file, a big file, or audio/model files is rejected | Auto |
 | 29 | A contract change that removes or narrows something is rejected; adding is fine | Auto |
 
+## 6. Practice, feedback and progress
+| # | What should happen | How |
+|---|---|---|
+| 30 | You can always see yourself: turning the camera on shows your mirrored picture under the buttons on every tab, with dots on your hands. If hand tracking can't load, the picture stays and a plain message says why | Auto (real Chrome with a test camera) |
+| 31 | Calibrate: clap along to 6 clicks and the app measures the delay between your clap and what it hears (about 120 ms in the test) | Auto (made-up player); By hand (real mic and headphones) |
+| 32 | Practice: playing 10% too slowly gets "dragging", about 90 BPM against 100, with at most 3 issues and something that went well first | Auto |
+| 33 | The coaching text arrives in plain words (Gemini, or built-in tips if Gemini or the server is away) and never invents mistakes | Auto (server tests); By hand (read a real one) |
+| 34 | "Loop bars 1-2 at 80% speed" sets up the slow loop with one click | Auto |
+| 35 | Every practice run is saved and "Your practice so far" shows the runs and whether you are getting steadier | Auto |
+
+## 7. Saving, login and real analysis
+| # | What should happen | How |
+|---|---|---|
+| 36 | Create: a saved track is still there after reloading the page, and loading it brings back its layers | Auto |
+| 37 | Login with Auth0 appears only when it is set up. Without it the app looks and works exactly the same | Auto (login hidden); By hand (real login) |
+| 38 | Upload a real song (MP3, WAV, FLAC or OGG): it shows its real tempo and key; a single-instrument recording also gets real sheet music; a full band mix shows a warning that the notes may be wrong | By hand (needs a few real songs) |
+| 39 | Songs, practice runs and tracks are stored in Tiger Data when it is connected, and in memory (lost on restart) when it is not | Auto (memory); By hand (real database) |
+
 ## Not tested yet (later tasks)
-Real song analysis, feedback and Gemini coaching, saving and replaying creations, login, deployment, and the final design.
+Separating a song into parts (so full songs get clean sheet music), a trained model of our own, deployment, and the final design.
