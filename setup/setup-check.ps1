@@ -60,8 +60,14 @@ if (Have "uv") { Ok ((Run "uv" @("--version"))) }
 else { Missing "uv (Python tool) is not installed" "winget install --id astral-sh.uv -e   (then close and reopen this window)" "https://docs.astral.sh/uv/getting-started/installation/" }
 
 # --- Claude Code ---
-if (Have "claude") { Ok ("Claude Code " + (Run "claude" @("--version"))) }
-else { Missing "Claude Code is not installed" "npm install -g @anthropic-ai/claude-code   (needs Node.js first)" "https://docs.claude.com/en/docs/claude-code/setup" }
+if (Have "claude") {
+    $cv = Run "claude" @("--version")
+    $old = $false
+    if ($cv -match "(\d+)\.(\d+)\.(\d+)") { $old = ([version]("{0}.{1}.{2}" -f $Matches[1], $Matches[2], $Matches[3])) -lt [version]"2.1.295" }
+    if ($old) { Missing ("Claude Code " + $cv + " is too old (need 2.1.295 or newer so a broken safety hook blocks the edit instead of letting it through)") "claude update" "https://code.claude.com/docs/en/setup" }
+    else { Ok ("Claude Code " + $cv) }
+}
+else { Missing "Claude Code is not installed" "Use the installer linked below (recommended). With npm instead you need Node 22 or newer: npm install -g @anthropic-ai/claude-code" "https://code.claude.com/docs/en/setup" }
 
 # --- GitHub CLI and sign-in ---
 $ghReady = $false

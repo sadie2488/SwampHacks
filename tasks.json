@@ -1,5 +1,5 @@
 {
-  "_readme": "Task cards. Only the lead writes this file. \"passes\" is set by CI or the lead, never by a worker. Flags: star = demo path, purple = needed for Veda by 9:30 AM. Intent is copied word for word from docs/plan.md section 7.",
+  "_readme": "Task cards. Only the lead writes this file. \"passes\" is set by CI or the lead, never by a worker. Flags: star = demo path, purple = needed for Veda by 9:30 AM. Intent is copied word for word from docs/plan.md section 7. read_first lists docs a worker should read before starting (shown in section 4.4 of the brief).",
   "tasks": [
     {
       "id": "0.1",
@@ -24,7 +24,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.2",
@@ -51,7 +52,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.3",
@@ -78,7 +80,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.4",
@@ -105,7 +108,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.5",
@@ -131,7 +135,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.6",
@@ -161,7 +166,8 @@
       "merge_gate": "lead",
       "status": "in_progress",
       "claimed_by": "lead",
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "0.7",
@@ -190,7 +196,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "0.8",
@@ -222,7 +229,8 @@
       "merge_gate": "lead",
       "status": "done",
       "claimed_by": "lead",
-      "passes": true
+      "passes": true,
+      "read_first": []
     },
     {
       "id": "L1",
@@ -265,7 +273,8 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "L6",
@@ -306,7 +315,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "V1",
@@ -339,7 +349,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "A1",
@@ -368,7 +379,8 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "A2",
@@ -401,7 +413,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "A3",
@@ -432,7 +447,10 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "A4",
@@ -468,7 +486,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "A5",
@@ -500,7 +521,10 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "A6",
@@ -532,7 +556,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "B1",
@@ -568,7 +593,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "B2",
@@ -605,7 +633,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "B3",
@@ -639,7 +670,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "B4",
@@ -672,7 +706,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "C1",
@@ -709,7 +744,8 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "C2",
@@ -743,7 +779,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "C3",
@@ -781,7 +818,8 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "D1",
@@ -813,7 +851,10 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "D2",
@@ -844,7 +885,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "D3",
@@ -877,7 +919,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "D4",
@@ -908,7 +951,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "L2",
@@ -944,7 +988,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "L3",
@@ -980,7 +1027,10 @@
       "merge_gate": "human",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": [
+        "docs/music-notes.md"
+      ]
     },
     {
       "id": "L4",
@@ -1012,7 +1062,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "L5",
@@ -1040,7 +1091,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     },
     {
       "id": "F1",
@@ -1070,7 +1122,8 @@
       "merge_gate": "lead",
       "status": "open",
       "claimed_by": null,
-      "passes": false
+      "passes": false,
+      "read_first": []
     }
   ]
 }

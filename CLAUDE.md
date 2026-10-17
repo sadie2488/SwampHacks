@@ -42,4 +42,5 @@ Post a verification report in the PR / update file:
 
 ## Where things are
 - Plan: `docs/plan.md` · Build spec: `docs/build-spec.md` · Commands design: `docs/commands-guide.md`
+- Words: `docs/glossary.md` · Music facts: `docs/music-notes.md` · Claude Code config facts: `docs/config-reference.md`
 - Tasks: `tasks.json` · Team: `docs/team.md` · Decisions: `docs/decisions.md` · Assumptions: `docs/assumptions.md`

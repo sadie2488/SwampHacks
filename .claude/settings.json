@@ -90,7 +90,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/scope-guard.mjs\"",
-            "timeout": 10,
+            "timeout": 30,
             "onFailure": "block"
           }
         ]
@@ -101,7 +101,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/bash-guard.mjs\"",
-            "timeout": 10,
+            "timeout": 30,
             "onFailure": "block"
           }
         ]
@@ -112,7 +112,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/secret-guard.mjs\"",
-            "timeout": 10,
+            "timeout": 30,
             "onFailure": "block"
           }
         ]

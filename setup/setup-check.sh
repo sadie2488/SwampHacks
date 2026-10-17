@@ -68,7 +68,18 @@ esac
 if have uv; then ok "$(uv --version)"; else missing "uv (Python tool) is not installed" "$HINT_UV" "https://docs.astral.sh/uv/getting-started/installation/"; fi
 
 # --- Claude Code ---
-if have claude; then ok "Claude Code $(claude --version 2>/dev/null | head -n 1)"; else missing "Claude Code is not installed" "npm install -g @anthropic-ai/claude-code   (needs Node.js first)" "https://docs.claude.com/en/docs/claude-code/setup"; fi
+if have claude; then
+  CV="$(claude --version 2>/dev/null | head -n 1)"
+  VER="$(echo "$CV" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+  IFS=. read -r CMA CMI CPA <<EOF
+$VER
+EOF
+  if [ "${CMA:-0}" -gt 2 ] 2>/dev/null || { [ "${CMA:-0}" -eq 2 ] && { [ "${CMI:-0}" -gt 1 ] || { [ "${CMI:-0}" -eq 1 ] && [ "${CPA:-0}" -ge 295 ]; }; }; } 2>/dev/null; then
+    ok "Claude Code $CV"
+  else
+    missing "Claude Code $CV is too old (need 2.1.295 or newer so a broken safety hook blocks the edit instead of letting it through)" "claude update" "https://code.claude.com/docs/en/setup"
+  fi
+else missing "Claude Code is not installed" "Use the installer linked below (recommended). With npm instead you need Node 22 or newer: npm install -g @anthropic-ai/claude-code" "https://code.claude.com/docs/en/setup"; fi
 
 # --- GitHub CLI and sign-in ---
 GH_READY=0

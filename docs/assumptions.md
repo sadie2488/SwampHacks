@@ -26,4 +26,8 @@ How assumptions are handled:
 | 15 | Sadie has added `VULTR_API_KEY` (restricted to the main laptop's IP) to `server/.env`; she may have added only the storage keys | Unconfirmed |
 | 16 | The GoDaddy domain name is not known yet | Unconfirmed |
 | 17 | The stray `@auth0/auth0-react` in the repo-root `package.json` came from Auth0's quickstart ("npm install @auth0/auth0-react@2.x") run in the wrong folder. It belongs in `web/package.json` and moves there when login is built | Assumed |
+| 19 | Workers can't start helper agents because `/start` writes `permissions.deny: ["Agent"]` into the worker's own `.claude/settings.local.json` (the docs describe this rule; untested on a real worker laptop yet) | Per the docs |
+| 20 | Auto mode is already the default starting mode in Claude Code 2.1.283+ (interactive terminal and VS Code); project settings can't set it, and teammates on older versions must launch with `claude --permission-mode auto` | Per the docs |
+| 21 | `attribution.commit: ""` hides the co-author line (the docs say an empty string hides it). Not yet seen on a real worker laptop; the command guard and CI reject any AI credit either way | Per the docs |
+| 22 | Claude Code installed with npm needs Node 22 or newer; the native installer has no such need. The project's own scripts only need Node 20 | Per the docs |
 | 18 | Vultr credit math for the watcher: spent = 100 + account balance (negative means credit left) + pending charges. Field names `balance` and `pending_charges` come from Vultr's Go client; the official API page was unreachable, so the sign and the IP-restriction option for keys are unverified. Check the watcher's number against the Vultr dashboard once | Unconfirmed |
