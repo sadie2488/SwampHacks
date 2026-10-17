@@ -10,6 +10,7 @@ import { start as startPlayback } from '@/modules/playback';
 import { Sheet } from '@/modules/sheet';
 import { start as startTouchDesigner } from '@/modules/touchdesigner';
 import { start as startVision } from '@/modules/vision';
+import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { AnalysisSummary } from './AnalysisSummary';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
@@ -43,7 +44,7 @@ const MODULES: Array<[name: string, start: () => Stop]> = [
 
 function SongView({ loader, setLoader }: { loader: LoaderState; setLoader: (s: LoaderState) => void }) {
   return (
-    <>
+    <div className="song-view">
       <SongLoader state={loader} setState={setLoader} />
       <AnalysisSummary />
       <div className="song-controls">
@@ -53,13 +54,14 @@ function SongView({ loader, setLoader }: { loader: LoaderState; setLoader: (s: L
         </PanelBoundary>
       </div>
       <PanelBoundary name="practice history"><History /></PanelBoundary>
-      <section className="panel" aria-labelledby="sheet-heading">
+      {/* the sheet sits on a calm torn-paper strip, in front of the landscape */}
+      <section className="sheet-strip" aria-labelledby="sheet-heading">
         <h2 id="sheet-heading">Sheet music</h2>
         <PanelBoundary name="sheet music">
           <Sheet />
         </PanelBoundary>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -95,8 +97,11 @@ export function App() {
 
   return (
     <div className="app">
+      <Backdrop />
       <header className="app-header">
-        <h1>SwampHacks Music</h1>
+        <h1 className="brand">
+          Swamp<span className="brand-accent">Hacks</span> Music
+        </h1>
         <div role="tablist" aria-label="Mode" className="tabs">
           {TABS.map((t) => (
             <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls="mode-panel" data-testid={t.testid} onClick={() => setTab(t.id)}>
@@ -107,10 +112,10 @@ export function App() {
         <LoginButton />
       </header>
 
-      <main>
+      <main className="app-main">
         <Devices fake={isFakeMode()} />
         <CameraPreview />
-        <div role="tabpanel" id="mode-panel" aria-labelledby={`tab-${tab}`}>
+        <div role="tabpanel" id="mode-panel" className="mode-panel" aria-labelledby={`tab-${tab}`}>
           {(tab === 'learn' || tab === 'play') && <SongView loader={loader} setLoader={setLoader} />}
           {tab === 'create' && (
             <PanelBoundary name="Create">
