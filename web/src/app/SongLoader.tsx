@@ -40,15 +40,21 @@ export function SongLoader({ state, setState }: { state: LoaderState; setState: 
   };
 
   return (
-    <section className="panel" aria-labelledby="song-heading">
-      <h2 id="song-heading">Pick a song</h2>
+    <section className="song-loader" aria-labelledby="song-heading">
+      <p className="kicker" aria-hidden="true">
+        Pick a song
+      </p>
+      <h2 id="song-heading">
+        <span className="sr-only">Pick a song: </span>What’s on the stand?
+      </h2>
       <div className="row">
-        <label>
-          Upload a song file{' '}
+        {/* the real file picker is hidden inside its label, which looks like the other pill buttons */}
+        <label className="upload-button">
           <input
             ref={fileInput}
             type="file"
             accept="audio/*"
+            className="visually-hidden-input"
             data-testid="song-file"
             disabled={state.busy}
             onChange={(e) => {
@@ -58,6 +64,7 @@ export function SongLoader({ state, setState }: { state: LoaderState; setState: 
               if (fileInput.current) fileInput.current.value = ''; // lets the same file be picked again
             }}
           />
+          Upload a song file
         </label>
         <button type="button" data-testid="use-demo" disabled={state.busy} onClick={() => void run(() => loadDemo())}>
           Use demo song

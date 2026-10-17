@@ -62,7 +62,9 @@ export function History() {
 
   return (
     <section className="panel history" aria-labelledby="history-heading" data-testid="history">
-      <h2 id="history-heading">Your practice so far</h2>
+      <h2 id="history-heading" className="kicker">
+        Your practice so far
+      </h2>
       <p data-testid="history-message">{historyMessage(recent, Boolean(songId))}</p>
       {saves.note && (
         <p className="notice" data-testid="history-save-note" role="status">

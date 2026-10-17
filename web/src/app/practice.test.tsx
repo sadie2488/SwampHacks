@@ -79,10 +79,10 @@ describe('steps and buttons', () => {
   it('lists the steps in plain words (headphones included) and has the three buttons', () => {
     const steps = [...container.querySelectorAll('ol li')].map((li) => li.textContent);
     expect(steps).toEqual([
-      'Turn on the microphone (button above).',
-      "Use headphones so the microphone doesn't hear the song.",
-      'Clap along to calibrate (so we can cancel the delay).',
-      'Play along with the song.',
+      'Turn on the microphone',
+      "Use headphones so the microphone doesn't hear the song",
+      'Clap along to calibrate the delay',
+      'Play along with the song',
     ]);
     expect(text('btn-calibrate')).toBe('Calibrate: clap along');
     expect(text('btn-practice-start')).toBe('Start practice');

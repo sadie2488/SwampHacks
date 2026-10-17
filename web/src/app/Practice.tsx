@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { bus, sendCommand, type Topics } from '@/bus';
 import { FeedbackCard } from './FeedbackCard';
-import { afterAudioWakes, useBusValue } from './hooks';
+import { afterAudioWakes, useBusValue, useModuleStatus } from './hooks';
 import { NO_SONG_MESSAGE, practiceWords } from './practice-logic';
 
 type Action = Topics['practiceControl']['action'];
 
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+
+const STEPS = ['Turn on the microphone', "Use headphones so the microphone doesn't hear the song", 'Clap along to calibrate the delay', 'Play along with the song'];
 
 export function Practice() {
   const feedback = useBusValue('feedback');
@@ -31,6 +33,10 @@ export function Practice() {
     [],
   );
   useEffect(() => bus.on('analysis', () => setNotice(null)), []);
+  const mic = useModuleStatus('audio-live');
+  const micOn = mic?.state === 'starting' || mic?.state === 'running';
+  // The step to do next: the microphone first, then the clap check, then playing along.
+  const nowStep = !micOn ? 0 : latency === undefined ? 2 : 3;
 
   const send = (action: Action) => () =>
     void afterAudioWakes(() => {
@@ -50,12 +56,18 @@ export function Practice() {
 
   return (
     <section className="panel practice" aria-labelledby="practice-heading">
-      <h2 id="practice-heading">Practice: play along</h2>
+      <p className="kicker" aria-hidden="true">
+        Practice: play along
+      </p>
+      <h2 id="practice-heading">
+        <span className="sr-only">Practice: </span>Play it with the reef
+      </h2>
       <ol className="practice-steps">
-        <li>Turn on the microphone (button above).</li>
-        <li>Use headphones so the microphone doesn't hear the song.</li>
-        <li>Clap along to calibrate (so we can cancel the delay).</li>
-        <li>Play along with the song.</li>
+        {STEPS.map((step, i) => (
+          <li key={i} aria-current={i === nowStep ? 'step' : undefined}>
+            {step}
+          </li>
+        ))}
       </ol>
       <div className="row">
         <button type="button" data-testid="btn-calibrate" onClick={send('calibrate')}>
