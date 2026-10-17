@@ -1145,7 +1145,7 @@
       "claimed_by": null,
       "passes": false,
       "read_first": [],
-      "progress": "Three 3D mockup directions made and shown to Lalitha (A Firefly Marsh, B Glass Hall, C Paper Reef; Learn and Play screens each) as real WebGL scenes with the app's real labels. Waiting for her pick (or a mix) and any inspiration, then a helper builds it in web/src/ui and web/src/styles. The source of the mockups is in scratch/design-mockups (not in git). Needs three.js added to web/package.json by the lead."
+      "progress": "Look chosen: C1, Paper Reef with a solid torn-paper band behind the staff (docs/decisions.md, docs/design-brief.md, mockup docs/design-mockups/c-paper-reef-calm.html?calm=strip). three.js 0.128.0 is installed in web/. Next: Lalitha builds it in web/src/ui and web/src/styles; the lead adds the mount point in App.tsx when she asks; all 22 browser checks must stay green."
     }
   ]
 }

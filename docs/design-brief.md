@@ -8,7 +8,7 @@ For whoever is doing the graphic design (Lalitha). Plain words; ask the main lap
   - **A Firefly Marsh**: night swamp, notes are fireflies on a glowing staff over dark water
   - **B Glass Hall**: brass concert hall, gold ribbons for the staff, light shafts
   - **C Paper Reef**: layered paper cut-outs, bright and easy to read
-- **Chosen: Look C (Paper Reef)**, with a calm band behind the staff so the music is easy to read. Two versions: `C1-*.jpg` (solid torn-paper strip) and `C2-*.jpg` (see-through tracing paper); the live page is `c-paper-reef-calm.html` (add `?calm=strip` or `?calm=vellum`, and `&screen=play`). Waiting for C1 or C2
+- **Chosen: Look C (Paper Reef)**, with a calm band behind the staff so the music is easy to read. **Final pick: C1, the solid torn-paper strip** (`C1-learn.jpg`, `C1-play.jpg`; live: `c-paper-reef-calm.html?calm=strip`, add `&screen=play` for Play). C2 (tracing paper) was the other option and is not used
 
 ## What you may edit (the design lane)
 - `web/src/ui/**` and `web/src/styles/**` (new folders: create them)
