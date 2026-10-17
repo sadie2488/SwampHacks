@@ -1,9 +1,72 @@
-"""Server entry point. The server-core lane (L4) builds this out: upload, analysis, demo songs, database."""
-from fastapi import FastAPI
+"""Server entry point: health, demo songs, upload, and song analysis."""
+import logging
+import re
+from pathlib import PurePosixPath
+from typing import Annotated
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
+
+from . import config, store
+
+log = logging.getLogger("music.server")
 
 app = FastAPI(title="SwampHacks Music")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/demo-songs")
+def demo_songs() -> list[dict]:
+    return store.demo_songs()
+
+
+@app.get("/api/songs/{song_id}/analysis")
+def song_analysis(song_id: str) -> dict:
+    analysis = store.get_analysis(song_id)
+    if analysis is None:
+        raise HTTPException(404, "We could not find that song. Try uploading it again.")
+    return analysis
+
+
+def _is_audio(file_name: str, content_type: str | None) -> bool:
+    extension = PurePosixPath(file_name).suffix.lower()
+    return (content_type or "").lower().startswith("audio/") or extension in config.AUDIO_EXTENSIONS
+
+
+async def _read_limited(file: UploadFile) -> bytes:
+    data = bytearray()
+    while chunk := await file.read(1024 * 1024):
+        data += chunk
+        if len(data) > config.MAX_UPLOAD_BYTES:
+            limit_mb = config.MAX_UPLOAD_BYTES // (1024 * 1024)
+            raise HTTPException(413, f"That file is too big. Please use an audio file under {limit_mb} MB.")
+    return bytes(data)
+
+
+@app.post("/api/songs")
+async def upload_song(file: Annotated[UploadFile | None, File()] = None) -> dict:
+    if file is None:
+        raise HTTPException(400, "Choose an audio file to upload.")
+    # Browsers may send a Windows-style path; keep only the file name itself.
+    file_name = re.split(r"[\\/]", file.filename or "")[-1] or "upload"
+    if not _is_audio(file_name, file.content_type):
+        raise HTTPException(415, "That does not look like an audio file. Try an MP3, WAV, FLAC, OGG, M4A or AAC file.")
+    data = await _read_limited(file)
+    if not data:
+        raise HTTPException(400, "That file is empty. Choose a different audio file.")
+    try:
+        return await run_in_threadpool(store.save_upload, file_name, data)
+    except Exception:
+        log.exception("Analysis failed for %s", file_name)
+        raise HTTPException(500, "We could not analyze that song. Please try another file.") from None
