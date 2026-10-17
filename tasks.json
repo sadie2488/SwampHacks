@@ -419,7 +419,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Built and tested on synthetic audio: tempo (within 0.01% on clean beats), beats, 3/4 vs 4/4, key (24 keys right), about 5 s for 3 minutes. Remaining: try real recordings (a human with a few songs)."
     },
     {
       "id": "A3",
@@ -492,7 +493,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Built and tested on synthetic audio: melody from a single line (pYIN), octave and tuning fixes, quantized to beats, about 0.99 precision and recall. Remaining: real instruments and voices; a full band mix needs song separation (A3) and gets a warning."
     },
     {
       "id": "A5",
@@ -640,7 +642,8 @@
       "passes": false,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Built and tested: clap calibration, matching played notes to the song (works at any speed), rule-based feedback with tempo, bars, pitch. Remaining: check on a real mic with headphones; tune thresholds in audio-live/practice/config.ts."
     },
     {
       "id": "B3",
@@ -672,12 +675,13 @@
         "⭐"
       ],
       "merge_gate": "human",
-      "status": "open",
+      "status": "done",
       "claimed_by": null,
-      "passes": false,
+      "passes": true,
       "read_first": [
         "docs/music-notes.md"
-      ]
+      ],
+      "progress": "Done: instant rule-based feedback, Gemini coaching through the server (checked with a real call, about 1.3 s) with a built-in fallback, practice panel, history trend."
     },
     {
       "id": "B4",
@@ -863,7 +867,7 @@
       "read_first": [
         "docs/music-notes.md"
       ],
-      "progress": "Skeleton merged: hum to notes (smoothing, quantize). Remaining: octave-jump fix, running tuning offset, optional key snapping (docs/music-notes.md section 8)."
+      "progress": "Skeleton plus quality merged: octave jump fix, tuning offset, optional snap to key, 0.97 precision and recall on synthetic hums. Remaining: real microphone."
     },
     {
       "id": "D2",
@@ -960,10 +964,11 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
+      "status": "done",
       "claimed_by": null,
-      "passes": false,
-      "read_first": []
+      "passes": true,
+      "read_first": [],
+      "progress": "Done: save a track and play it back later, even after a reload; falls back to this computer when the server is away."
     },
     {
       "id": "L2",
@@ -1003,7 +1008,7 @@
       "read_first": [
         "docs/music-notes.md"
       ],
-      "progress": "Skeleton merged: tempo 0.5-1.5 and pitch +-12 measured independent (soundtouchjs), loop, volume, demo song synthesized from notes. Remaining: listen on real speakers, AudioWorklet instead of ScriptProcessor, loop-wrap click."
+      "progress": "Skeleton plus hardening merged: tempo and pitch independent (measured), worklet output (no dropouts in real Chrome), bypass at normal speed, loop crossfade, position within about 6 ms of what is heard. Remaining: listen on real speakers."
     },
     {
       "id": "L3",
@@ -1043,7 +1048,7 @@
       "read_first": [
         "docs/music-notes.md"
       ],
-      "progress": "Skeleton merged: shell, song loader with offline fallback, analysis summary, sheet music (OSMD) with note letters and display transposition. Remaining: the real design (F1)."
+      "progress": "Merged: shell, song loader, sheet music, camera preview on every tab, Practice panel, history, optional login. Remaining: the real design (F1)."
     },
     {
       "id": "L4",
@@ -1077,7 +1082,7 @@
       "claimed_by": null,
       "passes": false,
       "read_first": [],
-      "progress": "Server skeleton merged (upload, fake analysis, demo song, public config route, env loading). Remaining: Tiger Data, Auth0, real analysis hook-up."
+      "progress": "Merged: upload, real analysis hook (see A2/A4), saving songs, sessions, feedback and creations (memory or Tiger Data), optional Auth0 login on server and website. Remaining: run the migration on the real database, try login against the real Auth0 tenant."
     },
     {
       "id": "L5",

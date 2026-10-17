@@ -271,6 +271,50 @@ test('frames for TouchDesigner reach the relay over a real WebSocket', T, async 
   assert.match((await $('status-touchdesigner').textContent()) ?? '', /./);
 });
 
+test('practice with a made-up slow player: calibrate, play along, get feedback, coaching, history and a loop button', { timeout: 150_000 }, async () => {
+  await $('tab-learn').click();
+  await page.evaluate(() => window.__music.fakePractice({ pace: 0.9 })); // the made-up player drags by 10 percent
+  const micOn = /running|made-up/i.test((await $('status-audio-live').textContent()) ?? '');
+  if (!micOn) await $('btn-enable-audio').click();
+  await until('microphone running', async () => /running|made-up/i.test((await $('status-audio-live').textContent()) ?? ''), 15_000);
+  // make sure the demo song is loaded and paused at the start
+  await $('btn-pause').click();
+  await page.evaluate(() => window.__music.sendCommand('playback.tempo', 'button', { how: 'set', value: 1 }));
+
+  await $('btn-calibrate').click();
+  await until('the delay is measured', async () => /Delay measured: \d+/.test((await $('practice-latency').textContent()) ?? ''), 40_000);
+
+  await $('btn-practice-start').click();
+  await until('listening', async () => /listening|play along/i.test((await $('practice-status').textContent()) ?? ''), 15_000);
+  await until('the song is playing', async () => (await topic('transport')).playing, 10_000);
+  await sleep(9_000); // play along for a while
+  await $('btn-pause').click(); // ends the run
+
+  const fb = await until('feedback arrives', async () => (await topic('feedback')) ?? null, 40_000);
+  assert.equal(fb.source, 'rules');
+  assert.equal(fb.tempo.verdict, 'dragging', `a 10 percent slow player should be told they dragged, got ${JSON.stringify(fb.tempo)}`);
+  assert.ok(fb.tempo.ratio > 0.8 && fb.tempo.ratio < 0.97, `ratio should be about 0.9, got ${fb.tempo.ratio}`);
+  await $('feedback-card').waitFor({ state: 'visible', timeout: 10_000 });
+  assert.ok(((await $('feedback-summary').textContent()) ?? '').length > 10);
+  assert.ok(((await $('feedback-tempo').textContent()) ?? '').length > 5);
+  // friendly coaching text arrives from the server (Gemini or the built-in tips), or from the local built-in sentence
+  await until('coaching text', async () => ((await $('feedback-coaching').textContent().catch(() => '')) ?? '').length > 20, 30_000);
+  // the run is saved and shows up in the history
+  await until('the run appears in the history', async () => (await page.locator('[data-testid="history-runs"] li').count()) >= 1, 20_000);
+  assert.ok(((await $('history-message').textContent()) ?? '').length > 5);
+  // "loop this bar at 80%" sets up a slow loop
+  const loopBtn = $('btn-loop-bar');
+  if (await loopBtn.count()) {
+    await loopBtn.click();
+    await until('the loop button set the speed and loop', async () => (await control('playback.tempo')) === 0.8 && (await control('playback.loop')) === true, 8_000);
+    await page.evaluate(() => {
+      window.__music.sendCommand('playback.loop', 'button', { how: 'set', value: false });
+      window.__music.sendCommand('playback.tempo', 'button', { how: 'set', value: 1 });
+      window.__music.sendCommand('playback.pause', 'button', { how: 'trigger' });
+    });
+  }
+});
+
 test('Create mode: a hummed melody becomes a layer that plays in a loop', { timeout: 120_000 }, async () => {
   await $('tab-create').click();
   await $('btn-add-layer').click();
@@ -292,6 +336,23 @@ test('Create mode: a hummed melody becomes a layer that plays in a loop', { time
   );
   assert.ok(notes >= 2, `the hummed melody has several notes, got ${notes}`);
   await $('btn-stop-loop').click();
+});
+
+test('Create mode: save the track, reload the page, and find it again', T, async () => {
+  await $('input-track-name').fill('E2E melody');
+  await $('btn-save-track').click();
+  await until('saved', async () => /saved/i.test((await $('save-status').textContent()) ?? ''), 20_000);
+  await page.reload();
+  await $('tab-create').click();
+  const item = await until('the saved track is listed', async () => ((await page.locator('[data-testid^="saved-track-"]').filter({ hasText: 'E2E melody' }).count()) > 0 ? true : null), 20_000);
+  assert.ok(item);
+  const index = await page.locator('[data-testid^="saved-track-"]').evaluateAll((els) => els.findIndex((e) => /E2E melody/.test(e.textContent ?? '')));
+  assert.ok(index >= 0);
+  await $(`btn-load-track-${index}`).click();
+  // loading may ask first when there is unsaved work (a fresh page has none), then the layers appear
+  const confirm = $('btn-confirm-load');
+  if (await confirm.count()) await confirm.click();
+  await until('the loaded track has notes', async () => Number((await $('layer-0-notes').textContent())?.match(/\d+/)?.[0] ?? 0) > 0, 15_000);
 });
 
 test('the app falls back to the built-in demo when the server is down', T, async () => {
