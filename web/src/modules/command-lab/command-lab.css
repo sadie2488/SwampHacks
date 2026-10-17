@@ -1,0 +1,24 @@
+/* Plain layout for the Command Lab. A designer will restyle this later. */
+.command-lab { max-width: 960px; margin: 0 auto; padding: 1rem; }
+.command-lab section { margin: 1.5rem 0; }
+.command-lab code { font-size: 0.9em; }
+.lab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.lab-list > li { border: 1px solid #8884; border-radius: 6px; padding: 0.5rem 0.75rem; }
+.lab-hint { color: #888; font-size: 0.9em; }
+.lab-reading { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+.lab-reading meter { width: 12rem; }
+
+/* the camera picture is mirrored, with the tracking drawn on top (both flip together) */
+.lab-camera { position: relative; width: 100%; max-width: 640px; background: #111; transform: scaleX(-1); }
+.lab-camera video, .lab-camera canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lab-camera video { object-fit: fill; }
+
+/* lamps and flashes */
+.lab-lamp { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 50%; background: #8886; }
+.lab-lamp[data-on="true"] { background: #2ecc40; box-shadow: 0 0 6px #2ecc40; }
+[data-testid^="control-"][data-flash="true"] { background: #ffe9a8; }
+[data-testid^="rule-"][data-enabled="false"] { opacity: 0.45; }
+[data-testid^="rule-"][data-fired="true"] { background: #d7f5dc; }
+[data-testid="lab-issues"] li[data-level="error"] { border-color: #d33; }
+[data-testid="lab-issues"] li[data-level="warning"] { border-color: #e8a317; }
+.lab-log { margin: 0; padding-left: 1.25rem; font-size: 0.9em; }
