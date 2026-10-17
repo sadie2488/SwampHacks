@@ -4,6 +4,9 @@ Newest first. Only the main laptop writes here. Overrides by humans are logged h
 
 | When | Decision | Why | Decided by |
 |---|---|---|---|
+| Sat 6:25 AM | Lead builds through helper agents in separate copies of the repo; the lead scope-checks each branch and re-runs every check before merging, never on a helper's word | Prevents silent damage and overlap | Lead |
+| Sat 5:45 AM | **Vultr budget rule**: the $100 credit must not be exceeded. Never create, resize or delete any Vultr resource without a human's explicit yes plus a cost estimate. GPU instances banned unless a human approves. A watcher checks the balance every 30 minutes and emails at $50, $75, $90 used; at $75 stop all new Vultr usage; at $90 list everything running. After submitting, delete all Vultr resources (`docs/vultr.md`) | Protect the money on the linked card | Sadie |
+| Sat 5:45 AM | Sponsor accounts created (Vultr, Gemini, Tiger Data, Auth0); keys live only in `server/.env`. Auth0 domain and client id are public values | Accounts ready for the build | Sadie |
 | Sat 5:09 AM | CI runs its check scripts from the base branch, not from the pull request's copy | A branch must not be able to weaken the checks that judge it | Lead |
 | Sat 5:05 AM | `.env` is private: git-ignored (tested), Claude blocked from reading or writing it by permissions and hooks, `.env.example` lists key names only, keys never in `VITE_` names | Safe place for API keys on a public repo | Lalitha |
 | Sat 4:55 AM | Claude is never credited as a contributor on GitHub: settings turn off commit and PR credit lines, a hook blocks credit wording, CI rejects it in commits, authors, PR title and body | Team preference, extends the 3:38 AM no-attribution decision | Lalitha |

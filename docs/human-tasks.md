@@ -4,7 +4,10 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 
 | Status | Task | Urgency |
 |---|---|---|
-| ☐ | Sponsor accounts + keys (Vultr first) | 🔴 |
+| ✅ | Sponsor accounts + keys: Vultr, Gemini, Tiger Data, Auth0 (keys are in `server/.env`) | 🔴 |
+| ☐ | GoDaddy domain name (not a secret: just tell the main laptop the name) | 🟠 |
+| ☐ | Confirm `VULTR_API_KEY` is in `server/.env` (restricted to the main laptop's IP) so the budget watcher can run | 🟠 |
+| ☐ | After submitting: delete all Vultr resources (checklist in `docs/vultr.md`) | 🟡 |
 | ☐ | Record test clips | 🔴 |
 | ☐ | Sadie: Gmail app password for the email relay | 🔴 |
 | ☐ | Repo owner: turn on GitHub secret scanning + push protection (Settings → Code security) | 🔴 |
@@ -18,16 +21,17 @@ These show up in everyone's ⭐ box until done. Tell the main laptop when you fi
 ## 🔑 Sponsor accounts (`/explain accounts`)
 **Golden rule: never paste a key into chat, email, or any file in this repo.** Keys go only into the private `.env` file on the machine that needs them — type them in yourself.
 
-- **Vultr** (hosting + storage): sign up at vultr.com (check the hackathon for a credit code). Create **Object Storage** (for datasets and models) and note its access keys
-- **Tiger Data** (database): sign up at the Tiger Data console, create a service, copy its connection string
-- **Gemini** (coaching text): get an API key from Google AI Studio
-- **GoDaddy** (domain): claim/register the domain via the hackathon's GoDaddy offer
-- **Auth0** (login, added last): create a tenant and a "Single Page Application"; we'll add callback URLs later
+Status (done by Sadie): ✅ Vultr · ✅ Gemini · ✅ Tiger Data · ✅ Auth0 · ❓ GoDaddy (domain name still needed)
+- **Vultr** (hosting + storage): Object Storage `swamphacks` with bucket `swamphacks-data`. Keys in `server/.env`. **Budget rules: `docs/vultr.md`** (a $100 credit; nothing gets created without a human's yes and a cost estimate; GPU banned)
+- **Tiger Data** (database): connection string is `DATABASE_URL` in `server/.env`
+- **Gemini** (coaching text): `GEMINI_API_KEY` in `server/.env`
+- **GoDaddy** (domain): not confirmed. Needed: the domain name
+- **Auth0** (login, added last): a "Single Page Application" (React). Callback, logout and web-origin URLs are `http://localhost:5173` for now (add the real domain at deploy). `AUTH0_DOMAIN` and `AUTH0_CLIENT_ID` are public values (safe in the website); everything else stays secret
 
 ## 🔒 Your private `.env` file (`/explain env`)
 The safe place for API keys. Each laptop that needs keys makes its own.
-- **Make it once** (PowerShell, in the project folder): `Copy-Item .env.example .env`
-- **Fill it in yourself**: open `.env` in **Notepad**, type each key after its `=`, save. In Notepad's Save dialog choose "All files" so it stays `.env` and not `.env.txt`
+- **The file lives at `server/.env`** (already made on the main laptop). On another laptop, make it once (PowerShell, in the project folder): `Copy-Item .env.example server\.env`
+- **Fill it in yourself**: open it in **Notepad**, type each key after its `=`, save. In Notepad's Save dialog choose "All files" so it stays `.env` and not `.env.txt`
 - **Why it's safe**
   - Git ignores it, so it can't be committed by accident (this is tested automatically)
   - Claude is blocked from reading it or writing to it; so are shell tricks like `cat .env` or `node -e`

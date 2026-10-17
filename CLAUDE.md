@@ -18,6 +18,7 @@
 - Never write or edit the tests that grade your own work
 - Never push to `main`. Work on your branch; open a pull request
 - Never read, print, or commit secrets (`.env*`, keys, app passwords). Never paste keys into chat
+- **Vultr budget ($100 credit on a real card)**: never create, resize, or delete any Vultr resource without a human's explicit yes plus a cost estimate. GPU instances are banned unless a human approves. Details: `docs/vultr.md`
 - Datasets, model weights, and audio/video clips never go in git (use Vultr storage)
 
 ## Overrides

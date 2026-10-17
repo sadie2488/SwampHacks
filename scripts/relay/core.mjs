@@ -55,21 +55,26 @@ export function createRelay({ config, store, transport, mailbox, now = () => Dat
     const humanAt = store.read('human', { t: 0 }).t ?? 0;
     let changed = false;
     for (const q of Object.values(qs)) {
-      if (q.state !== 'waiting' || now() - q.createdAt < config.waitMinutes * 60_000) continue;
+      // alerts (like a budget warning) go out on the next check; questions and heads-ups wait for a person first
+      const wait = q.kind === 'alert' ? 0 : config.waitMinutes * 60_000;
+      if (q.state !== 'waiting' || now() - q.createdAt < wait) continue;
       if (q.kind === 'notify' && humanAt > q.createdAt) {
         q.state = 'dismissed'; // a person was at the keyboard after the notification, no email needed
         changed = true;
         continue;
       }
       const isQuestion = q.kind === 'question';
+      const isAlert = q.kind === 'alert';
       const r = await sendMail({
-        subject: isQuestion ? `${TAG} Question ${q.id} [code ${q.code}]` : `${TAG} Heads-up ${q.id}`,
-        text: isQuestion
+        subject: isQuestion ? `${TAG} Question ${q.id} [code ${q.code}]` : isAlert ? `${TAG} ALERT ${q.id}` : `${TAG} Heads-up ${q.id}`,
+        text: isAlert
+          ? `${q.question}\n\nThis is an automatic alert from the main laptop. No reply is needed.\n`
+          : isQuestion
           ? `The main laptop's Claude asked:\n\n${q.question}\n\nNobody answered at the keyboard within ${config.waitMinutes} minutes.\nReply to this email with your answer. The code ${q.code} in the subject links your reply to this question. First answer wins.\n`
           : `The main laptop's Claude is waiting for a person:\n\n${q.question}\n\nNo reply is needed unless you want to tell it something (start your subject with ${TAG}).\n`,
       });
       if (!r.sent) break; // rate limited: try again next tick, nothing is lost
-      q.state = isQuestion ? 'emailed' : 'notified';
+      q.state = isQuestion ? 'emailed' : isAlert ? 'alerted' : 'notified';
       q.emailedAt = now();
       changed = true;
       log(`emailed ${isQuestion ? 'question' : 'heads-up'} ${q.id}`);
@@ -144,6 +149,8 @@ export function createRelay({ config, store, transport, mailbox, now = () => Dat
   return {
     ask,
     notify: (message) => ask(message, { kind: 'notify' }),
+    /** An urgent automatic email (e.g. a budget warning): sent on the next check, no waiting for a person. */
+    alert: (message) => ask(message, { kind: 'alert' }),
     recordAnswer,
     status,
     requestConfirmation,

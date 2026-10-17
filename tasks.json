@@ -22,9 +22,9 @@
       "deps": [],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "0.2",
@@ -49,9 +49,9 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "0.3",
@@ -76,9 +76,9 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "0.4",
@@ -103,9 +103,9 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "0.5",
@@ -129,9 +129,9 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "0.6",
@@ -159,8 +159,8 @@
         "🟣"
       ],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
+      "status": "in_progress",
+      "claimed_by": "lead",
       "passes": false
     },
     {
@@ -188,9 +188,41 @@
       ],
       "flags": [],
       "merge_gate": "lead",
-      "status": "open",
-      "claimed_by": null,
-      "passes": false
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
+    },
+    {
+      "id": "0.8",
+      "lane": "lead",
+      "title": "Vultr budget watcher",
+      "intent": "Vultr budget watcher",
+      "why": "Vultr has a $100 credit on a real card; we must not go over it.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Checks the balance every 30 minutes with a key only the script reads",
+          "Alerts at $50, $75 and $90 spent (emailed through the relay, on screen until it exists)",
+          "Can only read from Vultr; the command guard blocks creating, changing or deleting resources",
+          "Never prints the API key"
+        ],
+        "commands": [
+          "node --test tests/vultr-budget.test.mjs"
+        ]
+      },
+      "out_of_scope": [
+        "Creating or deleting any Vultr resource"
+      ],
+      "deps": [
+        "0.7"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "done",
+      "claimed_by": "lead",
+      "passes": true
     },
     {
       "id": "L1",

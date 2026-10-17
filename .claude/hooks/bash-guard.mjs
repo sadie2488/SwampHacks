@@ -59,6 +59,20 @@ try {
   ) {
     deny('pipe-to-shell', 'Running a downloaded script straight in a shell is blocked. Download it, read it, then run it');
   }
+  // Vultr has a $100 credit on a real card: nothing gets created, changed or deleted without a human's yes and a cost estimate.
+  // Reading (balance, lists) and using the existing storage bucket are fine.
+  if (/\bvultr-cli\b|api\.vultr\.com|vultrobjects\.com/i.test(command)) {
+    const apiWrite =
+      /(?:-X|--request)\s*=?\s*['"]?(?:POST|PUT|PATCH|DELETE)\b/i.test(command) ||
+      /\s(?:-d|--data(?:-\w+)?|--json)\b/.test(command) ||
+      /-Method\s+['"]?(?:Post|Put|Patch|Delete)\b/i.test(command) ||
+      /\.(?:post|put|patch|delete)\(|method\s*[:=]\s*['"](?:POST|PUT|PATCH|DELETE)/i.test(command);
+    const cliWrite = /\bvultr-cli\b/i.test(command) && /\b(create|delete|destroy|update|resize|upgrade|attach|detach|start|stop|reboot|halt|reinstall|restore|rebuild|set|add|remove|apply|enable|disable|convert|migrate|promote|reset)\b/i.test(command);
+    const bucketWrite = /vultrobjects\.com/i.test(command) && /\b(mb|rb|create-bucket|delete-bucket)\b/.test(command);
+    if (apiWrite || cliWrite || bucketWrite) {
+      deny('vultr-spend', 'Creating, changing or deleting Vultr resources needs a human\'s explicit yes plus a cost estimate, and GPU instances are banned (see docs/vultr.md)');
+    }
+  }
   if (INLINE_SECRET.test(command)) {
     deny('inline-secret', 'That command contains what looks like a key or private key. Never put keys in commands; type them yourself into the private file');
   }

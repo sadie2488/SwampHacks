@@ -23,3 +23,7 @@ How assumptions are handled:
 | 12 | The "needs input" notification may not fire in the VS Code panel (docs are silent); run Claude in VS Code's integrated terminal | Unconfirmed |
 | 13 | The GitHub CLI (`gh`) will be installed on the main laptop; the plan's pull requests, CI checks and merges depend on it | Unconfirmed |
 | 14 | Project permission "allow" rules only take effect after each person accepts the folder-trust prompt; "deny" rules and hooks apply right away | Per the docs, untested |
+| 15 | Sadie has added `VULTR_API_KEY` (restricted to the main laptop's IP) to `server/.env`; she may have added only the storage keys | Unconfirmed |
+| 16 | The GoDaddy domain name is not known yet | Unconfirmed |
+| 17 | The stray `@auth0/auth0-react` in the repo-root `package.json` came from Auth0's quickstart ("npm install @auth0/auth0-react@2.x") run in the wrong folder. It belongs in `web/package.json` and moves there when login is built | Assumed |
+| 18 | Vultr credit math for the watcher: spent = 100 + account balance (negative means credit left) + pending charges. Field names `balance` and `pending_charges` come from Vultr's Go client; the official API page was unreachable, so the sign and the IP-restriction option for keys are unverified. Check the watcher's number against the Vultr dashboard once | Unconfirmed |

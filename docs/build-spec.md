@@ -86,6 +86,12 @@ Thin end-to-end path on fake data: upload → fake analysis → sheet music rend
 - `scripts/ask-human`: question → 3-minute timer → email if unanswered → reply with one-time code + Gmail sender verification becomes the answer (first answer wins; later replies get "already answered")
 - Inbound commands with subject `[MUSIC] ...` (checkin, handback, explain, ask, anything else = message to Claude). Overrides by email need `CONFIRM <code>`. Rate-limit outgoing mail. A script filters the inbox; Claude never sees other mail
 
+## 0.8 Vultr budget watcher (main laptop) — added in handoff #2
+- Hard rule from Sadie: Vultr has a $100 credit on a real card. Never create/resize/delete a Vultr resource without a human's explicit yes plus a cost estimate. GPU instances banned unless a human approves. Full text: `docs/vultr.md`
+- `scripts/vultr-budget.mjs --watch` (every 30 min; `--once`, `--list`): reads balance + pending charges with `VULTR_API_KEY` from `server/.env` (restricted to this laptop's IP; never read or printed by Claude); alerts at $50, $75, $90 (emailed through the relay as an urgent alert; terminal until the relay exists). At $75 stop all new Vultr usage; at $90 list everything running and what to shut down
+- The command guard blocks Vultr create/change/delete commands (rule `vultr-spend`)
+- Sunday after submission: the "delete all Vultr resources" checklist in `docs/vultr.md`
+
 ## Quality rules (from research — keep)
 - Task card fields in `tasks.json`: id, lane, title, intent (verbatim), why, owned_paths, contracts, acceptance (plain English + commands), out_of_scope, deps, flags (⭐/🟣), merge_gate (auto|lead|human), status, claimed_by, passes (set by CI/lead only — never by the worker)
 - Worker receipt / update file ≤ 300 words, includes verification report + remaining quota; escalations = evidence → consequence → recommendation
@@ -96,4 +102,8 @@ Thin end-to-end path on fake data: upload → fake analysis → sheet music rend
 - Product risks to design for: separate parts before transcribing; quantize to tempo grid; note-letter fallback; headphones/metronome during practice; clap calibration for latency; HTTPS needed for camera/mic (localhost OK); TouchDesigner needs a small local relay (browsers can't send UDP/OSC); cache analysis; local demo mode; public-domain demo songs only
 
 ## Not yet confirmed (see `docs/assumptions.md`)
-Main laptop GPU/webcam · Chrome everywhere · demo instrument · feature freeze 3 AM · GitHub usernames of teammates · who builds TouchDesigner visuals · sleep rotation
+GoDaddy domain name · `VULTR_API_KEY` present · Chrome everywhere · demo instrument · feature freeze 3 AM · GitHub usernames of teammates · who builds TouchDesigner visuals · sleep rotation
+(Main laptop checked: webcam and Chrome yes; no NVIDIA GPU driver, no TouchDesigner.)
+
+## Status (Sat ~6:30 AM)
+0.1–0.5 and 0.7 built and tested. 0.8 built (needs `VULTR_API_KEY`). 0.6: server, shell + sheet, playback, commands + Command Lab, live audio, and the TouchDesigner sender + relay are merged; vision and create mode are being finished. Original handoff #2 is in `docs/history/handoff-2.md`; its background research is in `docs/research-notes.md`.
