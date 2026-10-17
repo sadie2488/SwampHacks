@@ -1,0 +1,43 @@
+/* The strip spans the whole layout, so its content (heading, controls, staff) is centred in the window,
+   with the same gap on the left and the right. */
+.sheet-strip-inner {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.sheet-strip-inner > h2 {
+  margin-bottom: 0.3rem;
+}
+
+/* Part / Written for / Beginner mode: one compact line right above the staff. */
+.sheet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.88rem;
+}
+
+.sheet-toolbar select {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.sheet-status {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+}
+
+.sheet-host {
+  position: relative;
+  max-height: 32rem;
+  overflow: auto;
+  background: transparent;
+}
+
+.sheet-host[hidden] {
+  display: none;
+}
+

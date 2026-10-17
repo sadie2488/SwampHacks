@@ -1,0 +1,72 @@
+/* Play tab: "What your hands say" meters and the rules that just lit up. */
+.hand-meter {
+  margin: 0.7rem 0;
+}
+
+.hand-meter-name {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.hand-meter-value {
+  font: 500 0.78rem var(--mono);
+  color: var(--muted);
+}
+
+.bar {
+  margin-top: 0.3rem;
+  height: 0.85rem;
+  border: var(--border);
+  border-radius: 99px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--coral);
+}
+
+.hands-card h3.kicker {
+  margin-top: 1rem;
+}
+
+.fired-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+
+.fired-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-top: 2px dashed var(--line);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.fired-list em {
+  flex: none;
+  font: 500 0.7rem var(--mono);
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--mustard);
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  padding: 0.15rem 0.6rem;
+}
+
+/* practice history in the practice card: a short list that scrolls rather than stretching the card */
+.practice-card [data-testid='history-runs'] {
+  max-height: 7.5rem;
+  overflow: auto;
+  font-size: 0.85rem;
+}

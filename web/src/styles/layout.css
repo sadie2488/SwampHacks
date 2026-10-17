@@ -1,0 +1,289 @@
+/* Read by screen readers, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The app sits above the landscape. It is full width so the paper strip can reach both edges of the window,
+   and it clips sideways so that strip never makes the page scroll left and right. */
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  overflow-x: clip;
+  padding: 1.6rem clamp(1rem, 3.2vw, 3rem) 3rem;
+}
+
+.app-header,
+.app-main {
+  position: relative;
+  z-index: 1;
+  max-width: 120rem;
+  margin: 0 auto;
+}
+
+/* ---------- header: the paper name tag on the left, the mode pills in the middle, log in on the right ---------- */
+
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.6rem;
+}
+
+h1.brand {
+  justify-self: start;
+  margin: 0;
+  padding: 0.3rem 1rem 0.4rem;
+  font: 800 1.75rem/1.1 var(--display);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: rotate(-1.2deg);
+}
+
+.brand-accent {
+  color: var(--coral-text);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.tabs button {
+  font-size: 1rem;
+  padding: 0.5rem 1.25rem;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.tabs button[aria-selected='true'] {
+  background: var(--mustard);
+}
+
+.header-end {
+  justify-self: end;
+}
+
+.login-box {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 899px) {
+  .app-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
+}
+
+/* ---------- page layout: floating cards, the sheet strip, the player bar ---------- */
+
+/* Learn and Play leave room at the bottom so the floating player bar never hides the end of the page. */
+.stage {
+  --dock-space: 10rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.stage-song {
+  padding-bottom: var(--dock-space);
+}
+
+.song-controls {
+  display: contents;
+}
+
+/* Cards paint above the paper strip where they meet. */
+.card {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+
+.stage-main {
+  min-width: 0;
+}
+
+/* Medium window: two columns, the strip across both. */
+@media (min-width: 760px) {
+  .stage {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+
+  .side-card {
+    grid-area: 1 / 1;
+  }
+
+  .stage-learn .practice-card,
+  .stage-play .hands-card {
+    grid-area: 1 / 2;
+    justify-self: end;
+    width: min(100%, 24rem);
+  }
+
+  .stage-play .practice-card {
+    grid-area: 3 / 2;
+    justify-self: end;
+    width: min(100%, 24rem);
+  }
+
+  .stage-song .sheet-strip {
+    grid-area: 2 / 1 / 3 / -1;
+  }
+
+  .stage-main {
+    grid-area: 1 / 2;
+  }
+}
+
+/* Wide window, like the mockup: the song card top left, practice top right, the landscape showing between them,
+   the strip right under them, reaching a little up behind the cards (its staff always starts below them). */
+@media (min-width: 1100px) {
+  .stage {
+    grid-template-columns: 20rem minmax(0, 1fr) 23.5rem;
+  }
+
+  .stage-learn .practice-card,
+  .stage-play .hands-card {
+    grid-area: 1 / 3;
+    width: auto;
+  }
+
+  .stage-play .practice-card {
+    grid-area: 3 / 3;
+    width: auto;
+  }
+
+  .stage-song .sheet-strip {
+    margin-top: -3.5rem;
+    padding-top: 5.25rem;
+  }
+
+  .stage-main {
+    grid-area: 1 / 2 / auto / -1;
+  }
+}
+
+@media (max-width: 759px) {
+  .stage {
+    --dock-space: 15rem;
+  }
+}
+
+/* ---------- paper-tag cards ---------- */
+
+.card,
+[data-testid='create-panel'],
+.command-lab > section,
+.camera-preview-waiting {
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 22px;
+  box-shadow: 7px 7px 0 var(--ink);
+  padding: 1.15rem 1.35rem 1.25rem;
+  margin: 0;
+}
+
+/* each card sits a little crooked, like paper pinned to a board */
+.side-card {
+  transform: rotate(-0.7deg);
+}
+
+.practice-card,
+.hands-card {
+  transform: rotate(0.6deg);
+}
+
+[data-testid='create-panel'] {
+  transform: rotate(-0.25deg);
+}
+
+.command-lab > section:nth-of-type(odd) {
+  transform: rotate(-0.3deg);
+}
+
+.command-lab > section:nth-of-type(even) {
+  transform: rotate(0.25deg);
+}
+
+/* The small mono label above each card's title ("PICK A SONG"). */
+.kicker {
+  margin: 0;
+  font: 500 0.72rem/1.3 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+}
+
+h2.kicker,
+h3.kicker {
+  margin: 0;
+  font: 500 0.72rem/1.3 var(--mono);
+  letter-spacing: 0.12em;
+}
+
+.kicker + h2 {
+  margin-top: 0.2rem;
+}
+
+.small-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+h3 {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+p {
+  margin: 0.5rem 0;
+}
+
+/* Inside a card, the practice and history parts are plain sections, not cards of their own. */
+.practice-card .panel {
+  margin: 0;
+  padding: 0;
+}
+
+.practice-card .history {
+  margin-top: 1rem;
+}
+
