@@ -1,0 +1,69 @@
+{
+  "_readme": "Who may edit what. Globs are relative to the repo root with forward slashes. '/*' means files sitting directly in the repo root. Branch names: <lane>/<person>/<task-id> (e.g. lane-c/sadie/C1-tracking). Lead helper branches: lead/<task-id>. A branch prefix must match a lane name below (or 'lead'). Only the lead edits this file.",
+  "lead_only": [
+    "/*",
+    "contracts/**",
+    "fixtures/**",
+    "tests/**",
+    "docs/**",
+    "setup/**",
+    "scripts/**",
+    ".claude/**",
+    ".github/**",
+    "tasks.json",
+    "ownership.json",
+    "web/package.json",
+    "web/tsconfig*.json",
+    "server/pyproject.toml",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock",
+    "**/uv.lock"
+  ],
+  "anyone": [
+    "scratch/**"
+  ],
+  "lanes": {
+    "shell": {
+      "paths": ["web/src/app/**", "web/src/modules/sheet/**", "web/index.html", "web/vite.config.*"],
+      "tasks": ["L3"]
+    },
+    "commands": {
+      "paths": ["web/src/modules/commands/**", "web/src/modules/mappings/**", "web/src/modules/command-lab/**"],
+      "tasks": ["L1", "L6", "V1"]
+    },
+    "playback": {
+      "paths": ["web/src/modules/playback/**"],
+      "tasks": ["L2"]
+    },
+    "lane-a": {
+      "paths": ["server/analysis/**", "ml/**"],
+      "tasks": ["A1", "A2", "A3", "A4", "A5", "A6"]
+    },
+    "lane-b": {
+      "paths": ["web/src/modules/audio-live/**", "server/feedback/**"],
+      "tasks": ["B1", "B2", "B3", "B4"]
+    },
+    "lane-c": {
+      "paths": ["web/src/modules/vision/**", "web/src/modules/touchdesigner/**", "bridge/**", "touchdesigner/**"],
+      "tasks": ["C1", "C2", "C3"]
+    },
+    "lane-d": {
+      "paths": ["web/src/modules/create/**"],
+      "tasks": ["D1", "D2", "D3", "D4"]
+    },
+    "server-core": {
+      "paths": ["server/app/**"],
+      "tasks": ["L4"]
+    },
+    "design": {
+      "paths": ["web/src/ui/**", "web/src/styles/**"],
+      "tasks": ["F1"]
+    },
+    "deploy": {
+      "paths": ["deploy/**"],
+      "tasks": ["L5"]
+    }
+  },
+  "claims": {}
+}

@@ -12,6 +12,9 @@ relay.private.json
 # Scratch space
 scratch/
 
+# Local checkout of the comms branch (made by scripts/comms-send.mjs)
+.comms/
+
 # Big files: datasets, models, recordings
 data/
 datasets/

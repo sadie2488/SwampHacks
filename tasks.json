@@ -1,0 +1,1044 @@
+{
+  "_readme": "Task cards. Only the lead writes this file. \"passes\" is set by CI or the lead, never by a worker. Flags: star = demo path, purple = needed for Veda by 9:30 AM. Intent is copied word for word from docs/plan.md section 7.",
+  "tasks": [
+    {
+      "id": "0.1",
+      "lane": "lead",
+      "title": "repo + ownership",
+      "intent": "repo + ownership",
+      "why": "Everyone must know which folders are theirs before anyone starts.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "ownership.json lists every lane and every lead-only path",
+          "Branch naming rule is written down",
+          "comms branch exists with the agreed file layout"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.2",
+      "lane": "lead",
+      "title": "rules, commands, docs",
+      "intent": "rules, commands, docs",
+      "why": "Every laptop gets the same rules and the same five commands.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "/checkin, /start, /explain, /ask, /handback exist as skills",
+          "CLAUDE.md stays about 100 lines or less",
+          "Brief and update templates match the spec"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.3",
+      "lane": "lead",
+      "title": "guardrails + CI",
+      "intent": "guardrails + CI",
+      "why": "Hooks warn early; CI is the real gate for ownership, secrets, attribution and file size.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "A bad edit outside a lane is blocked or flagged",
+          "CI checks ownership, no AI attribution, file size, secrets and contract schemas",
+          "CI finishes in under 5 minutes"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.4",
+      "lane": "lead",
+      "title": "contracts + fake data",
+      "intent": "contracts + fake data",
+      "why": "Lanes build in parallel against agreed data shapes and fake data.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Every contract is a JSON Schema with a version field",
+          "Every contract has fake data in fixtures/ that validates",
+          "Test list written in plain English and approved by a human before test code"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.5",
+      "lane": "lead",
+      "title": "setup checks",
+      "intent": "setup checks",
+      "why": "New laptops must be ready without anyone reading raw errors.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "setup-check.ps1 and setup-check.sh report each tool with the exact install command when missing",
+          ".gitattributes prevents Windows line-ending bugs"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.6",
+      "lane": "lead",
+      "title": "walking skeleton",
+      "intent": "walking skeleton",
+      "why": "Veda starts at ~10 AM; everything she needs must already work end to end on fake data.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Upload, fake analysis, sheet music, play/pause/tempo/pitch buttons, command system and a TouchDesigner message all work on fake data",
+          "L1, L6, L2, C1/C2, B1/B4 and D1-D3 are ready for Veda",
+          "Every later merge keeps the skeleton working"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.3",
+        "0.4"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "0.7",
+      "lane": "lead",
+      "title": "email relay",
+      "intent": "email relay",
+      "why": "Lets people use the system by email and lets the main laptop reach a human who is away.",
+      "owned_paths": [],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Sends only to the allowed addresses kept in the private file",
+          "ask-human emails after 3 minutes unanswered; first answer wins",
+          "[MUSIC] commands work by email; overrides need CONFIRM <code>"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [
+        "Sadie must type the Gmail app password herself"
+      ],
+      "deps": [
+        "0.3"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L1",
+      "lane": "commands",
+      "title": "command system + mapping engine",
+      "intent": "command system + mapping engine",
+      "why": "Buttons, voice, gestures and email all go through one command path that Veda can edit in plain text.",
+      "owned_paths": [
+        "web/src/modules/commands/**",
+        "web/src/modules/mappings/**",
+        "web/src/modules/command-lab/**"
+      ],
+      "contracts": [
+        "mapping",
+        "signal",
+        "command-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Reads mappings.yaml and applies it",
+          "Editing the file takes effect instantly (hot reload)",
+          "Smoothing, cooldown_ms, min_confidence, range, step and only_while all work",
+          "A bad line is skipped and shown as a friendly error; the app keeps running",
+          "Two commands fighting over the same signal in the same mode give a warning"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [
+        "Choosing the final command list (V1)",
+        "Building signal detectors (lanes B and C)"
+      ],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "🟣",
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L6",
+      "lane": "commands",
+      "title": "Command Lab",
+      "intent": "Command Lab",
+      "why": "Veda needs to see what the app senses and what each command does while she designs.",
+      "owned_paths": [
+        "web/src/modules/commands/**",
+        "web/src/modules/mappings/**",
+        "web/src/modules/command-lab/**"
+      ],
+      "contracts": [
+        "signal",
+        "command-event",
+        "mapping"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Live camera view with tracking drawn on top",
+          "A live meter for every signal",
+          "Every control with its current value",
+          "Each command lights up when it fires"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [
+        "New signals or controls from other lanes (ask the main laptop)"
+      ],
+      "deps": [
+        "L1",
+        "C1"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "V1",
+      "lane": "commands",
+      "title": "Veda designs the play + create commands",
+      "intent": "Veda designs the play + create commands",
+      "why": "Veda owns command design and may change any design detail of her part.",
+      "owned_paths": [
+        "web/src/modules/commands/**",
+        "web/src/modules/mappings/**",
+        "web/src/modules/command-lab/**"
+      ],
+      "contracts": [
+        "mapping"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Final command list for play and create modes is in mappings.yaml with comments",
+          "Voice-command arming decision is made",
+          "Final list of tracked body parts is decided"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "L1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A1",
+      "lane": "lane-a",
+      "title": "datasets",
+      "intent": "datasets",
+      "why": "Analysis and training need test music; nothing large goes in git.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "A usable set of public-domain or self-recorded music exists in Vultr storage",
+          "No audio or datasets are committed to git"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A2",
+      "lane": "lane-a",
+      "title": "tempo + key",
+      "intent": "tempo + key",
+      "why": "Upload analysis starts with tempo, key and time signature.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Given audio, returns tempo, beats, key and time signature matching the song-analysis contract",
+          "Works on the demo songs"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.4"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A3",
+      "lane": "lane-a",
+      "title": "segmentation",
+      "intent": "segmentation",
+      "why": "Separating the part before transcribing avoids messy sheet music.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Isolates the requested part from a full song",
+          "Output feeds sheet-music generation"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "A2"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A4",
+      "lane": "lane-a",
+      "title": "sheet music",
+      "intent": "sheet music",
+      "why": "The learner needs notes to play along with.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [
+        "song-analysis",
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Produces concert-pitch note events quantized to the tempo grid",
+          "Sheet music renders; beginner mode shows note letters",
+          "Falls back to note letters if the notation is messy"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "A2",
+        "A3"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A5",
+      "lane": "lane-a",
+      "title": "frozen test set",
+      "intent": "frozen test set",
+      "why": "A fair, leak-free way to judge any model.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Held-out split by piece and performer, frozen",
+          "Scoring uses mir_eval note-onset F1 against basic-pitch",
+          "Results are logged to files"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "A1"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "A6",
+      "lane": "lane-a",
+      "title": "custom PyTorch model",
+      "intent": "custom PyTorch model",
+      "why": "Optional upgrade over pretrained models.",
+      "owned_paths": [
+        "server/analysis/**",
+        "ml/**"
+      ],
+      "contracts": [
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Only swapped in if it beats the basic-pitch baseline on the frozen test set",
+          "Leakage review done before each training run"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "A5",
+        "A4"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "B1",
+      "lane": "lane-b",
+      "title": "mic + pitch",
+      "intent": "mic + pitch",
+      "why": "Everything live (feedback, snap/clap, create mode) starts from the mic.",
+      "owned_paths": [
+        "web/src/modules/audio-live/**",
+        "server/feedback/**"
+      ],
+      "contracts": [
+        "performance-event",
+        "signal"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Mic input works in Chrome",
+          "Detected pitch and note onsets are produced as performance events",
+          "Runs without freezing the page"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "🟣",
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "B2",
+      "lane": "lane-b",
+      "title": "compare user to song (+ timing calibration)",
+      "intent": "compare user to song (+ timing calibration)",
+      "why": "Feedback needs the learner compared to the song; calibration removes device latency.",
+      "owned_paths": [
+        "web/src/modules/audio-live/**",
+        "server/feedback/**"
+      ],
+      "contracts": [
+        "performance-event",
+        "note-event",
+        "feedback",
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Clap calibration produces one shared latency offset",
+          "User notes are compared to the song; tempo feedback works (demo focus)"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "B1",
+        "A2"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "B3",
+      "lane": "lane-b",
+      "title": "feedback + Gemini",
+      "intent": "feedback + Gemini",
+      "why": "Instant rule-based feedback, with Gemini coaching filling in after.",
+      "owned_paths": [
+        "web/src/modules/audio-live/**",
+        "server/feedback/**"
+      ],
+      "contracts": [
+        "feedback"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Rule-based feedback shows instantly",
+          "Gemini coaching fills in afterward; the Gemini key stays on the server",
+          "Canned coaching works with no network"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "B2"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "B4",
+      "lane": "lane-b",
+      "title": "keywords + snap/clap",
+      "intent": "keywords + snap/clap",
+      "why": "Voice and clap/snap are core command signals.",
+      "owned_paths": [
+        "web/src/modules/audio-live/**",
+        "server/feedback/**"
+      ],
+      "contracts": [
+        "signal"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Snap and clap detected as moment signals",
+          "Keywords only listen when armed by a gesture so the instrument does not trigger them"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "B1"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "C1",
+      "lane": "lane-c",
+      "title": "tracking",
+      "intent": "tracking",
+      "why": "Hand and head tracking drives play-mode control.",
+      "owned_paths": [
+        "web/src/modules/vision/**",
+        "web/src/modules/touchdesigner/**",
+        "bridge/**",
+        "touchdesigner/**"
+      ],
+      "contracts": [
+        "signal"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "MediaPipe runs in a background worker at about 15 fps",
+          "Hand height/x and head signals are published as signals",
+          "Page stays responsive"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "🟣",
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "C2",
+      "lane": "lane-c",
+      "title": "basic gestures",
+      "intent": "basic gestures",
+      "why": "Gestures are the moment signals commands use.",
+      "owned_paths": [
+        "web/src/modules/vision/**",
+        "web/src/modules/touchdesigner/**",
+        "bridge/**",
+        "touchdesigner/**"
+      ],
+      "contracts": [
+        "signal"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Fist, open palm, hand up, pinch, two-hand distance, head tilt, nod and drum-hit are detected and listed in the signal catalog"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "C1"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "C3",
+      "lane": "lane-c",
+      "title": "TouchDesigner connection",
+      "intent": "TouchDesigner connection",
+      "why": "Visuals must react to music and hands.",
+      "owned_paths": [
+        "web/src/modules/vision/**",
+        "web/src/modules/touchdesigner/**",
+        "bridge/**",
+        "touchdesigner/**"
+      ],
+      "contracts": [
+        "td-message"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "A small local relay forwards td-message data to TouchDesigner (browsers cannot send UDP/OSC)",
+          "Audio features and hand data arrive in TouchDesigner"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [
+        "Building the visuals themselves (human task)"
+      ],
+      "deps": [
+        "C1",
+        "B1"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "D1",
+      "lane": "lane-d",
+      "title": "hum → notes",
+      "intent": "hum → notes",
+      "why": "Create mode starts with the player humming a melody.",
+      "owned_paths": [
+        "web/src/modules/create/**"
+      ],
+      "contracts": [
+        "note-event",
+        "control-catalog"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "A hummed melody becomes note events"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "D2",
+      "lane": "lane-d",
+      "title": "instruments",
+      "intent": "instruments",
+      "why": "Hummed notes need to sound like an instrument.",
+      "owned_paths": [
+        "web/src/modules/create/**"
+      ],
+      "contracts": [
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Notes play back through a selectable instrument sound"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "D1"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "D3",
+      "lane": "lane-d",
+      "title": "layers + loops",
+      "intent": "layers + loops",
+      "why": "Layers and loops turn a hum into a beat.",
+      "owned_paths": [
+        "web/src/modules/create/**"
+      ],
+      "contracts": [
+        "note-event",
+        "control-catalog",
+        "command-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Add layers, record and stop loops, per-layer volume"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "D2"
+      ],
+      "flags": [
+        "🟣"
+      ],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "D4",
+      "lane": "lane-d",
+      "title": "save + replay",
+      "intent": "save + replay",
+      "why": "Creations should be saved and played back.",
+      "owned_paths": [
+        "web/src/modules/create/**"
+      ],
+      "contracts": [
+        "db-schema",
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "A created track can be saved and replayed"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "D3",
+        "L4"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L2",
+      "lane": "playback",
+      "title": "playback (tempo without pitch change, pitch shift)",
+      "intent": "playback (tempo without pitch change, pitch shift)",
+      "why": "Slowing down to practice without changing pitch is the core of Learn and Play mode.",
+      "owned_paths": [
+        "web/src/modules/playback/**"
+      ],
+      "contracts": [
+        "control-catalog",
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Tempo 0.5-1.5 without changing pitch",
+          "Pitch shift of plus or minus 12 semitones",
+          "Volume, loop and loop section work",
+          "The time-stretch library was tested early"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "🟣",
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L3",
+      "lane": "shell",
+      "title": "app shell",
+      "intent": "app shell",
+      "why": "Everything else plugs into the app shell and sheet view.",
+      "owned_paths": [
+        "web/src/app/**",
+        "web/src/modules/sheet/**",
+        "web/index.html",
+        "web/vite.config.*"
+      ],
+      "contracts": [
+        "song-analysis",
+        "note-event"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Upload, song view and sheet music display work",
+          "Modules plug in without editing each other"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [
+        "⭐"
+      ],
+      "merge_gate": "human",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L4",
+      "lane": "server-core",
+      "title": "server + Tiger Data + Auth0",
+      "intent": "server + Tiger Data + Auth0",
+      "why": "Server, history storage and login for sponsors; Auth0 is last and can be switched off.",
+      "owned_paths": [
+        "server/app/**"
+      ],
+      "contracts": [
+        "db-schema",
+        "feedback",
+        "song-analysis"
+      ],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Server runs with Tiger Data for songs, analyses and practice sessions",
+          "Auth0 login works and can be switched off"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "0.6"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "L5",
+      "lane": "deploy",
+      "title": "deploy",
+      "intent": "deploy",
+      "why": "Public demo hosting plus a local demo mode for bad Wi-Fi.",
+      "owned_paths": [
+        "deploy/**"
+      ],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Deployed on Vultr",
+          "Local demo mode works with cached results and canned coaching"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [],
+      "deps": [
+        "L4"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    },
+    {
+      "id": "F1",
+      "lane": "design",
+      "title": "the real look (after inspiration arrives)",
+      "intent": "the real look (after inspiration arrives)",
+      "why": "The app must not look AI-generated.",
+      "owned_paths": [
+        "web/src/ui/**",
+        "web/src/styles/**"
+      ],
+      "contracts": [],
+      "acceptance": {
+        "status": "draft - tests await human approval",
+        "plain": [
+          "Design inspiration from a human is applied across the app"
+        ],
+        "commands": []
+      },
+      "out_of_scope": [
+        "Starting before design inspiration is provided"
+      ],
+      "deps": [
+        "L3"
+      ],
+      "flags": [],
+      "merge_gate": "lead",
+      "status": "open",
+      "claimed_by": null,
+      "passes": false
+    }
+  ]
+}
