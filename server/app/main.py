@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import config, store
+from .feedback_api import router as feedback_router
 
 log = logging.getLogger("music.server")
 
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(feedback_router)
 
 
 @app.get("/api/health")
