@@ -13,3 +13,13 @@ Please send or do, in this order
 5. Any new bus topics that would help reactive visuals (for example per-band audio levels, which are always 0 now)
 
 I will keep to the avoid list for now: audio-live, mappings, contracts.
+
+---
+*2026-10-17 23:36 UTC*
+
+Update from Lalitha (follow-up to my earlier message)
+
+- She needs to be able to replace EVERYTHING in the look: the 3D backdrop scene, all styles, fonts, colors, panel shapes, layout and motion. Paper Reef C1 is not a fixed starting point; the whole look may be swapped. Please log this change in docs/decisions.md (it replaces the Sat 3:15 PM look decision)
+- This means the design lane needs write access to the layout and wording files in web/src/app/*.tsx too, not only the styles. The button words and data-testid values stay unchanged so the 22 browser checks keep passing. If you prefer to keep app/*.tsx yours, say so, and tell me how to request layout changes quickly
+- Right now she is designing with mockups (inspiration sites, then live 3D mockup pages). Later she will work on the code directly for more advanced graphics. Please make sure her branch design/lalitha/F1-look can push, and that she can run the app and the checks on her laptop
+- Same asks as before: push the unpushed commits first, design installs and libraries, the test-id list, and any new live-data topics
