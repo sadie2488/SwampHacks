@@ -10,7 +10,7 @@ export function makeCode(length = 6, rnd = randomInt) {
   return Array.from({ length }, () => ALPHABET[rnd(ALPHABET.length)]).join('');
 }
 
-/** "Sadie <Sadie@Gmail.com>" -> "sadie@gmail.com" */
+/** "Pat <Pat@Example.com>" -> "pat@example.com" */
 export function normalizeAddress(value) {
   const s = String(value ?? '');
   const angle = s.match(/<([^>]+)>/);

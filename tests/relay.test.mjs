@@ -12,12 +12,12 @@ import { classifyInbound, isAllowedSender, isAuthentic, loadConfig, makeCode, no
 import { MemoryStore } from '../scripts/relay/store.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SADIE = 'sadie@gmail.com';
-const VEDA = 'veda@gmail.com';
-const SHAYAAN = 'shayaan@gmail.com';
+const SADIE = 'sadie@example.com';
+const VEDA = 'veda@example.com';
+const SHAYAAN = 'shayaan@example.com';
 const STRANGER = 'stranger@evil.example';
 const config = { gmailAddress: SADIE, appPassword: 'x'.repeat(16), allowed: [SADIE, VEDA, SHAYAAN], sendTo: [SADIE, VEDA, SHAYAAN], maxPerHour: 10, waitMinutes: 3 };
-const auth = (domain = 'gmail.com') => `mx.google.com; dkim=pass header.i=@${domain} header.s=20230601 header.b=abc; spf=pass (google.com: domain of x@${domain} designates 1.2.3.4 as permitted sender) smtp.mailfrom=x@${domain}; dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=${domain}`;
+const auth = (domain = 'example.com') => `mx.google.com; dkim=pass header.i=@${domain} header.s=20230601 header.b=abc; spf=pass (google.com: domain of x@${domain} designates 1.2.3.4 as permitted sender) smtp.mailfrom=x@${domain}; dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=${domain}`;
 
 function setup(over = {}) {
   let t = 1_000_000_000;
@@ -45,24 +45,24 @@ test('codes use an alphabet without look-alike characters', () => {
 });
 
 test('addresses are compared without case or display names', () => {
-  assert.equal(normalizeAddress('Sadie <Sadie@Gmail.com>'), 'sadie@gmail.com');
-  assert.ok(isAllowedSender('Veda <VEDA@gmail.com>', config.allowed));
+  assert.equal(normalizeAddress('Sadie <Sadie@Example.com>'), 'sadie@example.com');
+  assert.ok(isAllowedSender('Veda <VEDA@example.com>', config.allowed));
   assert.ok(!isAllowedSender(STRANGER, config.allowed));
 });
 
 test('only Gmail\'s own verdict is trusted, and the signature must match the sender\'s domain', () => {
-  assert.ok(isAuthentic(auth(), 'veda@gmail.com'));
-  assert.ok(isAuthentic([auth(), 'forged; dkim=fail'], 'veda@gmail.com'), 'the top header counts');
-  assert.ok(!isAuthentic(undefined, 'veda@gmail.com'), 'no header');
-  assert.ok(!isAuthentic(auth().replace('dkim=pass', 'dkim=fail'), 'veda@gmail.com'), 'dkim failed');
-  assert.ok(!isAuthentic(auth().replace('spf=pass', 'spf=fail').replace('dmarc=pass', 'dmarc=fail'), 'veda@gmail.com'), 'no spf or dmarc');
-  assert.ok(!isAuthentic(auth('evil.example'), 'veda@gmail.com'), 'signed by another domain');
-  assert.ok(!isAuthentic(auth().replace('mx.google.com', 'mx.attacker.example'), 'veda@gmail.com'), 'not Gmail\'s header');
-  assert.ok(!isAuthentic(auth('notgmail.com'), 'veda@gmail.com'), 'a look-alike domain');
+  assert.ok(isAuthentic(auth(), 'veda@example.com'));
+  assert.ok(isAuthentic([auth(), 'forged; dkim=fail'], 'veda@example.com'), 'the top header counts');
+  assert.ok(!isAuthentic(undefined, 'veda@example.com'), 'no header');
+  assert.ok(!isAuthentic(auth().replace('dkim=pass', 'dkim=fail'), 'veda@example.com'), 'dkim failed');
+  assert.ok(!isAuthentic(auth().replace('spf=pass', 'spf=fail').replace('dmarc=pass', 'dmarc=fail'), 'veda@example.com'), 'no spf or dmarc');
+  assert.ok(!isAuthentic(auth('evil.example'), 'veda@example.com'), 'signed by another domain');
+  assert.ok(!isAuthentic(auth().replace('mx.google.com', 'mx.attacker.example'), 'veda@example.com'), 'not Gmail\'s header');
+  assert.ok(!isAuthentic(auth('notexample.com'), 'veda@example.com'), 'a look-alike domain');
 });
 
 test('replies are cut off before the quoted history', () => {
-  assert.equal(stripReply('Yes, go ahead\n\nOn Sat, Oct 17 at 5:00 AM Sadie <s@gmail.com> wrote:\n> old text'), 'Yes, go ahead');
+  assert.equal(stripReply('Yes, go ahead\n\nOn Sat, Oct 17 at 5:00 AM Sadie <s@example.com> wrote:\n> old text'), 'Yes, go ahead');
   assert.equal(stripReply('Answer\n> quoted\nmore'), 'Answer');
 });
 
@@ -274,7 +274,7 @@ test('the hooks write small files, never fail, and stay quiet when the relay is 
     assert.equal(spawnSync(process.execPath, ['-e', `process.stdout.write(String(require('fs').existsSync(${JSON.stringify(join(dir, 'state', 'questions.json'))})))`], { encoding: 'utf8' }).stdout, 'false');
     // relay set up -> a notification is recorded; an ordinary stop is not; a question is; key-like strings are hidden
     writeFileSync(join(dir, 'relay.private.json'), '{}');
-    assert.equal(hook('notify.mjs', { hook_event_name: 'Notification', message: 'Needs input AIzaSyA1234567890abcdefghijklmnopqrstuv please' }).status, 0);
+    assert.equal(hook('notify.mjs', { hook_event_name: 'Notification', message: `Needs input ${'AIza'}SyA1234567890abcdefghijklmnopqrstuv please` }).status, 0);
     assert.equal(hook('notify.mjs', { hook_event_name: 'Stop', last_assistant_message: 'All done.' }).status, 0);
     assert.equal(hook('notify.mjs', { hook_event_name: 'Stop', last_assistant_message: 'Which song should the demo use?' }).status, 0);
     const out = spawnSync(process.execPath, ['-e', `const q=JSON.parse(require('fs').readFileSync(${JSON.stringify(join(dir, 'state', 'questions.json'))},'utf8'));process.stdout.write(JSON.stringify(Object.values(q).map(x=>x.question)))`], { encoding: 'utf8' }).stdout;

@@ -139,7 +139,7 @@ const mustBlock = [
   ['rg -i token server/.env.local', 'secrets'],
   ['echo KEY=1 > .env', 'secrets'],
   ['echo KEY=1 >> server/.env.local', 'secrets'],
-  ['echo AIzaSyA1234567890abcdefghijklmnopqrstuv', 'key'],
+  ['echo ' + 'AIza' + 'SyA1234567890abcdefghijklmnopqrstuv', 'key'], // built in pieces so no key-shaped text sits in the repo
   ['git commit -m "x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"', 'credit'],
   ['git commit -m "Add thing\n\nGenerated with Claude Code"', 'credit'],
   ['git commit -m "$(cat <<\'EOF\'\nAdd thing\n\nCo-Authored-By: Someone <a@b.c>\nEOF\n)"', 'credit'],

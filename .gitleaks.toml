@@ -1,0 +1,14 @@
+title = "SwampHacks secret scan"
+
+[extend]
+useDefault = true
+
+# The lead's own safety tests use made-up keys and addresses on purpose (to prove the guards catch them).
+# Workers can't edit these folders (lead-only), so no real key can hide here.
+[allowlist]
+description = "Made-up values used by the safety tests and fake data"
+paths = [
+  '''^tests/''',
+  '''^scripts/hook-selftest\.mjs$''',
+  '''^fixtures/''',
+]
