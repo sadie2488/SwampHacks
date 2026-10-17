@@ -61,9 +61,9 @@ export class KeywordGate {
    * Give the gate the text of speech results `firstIndex`, `firstIndex + 1`, ... and get back the keywords to fire now.
    * Nothing is accepted while disarmed. A word is only accepted once per result, and not again within the cooldown.
    */
-  accept(texts: readonly string[], firstIndex = 0): string[] {
+  accept(texts: readonly string[], firstIndex = 0, allowWhileDisarmed = false): string[] {
     const t = this.now();
-    if (!this.isArmed && (this.cfg.graceAfterReleaseMs <= 0 || t - this.disarmedAt > this.cfg.graceAfterReleaseMs)) return [];
+    if (!this.isArmed && !allowWhileDisarmed && (this.cfg.graceAfterReleaseMs <= 0 || t - this.disarmedAt > this.cfg.graceAfterReleaseMs)) return [];
     const fire: string[] = [];
     texts.forEach((text, k) => {
       const idx = firstIndex + k;
