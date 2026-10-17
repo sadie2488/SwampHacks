@@ -222,7 +222,7 @@ describe('when saving goes wrong', () => {
     vi.stubGlobal('fetch', fakeServer({ samples: 500 }));
     startSessionSaver();
     bus.emit('feedback', fresh());
-    await until(() => getSaveState().syncVersion > base, 'the save');
+    await until(() => getSaveState().syncVersion > base && calls.length >= 3, 'the save and all three requests');
     expect(getSaveState().note).toBeNull();
     expect(calls.map((c) => c.url.split('/').pop())).toEqual(['sessions', 'samples', 'end']);
   });
@@ -268,7 +268,8 @@ describe('when saving goes wrong', () => {
     });
     startSessionSaver();
     bus.emit('feedback', fresh());
-    await until(() => getSaveState().syncVersion > base, 'the save');
+    // With storage broken the "saved" counter can tick before the last request goes out, so wait for all three.
+    await until(() => getSaveState().syncVersion > base && posts().length >= 3, 'the save and all three requests');
     expect(getSaveState().note).toBeNull();
     expect(posts()).toHaveLength(3);
     expect(readLocalRuns()).toEqual([]);
@@ -285,7 +286,7 @@ describe('when saving goes wrong', () => {
     try {
       startSessionSaver();
       bus.emit('feedback', fresh());
-      await until(() => getSaveState().syncVersion > base, 'the save');
+      await until(() => getSaveState().syncVersion > base && posts().length >= 3, 'the save and all three requests');
       expect(getSaveState().note).toBeNull();
       expect(posts()).toHaveLength(3);
       expect(readLocalRuns()).toEqual([]);
