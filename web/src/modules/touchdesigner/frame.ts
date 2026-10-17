@@ -33,7 +33,7 @@ export interface TdState {
   onsetPending: boolean;
   hands: Record<Side, HandMemory>;
   distance?: { value: number; at: number };
-  /** Eight frequency bands (0 to 1) if something measures them; otherwise frames carry zeros. */
+  /** Eight frequency bands (0 to 1) of the playing song (the bus "songLevels" topic); until they arrive, frames carry zeros. */
   bands?: number[];
 }
 
@@ -141,6 +141,10 @@ export function createTracker(now: () => number) {
     },
     onPitch(p: { midi: number | null; rms: number }): void {
       state.pitch = { midi: p.midi, rms: p.rms, at: now() };
+    },
+    /** The playing song's levels. Playback publishes zeros when it pauses or stops, so these never go stale. */
+    onSongLevels(levels: { bands: number[] }): void {
+      state.bands = levels.bands;
     },
     onTransport(tr: { bpm?: number; beatPhase?: number }): void {
       state.transport = { bpm: tr.bpm, beatPhase: tr.beatPhase };
