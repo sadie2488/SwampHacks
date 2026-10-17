@@ -84,7 +84,7 @@ async function init(m: Extract<ToWorker, { type: 'init' }>): Promise<void> {
     post({ type: 'ready', delegate });
   } catch (e) {
     console.error('[vision worker] could not start', e);
-    post({ type: 'error', message: e instanceof DownloadError ? MODEL_DOWNLOAD_MESSAGE : `Camera tracking couldn't start (${e instanceof Error ? e.message : String(e)}). You can still test with ?fake=1` });
+    post({ type: 'error', message: e instanceof DownloadError ? MODEL_DOWNLOAD_MESSAGE : `the tracking engine failed to load (${e instanceof Error ? e.message : String(e)})` });
   }
 }
 
@@ -118,7 +118,7 @@ function track(bitmap: ImageBitmap, t_ms: number): void {
       switching = true;
       failures = 0;
       build('CPU')
-        .catch((err) => post({ type: 'error', message: `Camera tracking stopped working (${err instanceof Error ? err.message : String(err)}). Try turning the camera off and on again` }))
+        .catch((err) => post({ type: 'error', message: `the tracking engine could not switch to the processor (${err instanceof Error ? err.message : String(err)})` }))
         .finally(() => (switching = false));
       post({ type: 'dropped' });
     } else if (failures >= 10) {
@@ -127,8 +127,8 @@ function track(bitmap: ImageBitmap, t_ms: number): void {
       post({
         type: 'error',
         message: /activeTexture|webgl|\bgl\b/i.test(why)
-          ? "This browser can't draw graphics the camera tracking needs (WebGL). In Chrome settings turn on \"Use graphics acceleration when available\", then reload. You can still test with ?fake=1"
-          : `Camera tracking stopped working (${why}). Try turning the camera off and on again`,
+          ? 'this browser cannot draw the graphics tracking needs (WebGL). In Chrome settings turn on "Use graphics acceleration when available", then reload'
+          : `the tracking engine kept failing (${why})`,
       });
     } else post({ type: 'dropped' });
   } finally {
