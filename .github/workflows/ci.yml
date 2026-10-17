@@ -131,7 +131,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install and test
+      - name: Install the repo's tooling (the relay's tests use it to check frames against the contract)
+        run: npm ci
+      - name: Install and test the relay
         if: ${{ hashFiles('bridge/package.json') != '' }}
         working-directory: bridge
         run: |
