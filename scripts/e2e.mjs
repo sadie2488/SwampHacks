@@ -42,7 +42,7 @@ function stopAll() {
 }
 const portOpen = (port) =>
   new Promise((resolve) => {
-    const s = net.connect(port, '127.0.0.1');
+    const s = net.connect(port, 'localhost'); // "localhost" may be IPv4 or IPv6 depending on the machine
     s.once('connect', () => (s.destroy(), resolve(true)));
     s.once('error', () => resolve(false));
   });
