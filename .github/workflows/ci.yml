@@ -82,6 +82,63 @@ jobs:
       - name: Check schemas, catalogs, fake data, and mappings
         run: node scripts/validate-contracts.mjs
 
+  web:
+    name: Website (types, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - name: Type check
+        run: npx tsc --noEmit
+        working-directory: web
+      - name: Unit tests
+        run: npx vitest run
+        working-directory: web
+      - name: Build
+        run: npx vite build
+        working-directory: web
+
+  server:
+    name: Server (lint, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install uv
+      - name: Install (no heavy audio libraries)
+        run: uv sync
+        working-directory: server
+      - name: Lint
+        run: uv run ruff check .
+        working-directory: server
+      - name: Tests
+        run: uv run pytest -q
+        working-directory: server
+
+  bridge:
+    name: TouchDesigner relay
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install and test
+        if: ${{ hashFiles('bridge/package.json') != '' }}
+        working-directory: bridge
+        run: |
+          npm ci
+          node --test
+          node relay.mjs --selftest
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
