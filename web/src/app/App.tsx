@@ -65,12 +65,14 @@ function SongView({ tab }: { tab: Tab }) {
       </div>
       {/* the sheet sits on a calm torn-paper strip, in front of the landscape */}
       <section className="sheet-strip" aria-labelledby="sheet-heading">
-        <h2 id="sheet-heading" className="kicker">
-          Sheet music
-        </h2>
-        <PanelBoundary name="sheet music">
-          <Sheet />
-        </PanelBoundary>
+        <div className="sheet-strip-inner">
+          <h2 id="sheet-heading" className="kicker">
+            Sheet music
+          </h2>
+          <PanelBoundary name="sheet music">
+            <Sheet />
+          </PanelBoundary>
+        </div>
       </section>
     </>
   );
