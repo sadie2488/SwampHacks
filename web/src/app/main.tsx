@@ -8,6 +8,7 @@ import '@/styles/sheet.css';
 import '@/styles/player-bar.css';
 import '@/styles/controls.css';
 import '@/styles/hands.css';
+import '@/styles/compact.css';
 
 createRoot(document.getElementById('root')!).render(
   <AuthGate>
