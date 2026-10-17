@@ -63,6 +63,8 @@ export function start(): Stop {
   let speech: SpeechListener | null = null;
   let speechChecked = false;
   let fakeResult = 0;
+  let createMode = bus.last('mode') === 'create';
+  let createVoiceEnabled = bus.last('controls')?.['create.instrument.voice'] === true;
   // The page-clock time that time 0 of the microphone's notes and onsets refers to. Practice mode needs it to line them up with the song.
   let micOriginMs = 0;
 
@@ -70,12 +72,12 @@ export function start(): Stop {
     for (const w of words) sendSignal({ id: `audio.keyword.${w}`, kind: 'moment', state: 'start' });
   };
 
-  // ---- keywords: only listen while the arming gesture is held ----
+  // Play voice commands use the fist; Create needs Start/Next available during its workflow.
   const syncKeywords = () => {
     if (!session || session.fake || !speech) return;
-    if (gate.armed) {
+    if (gate.armed || createMode) {
       speech.start();
-      reportStatus(MODULE, 'running', KEYWORD_STATUS.armed);
+      reportStatus(MODULE, 'running', createMode ? 'Listening for Create commands; enable Instrument Voice for instrument names' : KEYWORD_STATUS.armed);
     } else {
       speech.stop();
       reportStatus(MODULE, 'running', KEYWORD_STATUS.disarmed);
@@ -85,7 +87,7 @@ export function start(): Stop {
   const setUpKeywords = () => {
     if (!speechChecked) {
       speech = createSpeechListener({
-        onText: (texts, first) => fireKeywords(gate.accept(texts, first)),
+        onText: (texts, first) => fireKeywords(gate.accept(texts, first, createMode)),
         onNewSession: () => gate.newSession(),
         onProblem: (message) => reportStatus(MODULE, 'running', message),
       });
@@ -96,7 +98,7 @@ export function start(): Stop {
   };
 
   sayToActive = (text) => {
-    const words = gate.accept([text], fakeResult++);
+    const words = gate.accept([text], fakeResult++, createMode);
     fireKeywords(words);
     return words;
   };
@@ -106,6 +108,16 @@ export function start(): Stop {
     const changed = s.state === 'start' ? gate.arm() : s.state === 'end' ? gate.disarm() : false;
     if (changed) syncKeywords();
   });
+  const offControls = bus.on('controls', (controls) => {
+    const enabled = controls['create.instrument.voice'] === true;
+    if (enabled === createVoiceEnabled) return;
+    createVoiceEnabled = enabled;
+    syncKeywords();
+  }, { replay: true });
+  const offMode = bus.on('mode', (mode) => {
+    createMode = mode === 'create';
+    syncKeywords();
+  }, { replay: true });
 
   // ---- turning the microphone on and off ----
   const teardown = () => {
@@ -215,6 +227,8 @@ export function start(): Stop {
   return () => {
     offEnable();
     offSignal();
+    offControls();
+    offMode();
     practice.stop();
     sayToActive = null;
     if (wantOn || session) {

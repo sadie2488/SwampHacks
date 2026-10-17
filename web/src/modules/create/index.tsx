@@ -191,6 +191,32 @@ export function CreatePanel() {
               <label>
                 <input type="checkbox" data-testid={`layer-${i}-mute`} checked={layer.muted} onChange={(e) => store.dispatch({ type: 'setMuted', id: layer.id, muted: e.target.checked })} /> Mute
               </label>
+              {' '}
+              <label>
+                <input
+                  type="checkbox"
+                  data-testid={`layer-${i}-hand-pitch`}
+                  aria-label={`${layer.name} hand pitch`}
+                  checked={layer.handPitchEnabled ?? false}
+                  disabled={layer.notes.length === 0}
+                  onChange={(e) => store.dispatch({ type: 'setHandPitchEnabled', id: layer.id, enabled: e.target.checked })}
+                /> Hand controls pitch
+              </label>{' '}
+              {layer.handPitchEnabled && <span data-testid={`layer-${i}-pitch-value`}>{(layer.pitchSemitones ?? 0) > 0 ? '+' : ''}{(layer.pitchSemitones ?? 0).toFixed(1)} semitones</span>}
+              {' '}
+              <label>
+                <input
+                  type="checkbox"
+                  data-testid={`layer-${i}-instrument-voice`}
+                  aria-label={`${layer.name} instrument voice`}
+                  checked={layer.instrumentVoiceEnabled ?? false}
+                  disabled={layer.notes.length === 0}
+                  onChange={(e) => {
+                    if (layer.id !== store.getState().currentId) store.dispatch({ type: 'selectLayer', id: layer.id });
+                    sendCommand('create.instrument.voice', 'button', { how: 'set', value: e.target.checked });
+                  }}
+                /> Voice controls
+              </label>
             </li>
           ))}
         </ol>

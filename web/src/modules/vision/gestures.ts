@@ -15,7 +15,7 @@ export type Side = 'left' | 'right';
 export type SignalOut = Omit<Signal, 'version'>;
 
 // ---- landmark numbers (MediaPipe hand: 21 points, face mesh: 478 points) ----
-export const HAND = { WRIST: 0, THUMB_TIP: 4, INDEX_MCP: 5, INDEX_PIP: 6, INDEX_TIP: 8, MIDDLE_MCP: 9, MIDDLE_PIP: 10, MIDDLE_TIP: 12, RING_MCP: 13, RING_PIP: 14, RING_TIP: 16, PINKY_MCP: 17, PINKY_PIP: 18, PINKY_TIP: 20 } as const;
+export const HAND = { WRIST: 0, THUMB_MCP: 2, THUMB_IP: 3, THUMB_TIP: 4, INDEX_MCP: 5, INDEX_PIP: 6, INDEX_TIP: 8, MIDDLE_MCP: 9, MIDDLE_PIP: 10, MIDDLE_TIP: 12, RING_MCP: 13, RING_PIP: 14, RING_TIP: 16, PINKY_MCP: 17, PINKY_PIP: 18, PINKY_TIP: 20 } as const;
 export const FACE = { FOREHEAD: 10, NOSE_TIP: 1, EYE_OUTER_A: 33, EYE_OUTER_B: 263, CHIN: 152 } as const;
 /** [fingertip, middle joint] for index, middle, ring, pinky. The thumb is left out: it bends sideways. */
 const FINGERS: ReadonlyArray<readonly [number, number]> = [
@@ -40,6 +40,11 @@ export const THRESHOLDS = {
   /** Fist: even the least curled finger has its tip closer to the wrist than (this x) its middle joint. */
   fistOn: 0.85,
   fistOff: 1.05,
+  /** Thumb extension relative to hand size for a thumbs-up; lower release threshold provides hysteresis. */
+  thumbUpOn: 0.12,
+  thumbUpOff: 0.08,
+  /** Thumb tip rises this share of hand size above its middle joint for a thumbs-up. */
+  thumbUpMin: 0.12,
   /** Open palm: even the most curled finger has its tip farther from the wrist than (this x) its middle joint. */
   openOn: 1.25,
   openOff: 1.12,
@@ -101,6 +106,11 @@ export function pinchRatio(hand: Pt[], aspect = DEFAULT_ASPECT): number {
 export const isFist = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMax(hand, aspect) < THRESHOLDS.fistOn;
 export const isOpenPalm = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMin(hand, aspect) > THRESHOLDS.openOn;
 export const isPinch = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => pinchRatio(hand, aspect) < THRESHOLDS.pinchOn && !isFist(hand, aspect);
+export const isThumbsUp = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => {
+  const size = handSize(hand, aspect);
+  const rise = hand[HAND.THUMB_IP].y - hand[HAND.THUMB_TIP].y;
+  return curlMax(hand, aspect) < THRESHOLDS.fistOff && rise / Math.max(1e-6, size) >= THRESHOLDS.thumbUpOn;
+};
 
 /** The height (0 = top of picture) a palm has to be above to count as "raised above the head". */
 export function raisedLine(face?: Pt[] | null): number {
@@ -268,7 +278,7 @@ const bandBelow = (v: number, on: number, off: number): boolean | null => (v < o
 /** true above `on`, false below `off`, null in between (bigger = more "on"). */
 const bandAbove = (v: number, on: number, off: number): boolean | null => (v > on ? true : v < off ? false : null);
 
-const HOLDS = ['fist', 'open_palm', 'raised', 'pinch'] as const;
+const HOLDS = ['fist', 'open_palm', 'raised', 'pinch', 'thumbs_up'] as const;
 type Hold = (typeof HOLDS)[number];
 
 interface SideState {
@@ -299,7 +309,7 @@ export class GestureTracker {
 
   private newSide(): SideState {
     const latch = () => new Latch(this.o.onMs, this.o.offMs);
-    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity };
+    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch(), thumbs_up: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity };
   }
 
   update(frame: FrameObs): SignalOut[] {
@@ -365,6 +375,10 @@ export class GestureTracker {
       open_palm: bandAbove(curlMin(pts, aspect), THRESHOLDS.openOn, THRESHOLDS.openOff),
       raised: bandBelow(palmY, line, line + THRESHOLDS.raisedOffMargin),
       pinch: bandBelow(pinchRatio(pts, aspect), THRESHOLDS.pinchOn, THRESHOLDS.pinchOff),
+      thumbs_up: curlMax(pts, aspect) < THRESHOLDS.fistOff &&
+        (s.holds.thumbs_up.active
+          ? (pts[HAND.THUMB_IP].y - pts[HAND.THUMB_TIP].y) / Math.max(1e-6, handSize(pts, aspect)) >= THRESHOLDS.thumbUpOff
+          : isThumbsUp(pts, aspect)),
     };
     // A fist often tucks the thumb against the index finger: while the fist is on (or about to be), it is not a pinch.
     if (s.holds.fist.active || wants.fist === true) wants.pinch = false;
