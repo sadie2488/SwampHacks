@@ -2,6 +2,7 @@
 top, written with the standard library's wave module); nothing is committed. Skipped when the audio libraries are
 not installed (`uv sync --group analysis`). The pieces that need no libraries are in test_upload_wiring.py."""
 import io
+import logging
 import wave
 
 import pytest
@@ -11,6 +12,7 @@ pytest.importorskip("librosa")
 np = pytest.importorskip("numpy")
 
 from analysis import melody, tempo_key
+from analysis import test_separation as drums  # the tune with drum hits over it
 
 from . import analyzer, config
 from .main import app
@@ -243,6 +245,25 @@ def test_many_instruments_at_once_still_gives_the_melody_but_with_a_warning(clie
         )
     ]
     assert abs(doc["tempo_bpm"] - BPM) / BPM < 0.02
+
+
+def test_a_tune_buried_in_drum_hits_gets_its_notes_back_and_no_warning(client, caplog):
+    caplog.set_level(logging.INFO)
+    mix = drums.drum_mix(every=0.25)  # loud drum hits on every sixteenth, a quiet chord underneath
+    first = melody.extract_melody(mix, SR, drums.BPM)
+    assert analyzer.looks_like_full_mix(first), "with the drums left in this would have been called a full mix"
+    p, r = drums.score(first, drums.TRUTH)
+
+    response = upload(client, wav_bytes(mix))
+    assert response.status_code == 200
+    doc = response.json()
+    assert_valid_analysis(doc)
+    assert "warnings" not in doc
+    found = doc["parts"][0]["notes"]
+    p2, r2 = drums.score(found, drums.TRUTH)
+    print(f"[analyzer] drums left in: precision {p:.2f} recall {r:.2f}; upload (drums taken out): precision {p2:.2f} recall {r2:.2f}")
+    assert p2 >= 0.9 and r2 >= 0.9 and p2 > p + 0.3
+    assert "second try without drums" in caplog.text
 
 
 def test_a_long_song_says_that_only_the_first_part_was_analyzed(client, monkeypatch):
