@@ -6,7 +6,9 @@
 The steps, using the building blocks in `server/analysis/`:
 1. Load the audio once (mono, 22050 Hz, first six minutes).
 2. `tempo_key.analyze_tempo_key`: duration, tempo, beats, downbeats, key, time signature.
-3. `melody.extract_melody` with that tempo and those beats, wrapped into one `melody` part.
+3. `melody.extract_melody` with that tempo and those beats, wrapped into one `melody` part. When the
+   result looks like many instruments at once, the step runs a second time on the sound with the
+   drums taken out (`separation.harmonic_part`), and keeps that result only if it is clearly better.
 `sections` is left out: nothing cheap and trustworthy produces it yet.
 
 Honest failures, all in plain words:
@@ -25,6 +27,7 @@ import json
 import logging
 import shutil
 import threading
+import time
 from contextlib import suppress
 from pathlib import Path
 
@@ -72,6 +75,16 @@ FULL_MIX_MAX_CONFIDENCE = 0.5  # length-weighted average of the notes' pitch con
 FULL_MIX_MAX_NOTES_PER_SEC = 9.0
 FULL_MIX_MIN_NOTES = 4  # too few notes to judge
 
+# Second try for a full mix: the melody step runs again on the sound with the drums taken out
+# (`analysis/separation.py`). It replaces the first result only when it is clearly better, so a song
+# the drum removal cannot help keeps its first result and its warning. Measured on generated drum
+# mixes (quiet chord underneath): the confidence of mixes that were flagged went from 0.2 to 0.3 up to
+# 0.5 to 0.9, and the note rate dropped by half or more where drum hits had been read as notes.
+DRUMS_OUT_MIN_GAIN = 0.1  # to count as better it needs this much more pitch confidence...
+DRUMS_OUT_MAX_RATE_SHARE = 0.9  # ...with at most this share of the first try's notes a second...
+DRUMS_OUT_KEEP_SOUND_SHARE = 0.5  # ...and it must still cover this share of the first try's note time
+DRUMS_OUT_CLEAR_CONFIDENCE = FULL_MIX_MAX_CONFIDENCE + 0.1  # the warning goes only above this, not just past the line
+
 
 class AnalysisFailed(Exception):
     """The upload cannot be analyzed. `str(error)` is plain words that are safe to show."""
@@ -99,16 +112,24 @@ def _engine():
     return tempo_key, melody
 
 
-def looks_like_full_mix(notes: list[dict]) -> bool:
-    """True when the melody found looks like it came from many instruments at once (see the thresholds above)."""
+def _melody_stats(notes: list[dict]) -> tuple[float, float, float] | None:
+    """(length-weighted pitch confidence, notes a second, seconds of sound), or None with too few notes to judge."""
     if len(notes) < FULL_MIX_MIN_NOTES:
-        return False
+        return None
     total = sum(n["duration_sec"] for n in notes)
     if total <= 0:
-        return False
+        return None
     confidence = sum(n.get("confidence", 1.0) * n["duration_sec"] for n in notes) / total
     span = max(n["onset_sec"] + n["duration_sec"] for n in notes) - min(n["onset_sec"] for n in notes)
-    rate = len(notes) / span if span > 0 else 0.0
+    return confidence, len(notes) / span if span > 0 else 0.0, total
+
+
+def looks_like_full_mix(notes: list[dict]) -> bool:
+    """True when the melody found looks like it came from many instruments at once (see the thresholds above)."""
+    stats = _melody_stats(notes)
+    if stats is None:
+        return False
+    confidence, rate, _ = stats
     return confidence < FULL_MIX_MAX_CONFIDENCE or rate > FULL_MIX_MAX_NOTES_PER_SEC
 
 
@@ -139,8 +160,56 @@ def _melody_part(melody, y, sr: int, result: dict) -> tuple[list[dict], list[str
     except Exception:
         log.exception("Melody extraction failed")
         return [], [WARNING_NO_MELODY]
+    mixed = looks_like_full_mix(notes)
+    if mixed:
+        notes, mixed = _without_drums(melody, y, sr, result, notes)
     part = melody.melody_to_part(notes)  # also suggests an instrument when the range fits one
-    return [part], [WARNING_FULL_MIX] if looks_like_full_mix(notes) else []
+    return [part], [WARNING_FULL_MIX] if mixed else []
+
+
+def _clearly_better(first: list[dict], second: list[dict]) -> bool:
+    """Is the second try's melody clearly better than the first's? See the DRUMS_OUT_* notes above."""
+    before, after = _melody_stats(first), _melody_stats(second)
+    if before is None or after is None:
+        return False
+    if after[2] < DRUMS_OUT_KEEP_SOUND_SHARE * before[2] or after[0] < before[0]:
+        return False  # most of the melody went missing, or the pitch tracker got less sure
+    if not looks_like_full_mix(second):
+        return True
+    return after[0] >= before[0] + DRUMS_OUT_MIN_GAIN and after[1] <= DRUMS_OUT_MAX_RATE_SHARE * before[1]
+
+
+def _without_drums(melody, y, sr: int, result: dict, notes: list[dict]) -> tuple[list[dict], bool]:
+    """`(notes, still looks like a full mix)` after a second try on the sound with the drums taken out.
+
+    The second result is used only when it is clearly better; any failure keeps the first result.
+    The outcome goes to the log only, never to the person's warnings.
+    """
+    try:
+        started = time.monotonic()
+        separation = importlib.import_module("analysis.separation")
+        again = melody.extract_melody(separation.harmonic_part(y, sr), sr, result["tempo_bpm"], result["beats"])
+        seconds = time.monotonic() - started
+    except melody.AnalysisError as err:
+        log.info("Full-mix second try without drums found no melody (%s); the first result stays.", err)
+        return notes, True
+    except Exception:
+        log.info("Full-mix second try without drums failed; the first result stays.", exc_info=True)
+        return notes, True
+    before, after = _melody_stats(notes), _melody_stats(again)
+    better = _clearly_better(notes, again)
+    log.info(
+        "Full-mix second try without drums took %.1f s: %s (confidence %.2f -> %s, notes a second %.1f -> %s).",
+        seconds,
+        "used" if better else "not used, the first result stays",
+        before[0],
+        f"{after[0]:.2f}" if after else "n/a",
+        before[1],
+        f"{after[1]:.1f}" if after else "n/a",
+    )
+    if not better:
+        return notes, True
+    return again, looks_like_full_mix(again) or after[0] < DRUMS_OUT_CLEAR_CONFIDENCE
 
 
 def analyze_audio(path: Path) -> dict:
