@@ -152,13 +152,16 @@ test('a made-up hand movement drives the tempo through the mapping file', T, asy
   await until('tempo follows the hand back down', async () => (await control('playback.tempo')) < 0.7, 8_000);
 });
 
-test('a made-up clap toggles play and pause through the mapping file', T, async () => {
+test('a made-up double clap toggles play and pause; a single clap does nothing', T, async () => {
   const before = (await topic('transport')).playing;
-  await $('fake-audio.clap').click();
-  await until('clap flips playing', async () => (await topic('transport')).playing === !before);
-  await sleep(800); // clap rule has a cooldown
-  await $('fake-audio.clap').click();
-  await until('second clap flips back', async () => (await topic('transport')).playing === before);
+  await $('fake-audio.clap').click(); // one stray clap (a desk tap, a drum in the song) must not start or stop the music
+  await sleep(1000);
+  assert.equal((await topic('transport')).playing, before, 'a single clap should not toggle play/pause');
+  await $('fake-audio.clap.double').click();
+  await until('double clap flips playing', async () => (await topic('transport')).playing === !before);
+  await sleep(1000); // the rule has a cooldown
+  await $('fake-audio.clap.double').click();
+  await until('second double clap flips back', async () => (await topic('transport')).playing === before);
 });
 
 test('editing the mapping file applies instantly, with no page reload', T, async () => {

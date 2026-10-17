@@ -20,6 +20,7 @@
     { "id": "vision.hand.left.drum_hit", "kind": "moment", "source": "vision", "description": "Left hand makes a quick downward hit, like hitting a drum (wrist speed)." },
     { "id": "audio.snap", "kind": "moment", "source": "audio", "description": "A finger snap." },
     { "id": "audio.clap", "kind": "moment", "source": "audio", "description": "A hand clap." },
+    { "id": "audio.clap.double", "kind": "moment", "source": "audio", "description": "Two hand claps close together (about 0.15 to 0.7 s apart). Much harder to set off by accident than one clap." },
     { "id": "audio.onset", "kind": "moment", "source": "audio", "description": "Any note attack heard by the mic." },
     { "id": "audio.loudness", "kind": "slider", "source": "audio", "description": "How loud it is (0 = silent, 1 = very loud)." },
     { "id": "audio.hum.pitch", "kind": "slider", "source": "audio", "description": "Pitch of the hum or voice. raw is the MIDI note.", "range": [36, 96], "unit": "MIDI note" },

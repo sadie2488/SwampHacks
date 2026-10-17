@@ -23,13 +23,13 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 |---|---|---|
 | 11 | The Lab lists every signal and every control from the catalogs | Auto |
 | 12 | Moving a made-up hand slider changes the tempo through the mapping file; moving it back restores it | Auto |
-| 13 | A made-up clap toggles play and pause; a second clap too fast is ignored (cooldown) | Auto |
+| 13 | A made-up **double** clap toggles play and pause; a single clap does nothing (so a desk tap or a drum in the song cannot start the music); a second double clap too fast is ignored (cooldown) | Auto |
 | 14 | A voice command only works while the left fist is held ("arming") | Auto (unit test) |
 | 15 | Editing `mappings.yaml` and saving changes behaviour instantly, with no reload | Auto |
 | 16 | A typo (like `audio.clapp`) shows a friendly message that suggests the right name; every other rule keeps working | Auto |
 | 17 | Two rules fighting over the same signal and control show a warning | Auto (unit test) |
 | 18 | With a real camera: moving your hand moves its meter, a fist lights its lamp, and tracking is drawn over the video | By hand |
-| 19 | With a real mic: a clap and a snap each light their own lamp; humming moves the pitch meter; saying "slower" while holding the left fist lowers the tempo | By hand |
+| 19 | With a real mic: a clap, a double clap and a snap each light their own lamp; talking, typing, tapping the desk and the song playing through speakers light none of them; humming moves the pitch meter; saying "slower" while holding the left fist lowers the tempo | By hand |
 
 ## 3. Create mode
 | # | What should happen | How |
