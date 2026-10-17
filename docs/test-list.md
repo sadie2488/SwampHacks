@@ -70,6 +70,7 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 | 37 | Login with Auth0 appears only when it is set up. Without it the app looks and works exactly the same | Auto (login hidden); By hand (real login) |
 | 38 | Upload a real song (MP3, WAV, FLAC or OGG): it shows its real tempo and key; a single-instrument recording also gets real sheet music; a full band mix shows a warning that the notes may be wrong | By hand (needs a few real songs) |
 | 39 | Songs, practice runs and tracks are stored in Tiger Data when it is connected, and in memory (lost on restart) when it is not | Auto (memory); By hand (real database) |
+| 40 | A song with loud drums: the app takes the drums out and reads the melody again. A melody with drum hits on every beat gives (nearly) the right notes; a song it still can't read keeps the "may be wrong" warning; plain noise or drums alone still give "no music found" | Auto (made-up drum mixes); By hand (real songs) |
 
 ## Not tested yet (later tasks)
-Separating a song into parts (so full songs get clean sheet music), a trained model of our own, deployment, and the final design.
+Separating every instrument of a song (only the drums are taken out so far), a trained model of our own, deployment, and the final design.
