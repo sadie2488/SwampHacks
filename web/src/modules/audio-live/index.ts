@@ -1,6 +1,8 @@
 // The "audio-live" module: the microphone. It turns on only after a bus "enable" event for 'audio-live' (the user clicked
 // a button), then publishes pitch frames, performance events (notes and onsets) and the audio.* signals
 // (loudness, hum pitch, onset, snap, clap, spoken keywords). In fake mode it plays made-up data instead of using a mic.
+// It also does practice mode (see ./practice): the shell sends practiceControl (calibrate | start | stop) and gets back
+// practice (what is going on, in plain words) and feedback (rule-based coaching comparing the player with the song).
 import { bus, getAudioContext, isFakeMode, reportStatus, sendSignal, type Stop } from '@/bus';
 import { Analyzer } from './analyzer';
 import { startCapture, type Capture } from './capture';

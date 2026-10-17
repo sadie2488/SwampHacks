@@ -207,16 +207,12 @@ function paceLine(pairs: Array<[number, number]>, fallback: Line): Line {
   return { slope: fallback.slope, intercept: pairs.length ? median(pairs.map(([e, p]) => p - fallback.slope * e)) : fallback.intercept };
 }
 
-/** Distance from t to the closest value in a sorted list. */
-function nearestDistance(sorted: number[], t: number): number {
-  let lo = 0;
-  let hi = sorted.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (sorted[mid] < t) lo = mid + 1;
-    else hi = mid;
-  }
-  return Math.min(lo < sorted.length ? sorted[lo] - t : Infinity, lo > 0 ? t - sorted[lo - 1] : Infinity);
+/** Index of the value in a sorted list that is closest to t (the list must not be empty). */
+function nearestIndex(sorted: number[], t: number): number {
+  const hi = lowerBound(sorted, t);
+  if (hi === 0) return 0;
+  if (hi === sorted.length) return sorted.length - 1;
+  return t - sorted[hi - 1] <= sorted[hi] - t ? hi - 1 : hi;
 }
 
 /**
@@ -224,16 +220,27 @@ function nearestDistance(sorted: number[], t: number): number {
  * passes close to the most expected notes. A player who is 10 percent slow is half a second off after eight notes, so
  * matching against the written times alone would pair notes with their neighbours.
  */
-function searchLine(expSec: number[], playSec: number[], windowSec: number): Line {
-  if (expSec.length === 0 || playSec.length < PRACTICE.rules.minMatchedNotes) return { slope: 1, intercept: 0 };
+function searchLine(allExpSec: number[], playSec: number[], windowSec: number): Line {
+  if (allExpSec.length === 0 || playSec.length < PRACTICE.rules.minMatchedNotes) return { slope: 1, intercept: 0 };
+  // a long song needs no more than a few hundred notes to find the pace
+  const expSec = allExpSec.length > 240 ? Array.from({ length: 240 }, (_, k) => allExpSec[Math.floor((k * (allExpSec.length - 1)) / 239)]) : allExpSec;
   const tight = windowSec / 2;
+  const claimed = new Uint8Array(playSec.length);
   let best: Line = { slope: 1, intercept: 0 };
   let bestKey: [number, number, number] = [-1, 0, 0];
   for (let s = SLOPE_MIN; s <= SLOPE_MAX + 1e-9; s += SLOPE_STEP) {
     for (let k = -OFFSET_STEPS; k <= OFFSET_STEPS; k++) {
       const a = (k * windowSec) / OFFSET_STEPS;
+      // score: how many different sounds lie close to the line (a line that runs twice as fast would otherwise "hit" each sound twice)
+      claimed.fill(0);
       let count = 0;
-      for (const e of expSec) if (nearestDistance(playSec, a + s * e) <= tight) count++;
+      for (const e of expSec) {
+        const j = nearestIndex(playSec, a + s * e);
+        if (!claimed[j] && Math.abs(playSec[j] - (a + s * e)) <= tight) {
+          claimed[j] = 1;
+          count++;
+        }
+      }
       const key: [number, number, number] = [count, -Math.abs(s - 1), -Math.abs(a)];
       if (key[0] > bestKey[0] || (key[0] === bestKey[0] && (key[1] > bestKey[1] + 1e-9 || (Math.abs(key[1] - bestKey[1]) <= 1e-9 && key[2] > bestKey[2])))) {
         best = { slope: s, intercept: a };

@@ -148,7 +148,21 @@ describe('rushing', () => {
     expect(fb.tempo!.played_bpm).toBeCloseTo(112, 0);
     expect(fb.issues![0]).toMatchObject({ kind: 'tempo', severity: 'medium' });
     expect(fb.issues![0].message).toMatch(/rushed through bars 1-12/);
-    expect(fb.next_step).toMatch(/^Loop bars 1-12 at 90% speed/);
+    expect(fb.next_step).toBe('Loop bars 1-2 at 90% speed, then bring it back up.'); // a whole piece is too long to loop: start with the first two bars
+  });
+});
+
+describe('the slowed song is named in the words', () => {
+  it('says "at this speed" when the song was not at full tempo', () => {
+    const { fb } = scenario({ rate: 0.8, pace: 1.25 });
+    expect(fb.summary).toMatch(/about 25% faster than the song at this speed/);
+    expect(fb.issues![0].message).toMatch(/at this speed/);
+    expect(scenario({ pace: 1.25 }).fb.summary).not.toMatch(/at this speed/);
+  });
+  it('suggests a practice speed a notch under what the player managed', () => {
+    expect(scenario({ pace: 0.9 }).fb.next_step).toBe('Loop bars 1-2 at 80% speed, then bring it back up.');
+    expect(scenario({ rate: 0.8, pace: 0.9 }).fb.next_step).toMatch(/at 60% speed/);
+    expect(scenario({ rate: 0.6, pace: 0.5 }).fb.next_step).toMatch(/at 50% speed/);
   });
 });
 

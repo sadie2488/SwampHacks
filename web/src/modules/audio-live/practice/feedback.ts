@@ -97,9 +97,15 @@ function longestRun(tempos: BarTempo[], verdict: 'rushing' | 'dragging', band: n
   return best;
 }
 
+/** A speed to practise at (percent): one step of 10 below what the player managed (rounded to the nearest 10), never below 50. */
 function suggestedSpeed(rate: number, ratio: number | undefined): number {
   const v = rate * Math.min(ratio ?? 1, 1);
-  return Math.max(50, Math.floor(v * 10 - 1) * 10);
+  return Math.max(50, (Math.round(v * 10) - 1) * 10);
+}
+
+/** Looping more than four bars at a time is not practice: start with the first two. */
+function loopable(bars: [number, number]): [number, number] {
+  return bars[1] - bars[0] > 3 ? [bars[0], bars[0] + 1] : bars;
 }
 
 export function buildFeedback(input: FeedbackInput): Feedback {
@@ -163,7 +169,7 @@ export function buildFeedback(input: FeedbackInput): Feedback {
       ...span(analysis, tempoRun.bars),
       bars: tempoRun.bars,
       severity: tempoRun.off >= 0.2 ? 'high' : tempoRun.off >= 0.08 ? 'medium' : 'low',
-      message: `You ${word} ${where}, about ${pct(tempoRun.off)}% ${tempoRun.verdict === 'dragging' ? 'slower' : 'faster'} than the song: try counting along with the beat.`,
+      message: `You ${word} ${where}, about ${pct(tempoRun.off)}% ${tempoRun.verdict === 'dragging' ? 'slower' : 'faster'} than the song${result.rate === 1 ? '' : ' at this speed'}: try counting along with the beat.`,
     });
   }
 
@@ -276,10 +282,12 @@ export function buildFeedback(input: FeedbackInput): Feedback {
   out.strengths = good.slice(0, 2);
 
   // ---- the one next step ----
-  out.next_step = nextStep(input, issues[0], ratio);
+  // how fast the player managed to go in the part that needs work (the tempo issue may be about a few bars only)
+  const managed = tempoRun ? (tempoRun.verdict === 'dragging' ? 1 - tempoRun.off : 1 + tempoRun.off) : ratio;
+  out.next_step = nextStep(input, out.issues[0], managed);
 
   // ---- the summary ----
-  out.summary = summarize(enough, verdict, ratio, evenRhythm, out.issues, out.strengths, n);
+  out.summary = summarize(result.rate, enough, verdict, ratio, evenRhythm, out.issues, out.strengths, n);
   return out;
 }
 
@@ -291,11 +299,12 @@ function nextStep(input: FeedbackInput, top: Issue | undefined, ratio: number | 
     return now < 100 ? `Try it again at ${Math.min(100, now + 10)}% speed.` : 'Try the next section, or play this one without looking at the sheet music.';
   }
   const bars = top.bars ? barsText(top.bars) : 'that part';
+  const loopText = top.bars ? barsText(loopable(top.bars)) : 'that part';
   switch (top.kind) {
     case 'tempo':
-      return `Loop ${bars} at ${suggestedSpeed(result.rate, ratio)}% speed, then bring it back up.`;
+      return `Loop ${loopText} at ${suggestedSpeed(result.rate, ratio)}% speed, then bring it back up.`;
     case 'missed':
-      return `Loop ${bars} at ${suggestedSpeed(result.rate, 1)}% speed until every note is there.`;
+      return `Loop ${loopText} at ${suggestedSpeed(result.rate, 1)}% speed until every note is there.`;
     case 'pitch':
       return `Play ${bars} slowly and match each note to the song.`;
     case 'extra':
@@ -305,7 +314,7 @@ function nextStep(input: FeedbackInput, top: Issue | undefined, ratio: number | 
   }
 }
 
-function summarize(enough: boolean, verdict: string | undefined, ratio: number | undefined, evenRhythm: boolean, issues: Issue[], strengths: string[], n: number): string {
+function summarize(rate: number, enough: boolean, verdict: string | undefined, ratio: number | undefined, evenRhythm: boolean, issues: Issue[], strengths: string[], n: number): string {
   if (!enough) return `I only heard ${n === 1 ? 'one note' : `${n} notes`} that matched the song, which is too few to judge your tempo. Try again from the start and play a little louder.`;
   const side = issues.find((i) => i.kind !== 'tempo');
   if (verdict === 'steady') {
@@ -313,6 +322,6 @@ function summarize(enough: boolean, verdict: string | undefined, ratio: number |
     return `You kept a steady tempo${issues.some((i) => i.kind === 'tempo') ? ' overall' : ''}. ${issues[0].message}`;
   }
   const how = verdict === 'dragging' ? 'slower' : 'faster';
-  const first = `You played about ${pct(1 - ratio!)}% ${how} than the song${evenRhythm ? ', but your rhythm was even' : ''}.`;
+  const first = `You played about ${pct(1 - ratio!)}% ${how} than the song${rate === 1 ? '' : ' at this speed'}${evenRhythm ? ', but your rhythm was even' : ''}.`;
   return side ? `${first} ${side.message}` : `${first} Everything else sounded good.`;
 }

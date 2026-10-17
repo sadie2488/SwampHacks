@@ -20,10 +20,10 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<boolean> {
   });
 }
 
-/** Every clap or other sudden sound the microphone module reports, as page-clock ms. */
-function listenForHits(onHit: (tMs: number) => void): () => void {
+/** Every clap (and, unless only claps are wanted, any other sudden sound) the microphone module reports, as page-clock ms. */
+function listenForHits(onHit: (tMs: number) => void, clapsOnly = false): () => void {
   return bus.on('signal', (s) => {
-    if ((s.id === 'audio.clap' || s.id === 'audio.onset') && Number.isFinite(s.t_ms)) onHit(s.t_ms);
+    if ((s.id === 'audio.clap' || (!clapsOnly && s.id === 'audio.onset')) && Number.isFinite(s.t_ms)) onHit(s.t_ms);
   });
 }
 
@@ -77,7 +77,7 @@ export function browserCalibrationEnv(signal?: AbortSignal): CalibrationEnv {
       for (let k = 0; k < count; k++) scheduleClick(ctx, first + k * interval, k === 0);
       return clickTimesMs(first * 1000 + offset, count, bpm);
     },
-    listen: listenForHits,
+    listen: (onHit) => listenForHits(onHit),
     now: () => performance.now(),
     sleep,
   };
@@ -98,7 +98,8 @@ export function fakeCalibrationEnv(signal?: AbortSignal): CalibrationEnv {
       });
       return clicks;
     },
-    listen: listenForHits,
+    // the looping made-up hum reports an onset for every note it plays, which would be mistaken for claps
+    listen: (onHit) => listenForHits(onHit, true),
     now: () => performance.now(),
     sleep,
   };

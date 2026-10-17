@@ -107,7 +107,7 @@ export function createPracticeController(deps: PracticeDeps): PracticeController
   // ---- a practice run ----
   const beginRun = (state: TransportState) => {
     if (!analysis) return;
-    rec = new RunRecorder(state, deps.now(), analysis.duration_sec);
+    rec = new RunRecorder(state, deps.now(), state.durationSec > 0 ? state.durationSec : analysis.duration_sec);
     phase = 'listening';
     publish('listening', 'Listening: play along');
   };
