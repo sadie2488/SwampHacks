@@ -8,6 +8,7 @@
 //   transport       playback     -> shell, sheet, command lab, touchdesigner   what is playing right now
 //   signal          vision, audio-live (and fixture replays) -> commands, command lab, create, touchdesigner
 //   landmarks       vision       -> command lab (tracking overlay)
+//   cameraStream    vision       -> command lab (shows the live camera; null when the camera is off)
 //   pitch           audio-live   -> create, touchdesigner, command lab     frame-by-frame pitch of the mic (about 50 per second)
 //   performance     audio-live   -> (feedback, later)                     detected notes and onsets
 //   command         buttons (shell), commands engine, email -> everybody who reacts to a control
@@ -86,6 +87,7 @@ export interface Topics {
   transport: TransportState;
   signal: Signal;
   landmarks: Landmarks;
+  cameraStream: MediaStream | null;
   pitch: PitchFrame;
   performance: PerformanceEvent;
   command: CommandEvent;
