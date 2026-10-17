@@ -2,13 +2,13 @@
 // relay on this laptop (node bridge/relay.mjs), which hands them to TouchDesigner as OSC. Each frame is also published on the
 // bus "td" topic, even when no relay is running, so the rest of the app can be tested without TouchDesigner.
 import { bus, reportStatus, type Stop } from '@/bus';
-import { createSender, relayUrl, type SenderDeps } from './sender';
+import { createSender, resolveRelayUrl, type SenderDeps } from './sender';
 import { createTracker } from './frame';
 
 export { buildFrame } from './frame';
 
 /** Same as start(), but with the outside world (WebSocket, clock, timers) passed in. Tests use this. */
-export function startWith(deps: Pick<SenderDeps, 'url' | 'createSocket' | 'now' | 'setInterval' | 'clearInterval' | 'setTimeout' | 'clearTimeout'>): Stop {
+export function startWith(deps: Pick<SenderDeps, 'url' | 'notice' | 'createSocket' | 'now' | 'setInterval' | 'clearInterval' | 'setTimeout' | 'clearTimeout'>): Stop {
   const tracker = createTracker(deps.now);
   const sender = createSender({
     ...deps,
@@ -29,7 +29,7 @@ export function startWith(deps: Pick<SenderDeps, 'url' | 'createSocket' | 'now' 
       else sender.disable();
     }),
   ];
-  reportStatus('touchdesigner', 'idle', 'TouchDesigner is off.');
+  reportStatus('touchdesigner', 'idle', deps.notice ? `TouchDesigner is off. ${deps.notice}` : 'TouchDesigner is off.');
 
   return () => {
     for (const stop of stops) stop();
@@ -38,8 +38,10 @@ export function startWith(deps: Pick<SenderDeps, 'url' | 'createSocket' | 'now' 
 }
 
 export function start(): Stop {
+  const { url, notice } = resolveRelayUrl(typeof location !== 'undefined' ? location.search : '');
   return startWith({
-    url: relayUrl(typeof location !== 'undefined' ? location.search : ''),
+    url,
+    notice,
     createSocket: (url) => new WebSocket(url),
     now: () => performance.now(),
     setInterval: (fn, ms) => setInterval(fn, ms),

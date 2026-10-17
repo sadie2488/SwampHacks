@@ -4,7 +4,7 @@ import type { TdMessage } from '@/contracts';
 import { startWith } from './index';
 import { createTracker } from './frame';
 import { shapeProblems } from './frame.test-util';
-import { DEFAULT_RELAY_URL, createSender, relayUrl, type SenderState, type WebSocketLike } from './sender';
+import { DEFAULT_RELAY_URL, createSender, relayUrl, resolveRelayUrl, type SenderState, type WebSocketLike } from './sender';
 
 // ---- fakes: a clock you move by hand, and a WebSocket you control ----
 class FakeClock {
@@ -286,15 +286,45 @@ describe('relayUrl', () => {
     expect(relayUrl('')).toBe(DEFAULT_RELAY_URL);
     expect(relayUrl(undefined)).toBe(DEFAULT_RELAY_URL);
     expect(relayUrl('?fake=1')).toBe('ws://localhost:9980');
+    expect(resolveRelayUrl('?fake=1')).toEqual({ url: DEFAULT_RELAY_URL });
+    expect(resolveRelayUrl('?td=')).toEqual({ url: DEFAULT_RELAY_URL });
   });
-  it('can be pointed somewhere else with ?td=', () => {
-    expect(relayUrl('?td=ws://192.168.1.20:9981')).toBe('ws://192.168.1.20:9981');
-    expect(relayUrl('?fake=1&td=wss://example.com:443/td')).toBe('wss://example.com:443/td');
+  it('accepts another port on this computer: localhost, 127.0.0.1 and [::1]', () => {
+    expect(resolveRelayUrl('?td=ws://localhost:9981')).toEqual({ url: 'ws://localhost:9981/' });
+    expect(resolveRelayUrl('?fake=1&td=ws://127.0.0.1:9981')).toEqual({ url: 'ws://127.0.0.1:9981/' });
+    expect(resolveRelayUrl('?td=ws://[::1]:9981')).toEqual({ url: 'ws://[::1]:9981/' });
+    expect(resolveRelayUrl('?td=wss://localhost:9981/td')).toEqual({ url: 'wss://localhost:9981/td' });
+    expect(relayUrl('?td=WS://LOCALHOST:9981')).toBe('ws://localhost:9981/');
   });
-  it('ignores values that are not websocket addresses', () => {
-    expect(relayUrl('?td=http://localhost:9980')).toBe(DEFAULT_RELAY_URL);
-    expect(relayUrl('?td=')).toBe(DEFAULT_RELAY_URL);
-    expect(relayUrl('?td=javascript:alert(1)')).toBe(DEFAULT_RELAY_URL);
+  it('refuses a remote address, with a message in plain words, and uses the default', () => {
+    for (const search of [
+      '?td=ws://192.168.1.20:9981',
+      '?td=wss://attacker.example/steal',
+      '?td=ws://localhost.attacker.example:9980',
+      '?td=ws://127.0.0.1.attacker.example',
+      '?td=ws://localhost@attacker.example:9980',
+      '?td=ws://127.0.0.2:9980',
+      '?td=ws://0.0.0.0:9980',
+      '?td_remote=0&td=ws://attacker.example',
+      '?td_remote=true&td=ws://attacker.example',
+    ]) {
+      const got = resolveRelayUrl(search);
+      expect(got.url, search).toBe(DEFAULT_RELAY_URL);
+      expect(got.notice, search).toBe('Ignored the ?td= address: only this computer is allowed unless you add &td_remote=1.');
+    }
+  });
+  it('accepts a remote address only with &td_remote=1', () => {
+    expect(resolveRelayUrl('?td=ws://192.168.1.20:9981&td_remote=1')).toEqual({ url: 'ws://192.168.1.20:9981/' });
+    expect(resolveRelayUrl('?td_remote=1&fake=1&td=wss://example.com:443/td')).toEqual({ url: 'wss://example.com/td' });
+  });
+  it('refuses garbage, and td_remote does not make garbage acceptable', () => {
+    for (const td of ['http://localhost:9980', 'javascript:alert(1)', 'localhost:9980', 'ws://', 'not an address', 'ftp://localhost', 'data:text/plain,ws://localhost']) {
+      for (const extra of ['', '&td_remote=1']) {
+        const got = resolveRelayUrl(`?td=${encodeURIComponent(td)}${extra}`);
+        expect(got.url, td).toBe(DEFAULT_RELAY_URL);
+        expect(got.notice, td).toContain('Ignored the ?td= address');
+      }
+    }
   });
 });
 
@@ -368,6 +398,28 @@ describe('module wired to the bus', () => {
     clock.advance(500);
     expect(tdFrames.length).toBeGreaterThan(10);
     expect(statuses[statuses.length - 1].message).toContain('node bridge/relay.mjs');
+    stop();
+  });
+
+  it('shows the notice about an ignored address in every status message', () => {
+    const clock = new FakeClock();
+    FakeSocket.all = [];
+    const notice = 'Ignored the ?td= address: only this computer is allowed unless you add &td_remote=1.';
+    const stop = startWith({
+      url: 'ws://localhost:9980',
+      notice,
+      createSocket: (url) => new FakeSocket(url, clock),
+      now: clock.now,
+      setInterval: clock.setInterval,
+      clearInterval: clock.clear,
+      setTimeout: clock.setTimeout,
+      clearTimeout: clock.clear,
+    });
+    expect(statuses[statuses.length - 1].message).toBe(`TouchDesigner is off. ${notice}`);
+    bus.emit('enable', { module: 'touchdesigner', on: true });
+    FakeSocket.all[0].accept();
+    expect(statuses[statuses.length - 1]).toMatchObject({ state: 'running' });
+    expect(statuses[statuses.length - 1].message).toContain(notice);
     stop();
   });
 
