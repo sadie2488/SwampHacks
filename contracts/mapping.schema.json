@@ -20,6 +20,7 @@
         "smoothing": { "type": "number", "minimum": 0, "maximum": 1, "description": "0 = jumpy, 1 = very smooth." },
         "min_confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "How sure the app must be before acting." },
         "cooldown_ms": { "type": "number", "minimum": 0, "description": "Ignore repeats for this long." },
+        "hold_ms": { "type": "number", "minimum": 0, "description": "Only fire after the moment has been held this long (for example a sign held 2000 ms); progress shows while holding." },
         "only_while": { "type": "string", "pattern": "^(vision|audio|ui)(\\.[a-z0-9_]+)+$", "description": "Arming signal: the rule only works while this is active." },
         "step": { "type": "number", "description": "Size of one nudge (negative = down)." },
         "value": { "type": ["number", "boolean", "string", "array"], "description": "Fixed value to set when a trigger fires." },

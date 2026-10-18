@@ -1,7 +1,7 @@
 // The app shell (the Overture look): the entrance, the record menu, and inside a mode the header with the mode pills,
 // the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
 // screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { bus, isFakeMode, resumeAudio } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
@@ -10,6 +10,7 @@ import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { bigWordPlaces } from '@/ui/overture/carousel';
 import { Entrance } from '@/ui/overture/Entrance';
 import { GuideLayer } from '@/ui/overture/GuideLayer';
+import { HoldRing } from '@/ui/overture/HoldRing';
 import { MODES, modeLook, type ModeId, type Screen } from '@/ui/overture/modes';
 import { RecordMenu } from '@/ui/overture/RecordMenu';
 import { ModeTitle } from '@/ui/overture/ModeTitle';
@@ -74,6 +75,17 @@ export function App() {
       changeScreen('portal', update, { ...p.centre, hole: p.hole });
     } else changeScreen(kind, update);
   };
+  // app.mode (a held sign, the Command Lab, an email...) opens a mode just like clicking its tab button (not on the entrance)
+  const openModeRef = useRef(openMode);
+  openModeRef.current = (id: Tab) => screen !== 'entrance' && openMode(id);
+  useEffect(
+    () =>
+      bus.on('command', (c) => {
+        const id = TABS.find((t) => c.command === 'app.mode' && t.id === c.value)?.id;
+        if (id) openModeRef.current(id);
+      }),
+    [],
+  );
   const openMenu = () =>
     changeScreen('back', () => {
       setMenuSel(indexOf(tab));
@@ -94,6 +106,7 @@ export function App() {
     <div className="app" data-screen={screen} data-mode={shownMode} data-arrive={arrive.n ? `${arrive.kind}-${arrive.n % 2}` : undefined}>
       <Backdrop screen={screen} mode={shownMode} menuIndex={menuSel} />
       <GuideLayer screen={screen} mode={tab} />
+      <HoldRing />
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
       <header className="app-header" {...inert(screen === 'entrance')}>

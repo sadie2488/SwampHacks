@@ -38,6 +38,16 @@ export interface Rule {
   step?: number;
   /** trigger / toggle: a fixed value to set. */
   value?: ControlValue;
+  /** trigger / toggle / nudge: the moment must stay on this long (ms) before the rule fires. A ring shows the progress. */
+  holdMs?: number;
+}
+
+/** A rule that is waiting for its gesture to be held long enough. `progress` goes from 0 to 1. */
+export interface HoldProgress {
+  rule: string;
+  control: string;
+  value?: ControlValue;
+  progress: number;
 }
 
 export interface Catalogs {
@@ -63,7 +73,7 @@ const FIRED_EVERY_MS = 200; // follow rules light up the Command Lab at most abo
 // Sat-night fix: a practice run ends whenever tempo or pitch change, so follow rules leave these alone during a run.
 const STEADY_DURING_PRACTICE = new Set(['playback.tempo', 'playback.pitch']);
 
-const RULE_KEYS = ['name', 'mode', 'when', 'do', 'how', 'range', 'smoothing', 'min_confidence', 'cooldown_ms', 'only_while', 'step', 'value', 'enabled'];
+const RULE_KEYS = ['name', 'mode', 'when', 'do', 'how', 'range', 'smoothing', 'min_confidence', 'cooldown_ms', 'only_while', 'step', 'value', 'enabled', 'hold_ms'];
 const HOWS: RuleHow[] = ['follow', 'trigger', 'toggle', 'nudge'];
 const MODES: RuleMode[] = ['play', 'create', 'learn', 'any'];
 
@@ -237,6 +247,7 @@ function checkRule(raw: unknown, index: number, cat: Lookup): { rule?: Rule; iss
   const minConfidence = readNumber(r.min_confidence, 'min_confidence', 'a number from 0 to 1 (how sure the app must be)', 0, 1, errors);
   const cooldownMs = readNumber(r.cooldown_ms, 'cooldown_ms', 'a number of milliseconds, 0 or more', 0, Infinity, errors);
   const step = readNumber(r.step, 'step', 'a number (how far to move each time, negative = down)', -Infinity, Infinity, errors);
+  const holdMs = readNumber(r.hold_ms, 'hold_ms', 'a number of milliseconds to hold, like 2000 for two seconds', 0, Infinity, errors);
   let range: [number, number] | undefined;
   if (r.range !== undefined && r.range !== null) {
     if (Array.isArray(r.range) && r.range.length === 2 && r.range.every(isNumber)) range = [r.range[0], r.range[1]];
@@ -266,6 +277,11 @@ function checkRule(raw: unknown, index: number, cat: Lookup): { rule?: Rule; iss
   if (how && sig) {
     if (how === 'follow' && sig.kind !== 'slider') {
       errors.push(`"follow" needs a slider signal (a number that moves from 0 to 1, like vision.hand.right.height), but "${sig.id}" is a moment: it happens once. Use "how: trigger" for moments, or pick a slider signal.`);
+    }
+    if (holdMs && how === 'follow') {
+      errors.push('"hold_ms:" only works with moments (trigger, toggle or nudge), not with "follow". Remove it or change "how:".');
+    } else if (holdMs && sig.kind === 'moment' && !sig.holdable) {
+      errors.push(`"hold_ms:" needs a gesture you can hold, but "${sig.id}" happens in an instant. Pick something you can hold, like vision.sign.l or vision.hand.left.fist.`);
     }
     if (how !== 'follow' && sig.kind !== 'moment') {
       errors.push(`"${how}" needs a moment signal (something that happens, like a clap or a fist), but "${sig.id}" is a slider. Use "how: follow" for sliders, or pick a moment signal.`);
@@ -321,6 +337,7 @@ function checkRule(raw: unknown, index: number, cat: Lookup): { rule?: Rule; iss
   if (onlyWhile) rule.onlyWhile = onlyWhile;
   if (how === 'nudge') rule.step = step ?? ctl.step;
   if ((how === 'trigger' || how === 'toggle') && r.value !== undefined) rule.value = r.value as ControlValue;
+  if (holdMs) rule.holdMs = holdMs;
   return { rule, issues };
 }
 
@@ -402,6 +419,18 @@ export function createEngine(options: EngineOptions = {}) {
   let mode: Mode = 'play';
   let practiceRun = false;
   const held = new Set<string>(); // holdable signals that are active right now (a fist that is closed...)
+  // hold_ms rules whose gesture is on: when it started, and whether the rule already fired for this hold
+  const holding = new Map<number, { since: number; done: boolean }>();
+
+  const commandFor = (rule: Rule, t: number, value: ControlValue | undefined): CommandEvent => {
+    const source: CommandSource = rule.when.startsWith('audio.keyword.') ? 'voice' : 'gesture';
+    const command: CommandEvent = { version: 1, command: rule.do, source, how: rule.how, mode, mapping: rule.label, signal: rule.when, t_ms: t };
+    if (value !== undefined) command.value = value;
+    return command;
+  };
+  const momentValue = (rule: Rule) => (rule.how === 'nudge' ? rule.step : rule.value);
+  /** Still allowed to run right now (mode and only_while), ignoring the signal itself. */
+  const armed = (rule: Rule) => rule.enabled && (rule.mode === 'any' || rule.mode === mode) && (!rule.onlyWhile || held.has(rule.onlyWhile));
 
   const stateOf = (rule: Rule): RuleState => {
     let s = states.get(rule.index);
@@ -417,6 +446,7 @@ export function createEngine(options: EngineOptions = {}) {
       if (!result.fatal) {
         rules = result.rules;
         states = new Map();
+        holding.clear();
       }
       return issues;
     },
@@ -444,6 +474,7 @@ export function createEngine(options: EngineOptions = {}) {
 
       const out: Emission[] = [];
       const t = now();
+      if (sig.kind === 'moment' && sig.state === 'end') for (const rule of rules) if (rule.when === sig.id) holding.delete(rule.index);
       for (const rule of rules) {
         if (!rule.enabled || rule.when !== sig.id) continue;
         if (rule.mode !== 'any' && rule.mode !== mode) continue;
@@ -482,16 +513,59 @@ export function createEngine(options: EngineOptions = {}) {
         } else {
           if (sig.kind !== 'moment' || sig.state === 'end') continue; // these only react when the moment starts
           if (coolingDown) continue;
-          value = rule.how === 'nudge' ? rule.step : rule.value;
+          if (rule.holdMs) {
+            // a held rule only starts its timer here; tick() fires it once the gesture stayed on long enough
+            if (!holding.has(rule.index)) holding.set(rule.index, { since: t, done: false });
+            continue;
+          }
+          value = momentValue(rule);
         }
 
         state.lastCommandAt = t;
-        const source: CommandSource = sig.id.startsWith('audio.keyword.') ? 'voice' : 'gesture';
-        const command: CommandEvent = { version: 1, command: rule.do, source, how: rule.how, mode, mapping: rule.label, signal: rule.when, t_ms: t };
-        if (value !== undefined) command.value = value;
-        out.push({ command, fire });
+        out.push({ command: commandFor(rule, t, value), fire });
       }
       return out;
+    },
+
+    /** Call often (about 20 times a second) while holds() is not empty: fires the held rules whose time is up. */
+    tick(): Emission[] {
+      const out: Emission[] = [];
+      const t = now();
+      for (const [index, h] of holding) {
+        const rule = rules.find((r) => r.index === index);
+        if (!rule || !armed(rule)) {
+          holding.delete(index);
+          continue;
+        }
+        if (h.done || t - h.since < (rule.holdMs ?? 0)) continue;
+        h.done = true; // fire once per hold: let go and sign again to fire again
+        stateOf(rule).lastCommandAt = t;
+        out.push({ command: commandFor(rule, t, momentValue(rule)), fire: true });
+      }
+      return out;
+    },
+
+    /** The held rules still filling up (not yet fired), with their progress from 0 to 1. */
+    holds(): HoldProgress[] {
+      const t = now();
+      const out: HoldProgress[] = [];
+      for (const [index, h] of holding) {
+        const rule = rules.find((r) => r.index === index);
+        if (!rule || h.done || !armed(rule)) continue;
+        const p: HoldProgress = { rule: rule.label, control: rule.do, progress: clamp01((t - h.since) / (rule.holdMs || 1)) };
+        const value = momentValue(rule);
+        if (value !== undefined) p.value = value;
+        out.push(p);
+      }
+      return out;
+    },
+
+    /** Forget every held gesture whose signal starts with `prefix` (for example "vision." when the camera turns off). */
+    release(prefix: string): void {
+      for (const id of [...held]) if (id.startsWith(prefix)) held.delete(id);
+      for (const index of [...holding.keys()]) {
+        if (rules.find((r) => r.index === index)?.when.startsWith(prefix) ?? true) holding.delete(index);
+      }
     },
   };
 }
