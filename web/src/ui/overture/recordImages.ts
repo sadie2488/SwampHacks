@@ -106,7 +106,9 @@ async function drawFlower(c: HTMLCanvasElement, m: ModeLook): Promise<void> {
     return img;
   };
   // the fill (second ink) goes under the line (main ink), as in the section flowers
-  const urls = [...(art.fill ? [await tinted(art.fill, m.b)] : []), await tinted(art.line, m.a)];
+  // tinted at the record's own size so the stipple dots stay crisp
+  const px = Math.min(1024, c.width);
+  const urls = [...(art.fill ? [await tinted(art.fill, m.b, px)] : []), await tinted(art.line, m.a, px)];
   const pics = await Promise.all(urls.map(load));
   const k = c.width / 220;
   g.save();

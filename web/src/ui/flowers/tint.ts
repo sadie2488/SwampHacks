@@ -7,13 +7,13 @@ export const TINT_PX = 400;
 
 const done = new Map<string, string>();
 const pending = new Map<string, Promise<string>>();
-const key = (url: string, colour: string) => `${colour}|${url}`;
+const key = (url: string, colour: string, px: number) => `${px}|${colour}|${url}`;
 
 /** The tinted picture if it is ready already (no waiting), so a re-made flower shows at once. */
-export const tintedNow = (url: string, colour: string): string | undefined => done.get(key(url, colour));
+export const tintedNow = (url: string, colour: string, px = TINT_PX): string | undefined => done.get(key(url, colour, px));
 
 export function tinted(url: string, colour: string, px = TINT_PX): Promise<string> {
-  const k = key(url, colour);
+  const k = key(url, colour, px);
   const ready = done.get(k);
   if (ready) return Promise.resolve(ready);
   let p = pending.get(k);
