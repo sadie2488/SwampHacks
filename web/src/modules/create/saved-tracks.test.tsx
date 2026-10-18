@@ -104,7 +104,8 @@ describe('saving', () => {
     await render(<SavedTracks store={store} api={makeApi()} />);
     expect(($('input-track-name') as HTMLInputElement).value).toBe('My track');
     expect(($('btn-save-track') as HTMLButtonElement).disabled).toBe(true);
-    expect($('btn-save-track')?.textContent).toBe('Save this track');
+    expect($('btn-save-track')?.textContent).toBe('Save to History');
+    expect(($('input-track-name') as HTMLInputElement).placeholder).toBe('Name your track');
     expect(text('save-status')).toBe('');
   });
 
