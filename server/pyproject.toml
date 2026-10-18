@@ -17,10 +17,23 @@ dependencies = [
 [dependency-groups]
 dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "jsonschema>=4.22"]
 # Audio analysis libraries (real tempo, key and melody). Installed by default so uploaded songs are really analyzed.
-analysis = ["librosa>=0.10", "soundfile>=0.12", "numpy>=1.26"]
+analysis = [
+    "librosa>=0.10",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+    "basic-pitch[onnx]>=0.4",
+    "setuptools>=70,<81",
+]
 
 [tool.uv]
 default-groups = ["dev", "analysis"]
+# basic-pitch asks for TensorFlow on Python 3.11+, which has no wheels for Python 3.12. Its model runs on
+# onnxruntime instead (the "onnx" extra), so TensorFlow (and the Mac-only model runtimes) are never installed.
+override-dependencies = [
+  "tensorflow ; python_version < '3'",
+  "tensorflow-macos ; python_version < '3'",
+  "coremltools ; python_version < '3'",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["app", "analysis", "feedback"]

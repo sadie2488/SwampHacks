@@ -15,7 +15,7 @@ How it works:
   three-way split of every beat; otherwise 4/4. For 6/8 the beats are the two dotted-quarter pulses of
   each bar and `tempo_bpm` counts those pulses (not eighth notes). Note `onset_beat`s are still quarter
   notes (the melody step converts: one 6/8 pulse is 1.5 quarters).
-- Key: Krumhansl-Schmuckler on a pitch-class histogram of the harmonic part of the sound.
+- Key: Krumhansl-Schmuckler matching (Temperley profiles) on a pitch-class histogram of the harmonic part of the sound.
 """
 
 from __future__ import annotations
@@ -48,12 +48,15 @@ TEMPO_HIGH = 160.0
 VERY_SLOW = 45.0
 SLOW_PULSE_RATIO = 0.5  # in-between beats at least this share of a slow beat's strength: double the tempo
 HALVE_RATIO = 0.45  # every other beat weaker than this share of its neighbours: halve the tempo
+FAST_BPM = 140.0  # above this the slower pulse is the likelier one, so it needs less proof:
+FAST_HALVE_RATIO = 0.6  # every other beat under 60 percent (Hotel California's eighth notes measure 0.47)
 EVEN_STRONG_RATIO = 0.75  # ...but only when the remaining beats are this even with each other
 MIN_BEATS = 4
 
-# Krumhansl-Kessler key profiles, starting at the tonic.
-MAJOR_PROFILE = (6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
-MINOR_PROFILE = (6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+# Temperley (Kostka-Payne) key profiles, starting at the tonic. They replaced the Krumhansl-Kessler ones, which
+# named the key a fifth too high (the dominant) on 3 of 4 real band recordings; these got all 4 right.
+MAJOR_PROFILE = (0.748, 0.060, 0.488, 0.082, 0.670, 0.460, 0.096, 0.715, 0.104, 0.366, 0.057, 0.400)
+MINOR_PROFILE = (0.712, 0.084, 0.474, 0.618, 0.049, 0.460, 0.105, 0.747, 0.404, 0.067, 0.133, 0.330)
 
 # Tonic spelling by semitone above C. Sharp keys use sharps, flat keys use flats; the two six-accidental
 # keys (F#/Gb, D#/Eb) both use the sharp spelling so relative keys match (F# major with D# minor).
@@ -148,14 +151,14 @@ def _subdivide(times, parts):
     return np.append(inner, times[-1])
 
 
-def _slow_pulse_is_clear(strengths) -> bool:
+def _slow_pulse_is_clear(strengths, ratio: float = HALVE_RATIO) -> bool:
     """True when every second beat is clearly weak and the other beats are even with each other.
 
     A strong-weak-medium-weak bar is ordinary 4/4 and does not count: its strong beats differ.
     """
     a, b = strengths[0::2], strengths[1::2]
     strong, weak = (a, b) if a.mean() >= b.mean() else (b, a)
-    if weak.mean() >= HALVE_RATIO * strong.mean():
+    if weak.mean() >= ratio * strong.mean():
         return False
     first, second = strong[0::2].mean(), strong[1::2].mean()
     return bool(min(first, second) >= EVEN_STRONG_RATIO * max(first, second))
@@ -171,7 +174,8 @@ def _fix_octave(times, aenv, sr):
       example sustained chords with no drums), so each gap is split into 4 (or 2 from 35 BPM up). The
       split beats are a guess, and the low tempo confidence says so.
     - 100 to 160: if every second beat is clearly weak (under 45 percent of the strength of the
-      others, which are even with each other), the slower pulse is the real one, so halve it.
+      others, which are even with each other; 60 percent above 140 BPM), the slower pulse is the real
+      one, so halve it.
     Everything between 70 and 100 is left alone.
     """
     for _ in range(3):
@@ -190,7 +194,7 @@ def _fix_octave(times, aenv, sr):
         elif bpm < VERY_SLOW:
             times = _subdivide(times, 4 if bpm < 35.0 else 2)
     elif bpm >= 100.0 and len(times) >= 16:
-        if _slow_pulse_is_clear(strengths):
+        if _slow_pulse_is_clear(strengths, HALVE_RATIO if bpm <= FAST_BPM else FAST_HALVE_RATIO):
             times = _halve(times, strengths)
     return times
 
