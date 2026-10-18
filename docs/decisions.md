@@ -4,6 +4,7 @@ Newest first. Only the main laptop writes here. Overrides by humans are logged h
 
 | When | Decision | Why | Decided by |
 |---|---|---|---|
+| Sun ~4:00 AM | **The camera is shown mirrored again (selfie view)** everywhere: the background and the small previews. Replaces the earlier "not mirrored" choice | Un-mirrored felt like left and right were swapped | Lalitha |
 | Sun ~3:20 AM | **Enter a mode with an open palm closing into a fist ("grab") on the record menu**, either hand; it enters the chosen record. Create's default screen follows gesturesynth.org/play's minimalism as a principle only (nothing copied): only what you are doing right now is on screen | Hands-first navigation; more mode details from Lalitha later | Lalitha |
 | Sun ~3:10 AM | **Learn, Play and Create open as a blank, minimal screen**: live camera (not mirrored), the title, and the mockup's base visual on real data (Learn: staff lines + playhead + gliding notes; Create: hum circles; Play: tempo/pitch readout). Every panel (song, practice, player, sheet, layers, tracks) is hidden behind its own toggle button. Automated test browsers open all panels until the tests are updated | As minimal as possible; interaction by sound and camera | Lalitha |
 | Sun ~3:00 AM | **No vertical scrolling on laptop screens.** Every screen fits the window (1280x800 to 1920x1080); the sheet music turns pages automatically as the song plays; long lists scroll only inside their own box. Phones may scroll | The site is played like an instrument, through sound and camera | Lalitha |
