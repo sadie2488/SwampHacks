@@ -63,7 +63,7 @@ export function App() {
   const closeGuide = useCallback(() => setGuide(false), []);
   // only Learn has the song picker and the song panels; History (the 'play' id) is a quiet page and loads nothing
   const songTab = tab === 'learn';
-  const { isOpen, toggle: togglePanel, reset: resetPanels } = usePanels();
+  const { isOpen, toggle: togglePanel, openPanel, reset: resetPanels } = usePanels();
   useModules();
   useDeviceAutostart(screen);
 
@@ -82,6 +82,11 @@ export function App() {
     if (from !== section) resetPanels();
     for (const command of leaveSectionCommands(from, section)) sendCommand(command, 'button', { how: 'trigger' });
   }, [section, resetPanels]);
+  // arriving in Learn shows the player bar (play, pause, Restart) without a click; it can still be closed.
+  // Declared after the section-change reset above so the reset does not close it again on the same arrival.
+  useEffect(() => {
+    if (screen === 'mode' && tab === 'learn') openPanel('player');
+  }, [screen, tab, arrive.n, openPanel]);
   useEffect(() => unlockOnFirstGesture(), []);
 
   const openMode = (id: Tab) => {

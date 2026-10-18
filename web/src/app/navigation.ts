@@ -4,10 +4,10 @@ import type { Mode } from '@/contracts';
 import type { Screen } from '@/ui/overture/modes';
 
 /**
- * The mode published while the entrance or the record menu is showing. Learn has no hand or voice rules in
- * mappings.yaml, so only the `mode: any` rules (the sign shortcuts and the grab that enters a record) stay live, and
- * the Create controller stops its loop and recording (it stops whenever the mode is not Create). A test checks that
- * mappings.yaml still has no Learn rules.
+ * The mode published while the entrance or the record menu is showing. Learn's only rules in mappings.yaml are
+ * `learn.*` controls, which only the Learn screen itself reacts to (it is not mounted on the menu), so effectively only
+ * the `mode: any` rules stay live, and the Create controller stops its loop and recording (it stops whenever the mode
+ * is not Create). A test checks that mappings.yaml still has no other Learn rules.
  */
 export const MENU_MODE: Mode = 'learn';
 

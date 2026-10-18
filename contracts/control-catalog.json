@@ -8,6 +8,7 @@
     { "id": "playback.pitch", "kind": "value", "modes": ["learn", "play"], "range": [-12, 12], "default": 0, "step": 1, "unit": "semitones", "description": "Shift the pitch up or down without changing the speed." },
     { "id": "playback.volume", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.8, "step": 0.1, "description": "Overall volume." },
     { "id": "playback.loop", "kind": "toggle", "modes": ["learn", "play"], "default": false, "description": "Loop on or off." },
+    { "id": "playback.seek", "kind": "value", "modes": ["learn", "play"], "unit": "seconds", "description": "Jump to this place in the song, in song seconds (0 = the start)." },
     { "id": "playback.loop_section", "kind": "value", "value_type": "range", "modes": ["learn", "play"], "unit": "seconds", "description": "Which part to loop, as [start, end] in song seconds." },
     { "id": "create.layer.add", "kind": "trigger", "modes": ["create"], "description": "Add a new empty layer." },
     { "id": "create.instrument", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["piano", "synth", "bass", "pluck", "drums"], "default": "piano", "description": "Choose the instrument sound for the current layer." },
@@ -23,6 +24,7 @@
     { "id": "create.effects", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["none", "reverb", "delay", "filter"], "default": "none", "description": "Effect on the current layer." },
     { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." },
     { "id": "app.mode", "kind": "value", "value_type": "string", "modes": ["learn", "play", "create"], "options": ["learn", "play", "create", "lab"], "default": "learn", "description": "Switch the app to Learn, Play, Create or the Command Lab (lab)." },
+    { "id": "learn.pause", "kind": "trigger", "modes": ["learn"], "description": "Learn screen: pause the song (a pause mark shows), or count down 3, 2, 1 and play on from where it is." },
     { "id": "app.enter", "kind": "trigger", "modes": ["learn", "play", "create"], "description": "Enter the record that is chosen on the menu." }
   ]
 }

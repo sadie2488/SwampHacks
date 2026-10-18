@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
-import { bus, resetControls, type Topics } from '@/bus';
+import { bus, reportStatus, resetControls, type Topics } from '@/bus';
 import * as audioLive from '@/modules/audio-live';
 import * as commands from '@/modules/commands';
 import * as create from '@/modules/create';
@@ -467,6 +467,7 @@ describe('practice panel', () => {
     const stop = bus.on('practiceControl', (c) => control.push(c.action));
     await click('use-demo');
     await until(() => $('sheet-ready'), 'the sheet');
+    await act(async () => reportStatus('audio-live', 'running', 'Listening')); // the microphone is on (off, Start would turn it on first)
     await click('btn-practice-start');
     expect(control).toEqual(['start']);
     expect(seen).toContain('command:playback.play:button:trigger:');

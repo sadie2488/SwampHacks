@@ -1,5 +1,6 @@
 // The thinking behind the Practice panel, kept free of React so it can be tested on its own:
 // turning bars into song seconds, the plain-words lines, the local coaching sentence, and asking the server for coaching.
+import { bus, getStatus } from '@/bus';
 import type { Feedback, Part, SongAnalysis } from '@/contracts';
 import { barStartAt, sheetGrid } from '@/modules/sheet/bar-grid';
 
@@ -80,6 +81,42 @@ export function practiceWords(p: { state: string; message?: string } | undefined
 }
 
 export const NO_SONG_MESSAGE = 'Pick a song first: use the demo song or upload a file above, then start practice.';
+export const MIC_STARTING_MESSAGE = 'Turning on the microphone...';
+export const MIC_FAILED_MESSAGE = 'The microphone could not be turned on. Allow it in the browser and try again.';
+/** How long Start practice waits for the microphone to come on before giving up. */
+export const MIC_WAIT_MS = 8000;
+
+/**
+ * Start practice with the microphone off: turn it on (the same request as the "Turn on microphone" button), wait for
+ * the audio-live module to report it is running, then do the action. Gives up (and calls `failed`) if it never comes
+ * on, or reports an error first. Returns a function that cancels the wait.
+ */
+export function startMicThen(action: () => void, failed: () => void, waitMs = MIC_WAIT_MS): () => void {
+  if (getStatus('audio-live')?.state === 'running') {
+    action();
+    return () => {};
+  }
+  let done = false;
+  const finish = (ok: boolean) => {
+    if (done) return;
+    done = true;
+    off();
+    clearTimeout(timer);
+    (ok ? action : failed)();
+  };
+  const off = bus.on('status', (s) => {
+    if (s.module !== 'audio-live') return;
+    if (s.state === 'running') finish(true);
+    else if (s.state === 'error' || s.state === 'idle') finish(false);
+  });
+  const timer = setTimeout(() => finish(false), waitMs);
+  bus.emit('enable', { module: 'audio-live', on: true });
+  return () => {
+    done = true;
+    off();
+    clearTimeout(timer);
+  };
+}
 
 // ---- coaching text ----
 

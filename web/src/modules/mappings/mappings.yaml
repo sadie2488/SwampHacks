@@ -246,6 +246,17 @@
   how: trigger
 
 
+# --- Learn mode ------------------------------------------------------------------------------------------------------
+# Show the ASL letter V (two fingers up) to pause the song; show it again to count down 3, 2, 1 and play on from
+# where the song is (drag the sheet with a closed hand while paused to move it). Only works on the Learn screen itself.
+
+- name: V sign pauses and resumes
+  mode: learn
+  when: vision.sign.v
+  do: learn.pause
+  how: trigger
+  cooldown_ms: 1500
+
 # --- Any mode: Lalitha's sign shortcuts ----------------------------------------------------------------------------
 # Hold a fingerspelled letter for 2 seconds to jump to a mode. A ring fills around it while you hold; let go early
 # and nothing happens. L = Learn, Y = Play, C = Create, W = Command Lab. Change the letters or hold time freely.

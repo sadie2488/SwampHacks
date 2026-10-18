@@ -1,0 +1,73 @@
+/* The Learn screen's own layer: the tool pills, the pause mark, the countdown and the scrub time label. */
+.learn-letters {
+  z-index: 1;
+}
+
+.learn-tools {
+  position: fixed;
+  z-index: 12;
+  top: var(--top, 92px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.learn-pause-mark {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 22px;
+  pointer-events: none;
+  opacity: 0.85;
+  animation: learn-fade-in 400ms ease-out;
+}
+
+.learn-pause-mark span {
+  display: block;
+  width: 30px;
+  height: 120px;
+  border-radius: 8px;
+  background: currentColor;
+}
+
+.learn-countdown {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font: 400 clamp(120px, 24vh, 240px) / 1 var(--serif, Georgia, serif);
+  pointer-events: none;
+  text-shadow: var(--halo, none);
+  animation: learn-fade-in 250ms ease-out;
+}
+
+.learn-scrub-time {
+  position: fixed;
+  z-index: 13;
+  left: 0;
+  top: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(20, 18, 16, 0.85);
+  color: var(--paper-white, #f2eee6);
+  font: 500 13px/1.2 var(--sans, sans-serif);
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+html[data-learn-scrub] .sheet-strip {
+  cursor: grabbing;
+}
+
+@keyframes learn-fade-in {
+  from {
+    opacity: 0;
+  }
+}
