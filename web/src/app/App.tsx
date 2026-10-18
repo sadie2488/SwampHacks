@@ -189,7 +189,8 @@ export function App() {
         <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>
           <ModeTitle look={modeLook(tab)} guides={screen === 'mode'} />
           {/* the mode's own picture over the camera (staff and notes, hum rings, hand readout), driven by real data */}
-          {screen === 'mode' && <ModeVisual mode={tab} />}
+          {/* not on the Command Lab: its page has no picture, and a mounted canvas would keep the last mode's frame */}
+          {screen === 'mode' && section !== 'lab' && <ModeVisual mode={tab} />}
           {/* the left column: the song picker (Learn only), the devices, and the camera picture right under them.
               Learn splits them into two panels (Song, Devices); the other modes keep one card. */}
           {tab === 'learn' ? (
