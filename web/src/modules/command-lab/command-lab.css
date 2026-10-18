@@ -25,6 +25,65 @@
 [data-testid="lab-issues"] li[data-level="warning"] { border-color: #e8a317; }
 .lab-log { margin: 0; padding-left: 1.25rem; font-size: 0.9em; }
 
+/* ---- "Map a signal to a command": a calm one-line strip above the rules grid. Nothing in it works yet,
+   so every control is disabled and the button says so. Keep it short: the page must not scroll. ---- */
+.lab-map-strip {
+  margin: 0 0 12px;
+  padding: 10px 14px 12px;
+  border: 1px dashed var(--rule-strong, #8888);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--night, #0b0a0c) 40%, transparent);
+  display: grid;
+  gap: 8px;
+}
+
+.lab-map-heading {
+  margin: 0;
+  font: var(--label-weight, 500) 11px/1.3 var(--sans, sans-serif);
+  letter-spacing: var(--kicker-track, 0.08em);
+  text-transform: uppercase;
+  color: var(--muted, #888);
+}
+
+.lab-map-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.lab-map-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--label-weight, 500) 13px/1.2 var(--sans, sans-serif);
+  color: var(--muted, #888);
+}
+
+.lab-map-field select { min-width: 11rem; max-width: 16rem; }
+.lab-map-field > select { margin-left: 0; }
+
+.lab-map-arrow {
+  font: 400 20px/1 var(--serif, Georgia, serif);
+  color: var(--muted, #888);
+}
+
+.lab-map-soon {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.lab-map-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted, #888);
+}
+
 /* ---- the rules, as a grid of cards ----
    Each card names its rule, shows its trigger and action, and wears its section's colour on a small tag.
    When a rule fires the card glows briefly: only transform and opacity move (a ring drawn on a pseudo-element
@@ -37,7 +96,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--rule-gap);
-  max-height: min(52vh, 460px);
+  max-height: min(44vh, 400px); /* a little shorter: the map strip above takes the rest */
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
