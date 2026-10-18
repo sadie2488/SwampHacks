@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overture Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Cinzel+Decorative:wght@700;900&family=Grenze+Gotisch:wght@500;700&family=Instrument+Serif&family=Pinyon+Script&family=Mea+Culpa&family=Ballet&display=swap" rel="stylesheet">
+<!--
+  HOW TO CHANGE THINGS
+  1. Words, colors, fonts, effect strengths: edit CONFIG in the first <script> block (search "CONFIG").
+  2. Quick experiments: press T (or the "Tweak" pill) for live sliders. "Copy values" puts them on the clipboard.
+  3. Each part of the page is a section marked  // ===== NAME =====  so it can be swapped on its own.
+-->
+<style>
+:root{
+  --bg:#0b0a0c; --ink:#f4e4a1; --a:#ff2d8a; --b:#f4e4a1; --line:#5fe1d6;
+  --script:'Mea Culpa','Ballet',cursive; --bigfont:'Instrument Serif',Georgia,serif; --bigsize:clamp(80px,15vw,300px);   /* cursive parts: change here */ --display:Archivo,system-ui,sans-serif; --serif:'Instrument Serif',Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;font-family:var(--display);font-stretch:75%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+canvas.layer{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);border-radius:999px;padding:7px 16px;
+  font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-stretch:100%;transition:background .2s,color .2s}
+.pill[aria-pressed=true],.pill:hover{background:var(--ink);color:var(--bg)}
+.script{font-family:var(--script);line-height:.8}
+.hide{opacity:0;pointer-events:none!important}
+.fade{transition:opacity .6s}
+
+/* ===== POSTER MICRO-TYPE ===== */
+.micro{position:fixed;left:0;right:0;display:grid;grid-template-columns:repeat(5,1fr);padding:10px 16px;
+  font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;pointer-events:none;opacity:.7}
+.micro span:nth-child(5n+2),.micro span:nth-child(5n+3),.micro span:nth-child(5n+4){text-align:center}
+.micro span:nth-child(5n){text-align:right}
+.micro.top{top:0}.micro.flash{opacity:1}
+
+/* ===== LOADER + GATE ===== */
+#loader{position:fixed;inset:0;z-index:6}
+.plate{position:absolute;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.7}
+.plate b{display:block;font-family:var(--serif);font-weight:400;font-size:44px;letter-spacing:0;line-height:1}
+#plateFig{left:16px;bottom:24px}
+#plateName{right:16px;top:44px;text-align:right}
+#plateName i{font-family:var(--serif);font-size:22px;letter-spacing:0;text-transform:none}
+#gate{position:absolute;left:6vw;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:calc(100% - 32px)}
+#gate,#info,#plateFig{transform-origin:left center}#plateName,#readout{transform-origin:right top}
+#gate .script{font-size:clamp(64px,10vw,150px);margin-bottom:18px}
+#gate .ghost{border:0;text-decoration:underline;font-size:10px}
+@media (max-width:700px){#gate{top:auto;bottom:90px;transform:none;left:16px}}
+
+/* ===== RECORD ROW (A24-style selection) ===== */
+#select{position:fixed;inset:0}
+#row{position:absolute;inset:0;perspective:1400px}
+.disc{position:absolute;left:0;top:0;width:340px;height:340px;transform-style:preserve-3d;will-change:transform}
+.disc svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* the chosen record glows in the mode colour (strength: Tweak > discGlow) */
+.disc .platter{transition:filter .4s}
+.disc .glow-ring{opacity:0;transition:opacity .4s}
+.disc.on .glow-ring{opacity:calc(var(--glow,1)*.9)}   /* glow hugs the outer edge only; the middle stays clear */
+.disc .scribble path{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;
+  stroke-dasharray:1400;stroke-dashoffset:1400;transition:stroke-dashoffset .7s cubic-bezier(.6,0,.2,1)}
+.disc.hover .scribble path{stroke-dashoffset:0}
+#info{position:absolute;left:16px;top:44px;width:min(330px,calc(100% - 32px))}
+#info h1{font-family:var(--serif);font-weight:400;font-size:clamp(44px,6vw,76px);line-height:.9;text-transform:uppercase;white-space:nowrap;clip-path:inset(0 -100vw 0 0)}
+#info h1 span{display:inline-block;animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{transform:translateY(100%)}}
+#info dl{margin-top:10px;display:grid;grid-template-columns:auto 1fr;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+#info dt,#info dd{border-top:1px solid rgba(244,228,161,.35);padding:5px 0}
+#info dd{text-align:right;font-weight:700}
+#quotes{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);display:flex;gap:56px;text-align:center}
+#quotes div{font-family:var(--serif);font-size:20px;text-transform:uppercase;line-height:1;max-width:16ch}
+#quotes small{display:block;font-family:var(--display);font-size:9px;letter-spacing:.12em;margin-bottom:6px}
+
+/* ===== MODE SCREEN ===== */
+#mode{position:fixed;inset:0}
+#mode .title{position:absolute;left:4vw;top:15vh;font-size:clamp(80px,12vw,170px)}
+#mode .sub{position:absolute;left:4vw;top:calc(15vh + clamp(80px,12vw,170px));font-weight:900;font-stretch:62%;
+  text-transform:uppercase;font-size:clamp(18px,2.2vw,30px);line-height:.95;max-width:20ch}
+#readout{position:absolute;right:16px;top:44px;text-align:right;font-size:10px;letter-spacing:.08em;text-transform:uppercase;line-height:1.8}
+#readout b{display:block;font-family:var(--serif);font-weight:400;font-size:34px;line-height:1}
+#wire{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+/* ===== BOTTOM PILL NAV (Jacob How style) ===== */
+#nav{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:999px;
+  background:rgba(11,10,12,.55);backdrop-filter:blur(8px);z-index:5}
+#nav .pill{border-color:transparent}
+#corner{position:fixed;right:16px;bottom:24px;display:flex;gap:6px;z-index:5}
+
+/* ===== PORTAL (the record that zooms into a mode) ===== */
+.portal{position:fixed;z-index:4;pointer-events:none;transform-origin:50% 50%;will-change:transform}
+.portal svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+
+/* ===== ARRANGE MODE ===== */
+#row.arranging{cursor:move}
+body.arranging [data-arr]:not(.hide){outline:1px dashed var(--a);outline-offset:6px;cursor:move;pointer-events:auto!important;user-select:none}
+body.arranging .arr-selected{outline:2px solid var(--a)!important}
+#gateTitle{transform-origin:left center}
+#corner{z-index:8}
+#row.arranging .disc{outline:1px dashed var(--a);outline-offset:6px;border-radius:50%}
+#arrangeHint{position:fixed;left:50%;top:76px;transform:translateX(-50%);font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:6px 12px;background:var(--a);color:var(--bg);border-radius:999px;z-index:6;white-space:nowrap}
+
+/* ===== MENU LAYOUT: giant words wrapped round the records, tiny everything else (size contrast) ===== */
+#info,#quotes{display:none}
+.big{position:absolute;left:0;right:0;text-align:center;font-family:var(--bigfont);font-weight:400;text-transform:uppercase;
+  font-size:var(--bigsize);line-height:.84;letter-spacing:-.01em;pointer-events:none;white-space:nowrap}
+.big .ln{display:block;padding:.04em 0}
+.big .ln span{display:inline-block}
+/* --side alternates per record: 1 = top line upper LEFT + bottom line lower RIGHT, -1 = mirrored.
+   Each line slides in from the side it leans towards and settles into its spot. */
+#select{--side:1}
+#bigBack{z-index:0}#row{z-index:1}#bigFront{z-index:2}   /* placed from the chosen record in layoutRow() */
+#bigBack .ln span{animation:inTop .9s cubic-bezier(.16,.84,.24,1) both}
+#bigFront .ln span{animation:inBottom .9s cubic-bezier(.16,.84,.24,1) both}
+@keyframes inTop{from{transform:translateX(calc(-40vw*var(--side)));opacity:0}}      /* comes in from the side it leans to */
+@keyframes inBottom{from{transform:translateX(calc(40vw*var(--side)));opacity:0}}
+.tiny{font-size:11px;font-weight:600;letter-spacing:.02em;line-height:1.35}
+#menuAbout{position:absolute;left:16px;top:64px;max-width:230px;z-index:3}
+#menuAbout b{display:block;font-weight:700;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;font-size:10px;opacity:.7}
+#menuAbout p{font-size:14px;font-weight:700;line-height:1.2}
+#menuCount{position:absolute;right:16px;top:60px;font-family:var(--bigfont);font-size:clamp(48px,6vw,96px);line-height:.9;z-index:3}
+#menuRule{position:absolute;left:16px;right:16px;bottom:150px;height:1px;background:var(--ink);opacity:.25;z-index:3}
+#menuTag{position:absolute;left:16px;bottom:72px;font-family:var(--bigfont);text-transform:uppercase;font-size:clamp(28px,3.6vw,54px);line-height:.9;z-index:3}
+#menuPick{position:absolute;right:16px;bottom:72px;width:min(360px,60vw);z-index:3}
+#pickOrnament{display:block;width:150px;height:28px;margin:0 0 10px auto;opacity:.45;overflow:visible}
+#menuPick{text-align:right}#modePills{justify-content:flex-end}
+#modePills{display:flex;flex-wrap:wrap;gap:6px}
+#modePills button{padding:6px 12px;border-radius:999px;background:rgba(244,228,161,.12);font-size:12px;font-weight:700}
+#modePills button[aria-pressed=true]{background:var(--a);color:var(--bg)}
+body.on-select #nav{display:none}
+@media (max-width:640px){#menuTag{display:none}#menuRule{bottom:120px}#menuPick{left:16px;right:16px;width:auto;bottom:24px}}
+
+/* ===== QUIET MENU PASS: one margin, crisp off-white type, one colour at a time, less decoration ===== */
+:root{--m:28px;--paper:#f2eee6}
+#menuCount{display:none}
+body.on-select .micro, body.on-select #guide{opacity:0!important;pointer-events:none}
+body.on-select #corner{top:var(--m);bottom:auto;right:var(--m);opacity:.3;transition:opacity .3s}
+body.on-select #corner:hover{opacity:1}
+body.on-select .disc:not(.on){filter:grayscale(.9) brightness(.5)}          /* only the chosen record keeps its colour */
+.disc{transition:filter .6s}
+.disc.on .platter{filter:drop-shadow(0 26px 34px rgba(0,0,0,.6)) drop-shadow(0 6px 10px rgba(0,0,0,.35))}   /* sits above the scene */
+.big,#menuTag,#menuAbout,#modePills button:not([aria-pressed=true]){color:var(--paper)}
+#menuAbout{left:var(--m)!important;top:var(--m)!important}
+#menuRule{left:var(--m)!important;right:var(--m)!important;bottom:calc(var(--m) + 96px)!important;opacity:.18!important}
+#menuTag{left:var(--m)!important;bottom:var(--m)!important}
+#menuPick{right:var(--m)!important;bottom:var(--m)!important}
+#mode .title{font-family:var(--bigfont);text-transform:uppercase;line-height:.85}   /* script is kept for the Overture logo only */
+
+/* ===== GUIDE INDICATOR (what the app is following) ===== */
+#guide{position:fixed;left:50%;top:40px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;
+  padding:6px 14px;border:1.5px solid var(--a);border-radius:999px;font-weight:800;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;font-stretch:100%;background:rgba(11,10,12,.5);z-index:5;white-space:nowrap}
+#guide i{width:7px;height:7px;border-radius:50%;background:var(--a);animation:blink 1.2s infinite}
+#guide.lost{border-color:var(--ink);opacity:.7}#guide.lost i{background:var(--ink);animation:none}
+@keyframes blink{50%{opacity:.25}}
+
+/* ===== TWEAK PANEL ===== */
+#tweak{position:fixed;left:16px;bottom:72px;width:250px;max-height:70vh;overflow:auto;padding:12px;border:1px solid var(--ink);
+  background:rgba(11,10,12,.85);font-size:10px;letter-spacing:.05em;text-transform:uppercase;z-index:7}
+#tweak label{display:block;margin:6px 0}
+#tweak input{width:100%;accent-color:var(--a)}
+#tweak output{float:right}
+@media (max-width:640px){
+  .disc{width:220px;height:220px}#quotes{display:none}#count{left:16px;top:20vh}
+  #nav{bottom:16px}#corner{bottom:auto;top:44px;flex-direction:column}#tweak{left:16px;right:16px;width:auto;bottom:64px}
+}
+@media (prefers-reduced-motion:reduce){#info h1 span{animation:none}.disc .scribble path{transition:none}}
+</style>
+</head>
+<body>
+<!-- paper grain for the record labels -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="7"/>
+    <feColorMatrix values="0 0 0 0 0.1  0 0 0 0 0.09  0 0 0 0 0.09  0 0 0 1.6 -.55"/></filter>
+  <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur id="softGlowBlur" stdDeviation="3"/></filter>
+  <filter id="mistBlur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="rippleBlur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.6"/></filter>
+  <filter id="arcBlur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.4"/></filter>
+  <filter id="sheenBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+  <!-- marbled light streaks in the vinyl -->
+  <filter id="marble" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".008 .035" numOctaves="3" seed="3"/>
+    <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 2.6 -1.25"/></filter>
+</defs></svg>
+<canvas id="gl" class="layer"></canvas>
+<canvas id="lines" class="layer"></canvas>
+<canvas id="skel" class="layer"></canvas>
+<div id="guide" class="hide fade" aria-live="polite"><i></i><span id="guideText"></span></div>
+<div class="micro top" id="micro"></div>
+
+<div id="loader">
+  <div class="plate" id="plateName"><span id="plateNo"></span><br><i id="plateSp"></i></div>
+  <div id="gate" class="hide fade">
+    <div class="script" id="gateTitle"></div>
+    <button class="pill" id="enterLive">Enter with camera + sound</button>
+  </div>
+</div>
+
+<section id="select" class="hide fade" aria-label="Choose a mode">
+  <div id="bigBack" class="big" aria-hidden="true"></div>   <!-- first line sits BEHIND the records -->
+  <div id="row"></div>
+  <div id="bigFront" class="big" aria-hidden="true"></div>  <!-- second line runs IN FRONT of them -->
+  <div id="menuAbout" class="tiny"><b id="aboutLabel"></b><p id="modeBlurb"></p></div>
+  <div id="menuCount"></div>
+  <div id="menuRule"></div>
+  <div id="menuTag"></div>
+  <div id="menuPick"><svg id="pickOrnament" viewBox="0 0 160 30" aria-hidden="true"></svg><div id="modePills"></div></div>   <!-- control only; the staff is decoration -->
+  <div id="info"><h1 id="infoTitle"></h1><dl id="infoRows"></dl></div>
+  <div id="quotes"></div>
+</section>
+
+<section id="mode" class="hide fade">
+  <div class="script title" id="modeTitle"></div>
+  <div class="sub" id="modeSub"></div>
+  <div id="readout"></div>
+  <svg id="wire"></svg>
+</section>
+
+<nav id="nav" class="hide fade"></nav>
+<div id="corner" class="fade">
+  <button class="pill" id="arrangeBtn" aria-pressed="false">Arrange</button>
+  <button class="pill" id="tweakBtn">Tweak</button>
+</div>
+<div id="arrangeHint" hidden>Drag to move · scroll to resize · Shift + scroll to rotate · A to finish</div>
+<div id="tweak" hidden></div>
+
+<script>
+// ===== CONFIG: change words, colors, fonts and effect strengths here =====
+const CONFIG = {
+  title: 'Overture',                               // the app's name
+  microWords: 'TEMPO KEY LISTEN BREATHE COUNT IN ONE TWO THREE FOUR HUM LOUDER SLOWER AGAIN BAR TWELVE REST HOLD MINOR MAJOR LOOP DROP FEEL ECHO',
+  // offsetX: how far each line sits off the record's centre (share of record width); topY/bottomY: line centres
+  // relative to the record's centre (share of record height). -.38/+.26 centres the pair ~6% above the middle (optical centre)
+  // the record menu's own, quieter look (the camera stays recognisable but steps back)
+  menuLook: { dim:.42, sat:.12, tint:.1, effect:0, blur:7, grain:.05, vignette:1.9 },
+  menu: { maxWidth:80,   // (the bottom-right 'note' sentence was removed: that corner is controls only)
+    offsetX:.12, topY:-.38, bottomY:.26,
+      // maxWidth: % of screen a big line may span
+    about:'About Modes', tag:['Four ways in.','Pick one.'], note:'Each mode listens and watches differently. Pick the one that fits what you want to do right now.' },
+  modes: [
+    { id:'learn', name:'Learn', num:'01', big:['Learn','By Ear'], sub:'Upload a song. Read it. Play along.',
+      rows:[['Uses','Song + mic'],['You get','Sheet music'],['Then','Timing feedback']],
+      quotes:[['Tempo','“Finds the beat for you”'],['Coach','“Tells you where you rushed”']] },
+    { id:'play', name:'Play', num:'02', big:['Play','With Your Hands'], sub:'Your hands and voice drive the music.',
+      rows:[['Uses','Camera + mic'],['Hand height','Tempo'],['Double clap','Play / pause']],
+      quotes:[['Motion','“Conduct it with your hands”'],['Voice','“Say slower, it slows”']] },
+    { id:'create', name:'Create', num:'03', big:['Create','From a Hum'], sub:'Hum it. Loop it. Keep it.',
+      rows:[['Uses','Mic'],['Hum','Becomes notes'],['Snap','Adds a beat']],
+      quotes:[['Hum','“Your voice, any instrument”'],['Loops','“Layer it, save it”']] },
+    { id:'lab', name:'Command Lab', num:'04', big:['Command','Lab'], sub:'Try every gesture and word.',
+      rows:[['Uses','Camera + mic'],['Shows','What it sees'],['For','Practising moves']],
+      quotes:[['Gestures','“See every move land”'],['Words','“Test each command”']] },
+  ],
+  // Two ink colors per screen, printed on black (Jacob How palette + the flower posters)
+  palettes: {
+    intro:  { a:'#ff2d8a', b:'#f4e4a1' },
+    learn:  { a:'#1fb3bf', b:'#ff4a3d' },        // brighter, cleaner teal (was #2b8a94, from the vinyl reference)
+    play:   { a:'#ff7a00', b:'#ff2d8a' },
+    create: { a:'#c9a8ff', b:'#ff4fa3' },
+    lab:    { a:'#2f5bff', b:'#ff9a1f' },
+  },
+  background: '#0b0a0c',
+  fieldLineColor: '#5fe1d6',                       // Active Theory teal arcs
+  tweak: {                                         // live sliders: [value, min, max, step]
+    effect:       [.25, 0, 1, .05],     // 0 = plain camera, 1 = full halftone print
+    camColor:     [.6, 0, 1, .05],      // 0 = black and white, 1 = natural colour
+    tint:         [.3, 0, 1, .05],      // palette colour wash over the camera
+    dim:          [.8, .3, 1, .05],     // camera brightness (lower = UI easier to read)
+    vignette:     [0.6, 0, 3, .1],
+    dotSize:      [4, 2, 20, 1],        // halftone cell in px
+    dotGain:      [1, .3, 2, .05],      // how big dots get in bright areas
+    misregister:  [1, 0, 14, .5],       // second ink offset (print look)
+    trailAmount:  [1, 0, 3, .05],       // cursor smoke strength
+    trailFade:    [.965, .9, .995, .001],
+    trailSize:    [0.055, .02, .2, .005],
+    trailWarp:    [1, 0, 4, .05],       // how much smoke bends the image
+    glow:         [.45, 0, 1.5, .05],
+    fieldLines:   [12, 0, 30, 1],
+    fieldBend:    [1, 0, 3, .05],
+    discSpin:     [1, 0, 4, .05],
+    particles:    [1, 0, 2, .05],       // particle size multiplier
+    grain:        [.04, 0, .15, .005],
+    discSize:     [540, 120, 800, 10],  // record size in px (or use Arrange: scroll to resize)
+    discGlow:     [1, 0, 3, .05],       // glow around the chosen record (0 = none)
+    portalTime:   [.75, 0, 2, .05],     // seconds for the record to rush in when clicked (0 = instant)
+    rippleStrength:[1, 0, 3, .05],      // click ripple through the camera picture
+    discSpacing:  [1, .4, 2.2, .05],    // gap between records
+    discRise:     [.38, -1, 1, .02],    // how steeply the row climbs (0 = flat, minus = falls)
+    discTilt:     [52, 0, 80, 1],       // how much the records lie back
+    selectedTilt: [22, 0, 80, 1],       // how much the chosen record lies back (lower = faces you more)
+    rowX:         [0.53, 0, 1, .01],      // where the selected record sits (or use Arrange: drag)
+    rowY:         [.52, 0, 1, .01],
+    rowAngle:     [6, -180, 180, 1],    // rotate the record row (or Arrange: Shift + scroll)
+    orchidSize:   [0.49, .15, 1.5, .01], // entrance orchid scale (or Arrange: scroll over it)
+    flowerSize:   [1.35, .6, 2.2, .05], // each bloom's size, without moving them apart
+    flowerGap:    [1.25, .8, 2, .05],   // space between chrysanthemums (higher = smaller heads, more gap)
+    bloomRange:   [700, 0, 1500, 10],   // how far from the Enter button the blooms start opening (0 = always open)
+    orchidX:      [0.646, 0, 1, .01],     // entrance orchid position (or Arrange: drag it)
+    orchidY:      [0.532, 0, 1, .01],
+    orchidRot:    [35, -180, 180, 1],    // rotate the orchid (or Arrange: Shift + scroll)
+    orchidDots:   [6, 3, 14, 1],        // size of the type marks the flowers are drawn with
+    skeletonWidth:[1.5, .5, 5, .25],    // guide line thickness
+    skeletonGlow: [10, 0, 30, 1],
+  },
+  // Entrance screen: an x-ray of a moth orchid that dissolves into dots when you go in
+  entrance: {
+    xrayLow:  '#ff2d8a',                           // thin parts of the petals
+    xrayHigh: '#f6f2ff',                           // thick / overlapping parts
+    plate: ['Fig. 01', 'Chrysanthemum'],            // specimen-plate labels (top right)
+    lipColor: '#e0185a',                           // flower centres
+    coolInk:   '#6f8fe0',                          // faint marks (the blue bits in the references)
+    // Traced from the reference photo. Units: 100 photo px = 1, (0,0) = middle of the spray, y up.
+    // flowers: [x, y, size, tilt]; a negative size makes a bud. Max 16.
+    flowers: [
+      [-2.05, 3.5, .6, .5],  [-.45, 2.35, .92, .1],  [.85, 1.85, .8, -.1],  [-1.35, 1.2, .95, .05],
+      [.95, .6, 1, -.05],    [-.55, .4, .5, .6],     [-.4, -.8, .78, .1],   [1.45, -.9, .98, -.1],
+      [-.7, -2, .82, .15],   [1.45, -2.3, .85, -.05], [.6, -3.5, .5, .2],   [-.95, -3.55, -.28, .9],
+    ],
+    // stems: [x1, y1, x2, y2] straight pieces. Max 12.
+    stems: [
+      [-2.95, 1.2, -1.45, 2.1], [-1.45, 2.1, -1.85, 3], [.05, 1.5, .6, -.2], [.6, -.2, .4, -1.6],
+      [.4, -1.6, .05, -2.4], [.05, -2.4, -.55, -3.3], [-.55, -3.3, -.9, -3.5], [.4, -1.6, 1.2, -2.1], [.05, -2.4, .55, -3.2],
+    ],
+  },
+  // Design preview: hand + head lines and the guide pill are still drawn, but they control nothing
+  // (no record picking, no pinch, tempo/pitch readouts stay at rest). Set true to turn motion back on.
+  motionControls: false,
+  handDots: { on:true, gap:9, small:.7, joint:2.4 },   // hand guide as dots: spacing along bones, small dot size, joint dot size (on:false = lines)
+  compareOriginal: null,                           // (was 'play') every record now uses the same design
+  // a record that is a solid colour disc with a dark flower print and the name in the disc colour (null = none)
+  // a frosted clear-vinyl record (null = none). nameColor null = the mode colour
+  clearDisc: { mode:null,       /* was 'lab' */ frost:.32, tint:'#eef2ea', labelR:30, nameColor:null,
+    nameStyle:'arch',                              // 'arch' (70s arched wordmark), 'blur' (stacked, out of focus) or 'arc'
+    arch:{ width:164, height:26, stretch:1.2, lift:36, drop:30, under:48, underSize:20, wear:1.6 },
+    nameSize:42, nameWidth:170, tilt:-8, blur:1.4, nameOpacity:.9 },   // 'blur' = stacked, tilted, out of focus; 'arc' = round the record
+  // shattered record: breaks apart when selected, pieces rejoin when clicked (null = off)
+  shatter: { mode:null,          /* was 'create': turned off by Lalitha */  pieces:7, spread:1, rotate:9, breakTime:.45, accel:5, joinSpeed:.0000001 },   // breakTime: seconds to fully shatter; accel: how sharply it speeds up
+  flowerDisc: { mode:null,      /* was 'create' */ image:'create-flower-ref.png', cx:.53, cy:.472, r:.425, threshold:.5, ink:'#0b0a0c' },                         // this mode's record uses the very first design, for comparison (null = none)
+  // Record labels (grunge print look)
+  label: {
+    paper: '#e8e3d6',                              // label paper
+    ink: '#191617',                                // print ink
+    nameStyle: 'display',                          // 'display' (tall decorative, straight), 'rings', 'arc', 'sans', 'serif', 'script' or 'block'
+    display: { font:'Cinzel Decorative', size:46, stretch:1.5, width:196 },   // tall swashy capitals in one straight line across the record
+    // extras for single records
+    // every record uses the Play style: frosted colour filter, letters cut out of it, gray instead of white
+    perMode: Object.fromEntries(['learn','play','create','lab'].map(id=>[id,{
+      gray:{ color:'#a29d97', mist:.7, grain:.35, clouds:[[-40,-35,45,32],[45,40,40,30],[10,-70,35,20],[-60,50,30,24]] },
+      effect:'window', window:{ tint:.45, frost:.55, edge:0 }, toneSize:78, toneWidth:178, toneDark:.45, toneEdge:.35 }])),
+    // previous one-off extras (not used now): learn ring { r:86, size:14, reps:3, opacity:.75, font:'Grenze Gotisch' } + titleScale .62
+    rings: { outer:{ r:88, size:15, reps:1, opacity:.5 }, main:{ r:65, size:34, reps:1, opacity:1 }, inner:{ r:42, size:10, reps:1, opacity:.55 } },   // reps: times the name repeats per ring
+    arcRadius: 66,                                 // which ring band the name sits in (label is 34, edge is 100)
+    arcSize: 30,                                   // name size on the ring
+    arcSpacing: 3,                                 // letter spacing on the ring
+    arcTwice: true,                                // also print it along the bottom
+    titleWeight: 700,                              // 400 thin ... 900 heavy
+    titleWidth: 180,                               // name width (record is 200 across: above 200 it gets cut off at the edge)
+    grooves: .13,                                  // groove line strength (keep well under the title)
+    solidLines: 1,                                 // the solid rings from the first design (0 = off)
+    edge: .9,                                      // outer rim strength
+    rimWidth: 2.4,                                 // outer rim thickness (bold, blended)
+    holeWidth: 2,                                  // centre hole outline thickness
+    glowSpread: 4,                                 // how far the chosen record's glow spreads (was 7)
+    paperOpacity: .5,                              // (paper look, not used by the vinyl look)
+    vinyl: .55,                                    // how strongly the record is tinted with the mode colour (0 = clear)
+    marble: .35,                                   // light streaks curving round the vinyl
+    streaks: 16,                                   // how many streaks
+    sheen: .06,                                    // the still white overlay across the spinning record (was .22)
+    labelR: 34,                                    // dark centre label size (record is 200 across)
+    flowerOpacity: .45,                            // the stippled flower printed on the vinyl
+    titleColor: '#f6f2ea',
+    titleOpacity: .72,                             // lower = more 'printed into' the vinyl
+    hole: 14,                                      // centre hole size (the record is 200 across)
+    flowerSize: 82,                                // stippled orchid size on the label
+    stipple: 4,                                    // dot spacing of the orchid in px (smaller = finer)
+    grain: .55,                                    // paper grain strength
+    year: '2026',
+  },
+  // What guides each screen. The skeleton line is drawn only around these.
+  guides: { select:['hand'], learn:[], play:['head','hand'], create:['hand'], lab:['head','hand'] },
+  guideWords: { hand:'your hand', head:'your head' },
+  style: 0,                                        // 0 dots · 1 lines · 2 flat duotone
+  fakeBpm: 96,
+};
+const T = Object.fromEntries(Object.entries(CONFIG.tweak).map(([k,v])=>[k,v[0]]));
+// your slider and Arrange changes are remembered in this browser (Reset in the Tweak panel clears them)
+try { Object.assign(T, JSON.parse(localStorage.getItem('mockupTweaks')||'{}')); } catch(e){}
+const saveT = () => { try { localStorage.setItem('mockupTweaks', JSON.stringify(T)); } catch(e){} };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduce) { T.trailAmount = .3; T.discSpin = .2; }
+document.documentElement.style.setProperty('--bg', CONFIG.background);
+document.documentElement.style.setProperty('--line', CONFIG.fieldLineColor);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== MICRO TYPE =====
+const WORDS = CONFIG.microWords.split(' ');
+micro.innerHTML = Array.from({length:15},(_,i)=>`<span>${WORDS[(i*7+3)%WORDS.length]}</span>`).join('');
+gateTitle.textContent = CONFIG.title;
+[plateNo.textContent, plateSp.textContent] = CONFIG.entrance.plate;
+
+// ===== STATE =====
+const S = { screen:'loader', sel:0, scroll:0, goal:0, vel:0, mouse:{x:innerWidth/2,y:innerHeight/2,px:0,py:0},
+  level:0, bass:0, pulse:0, avg:0, palette:'intro' };
+const hexV = h => new THREE.Color(h);
+
+// ===== RENDERER =====
+const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias:false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.autoClear = false;
+const quadCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const QUAD = new THREE.PlaneGeometry(2,2);
+const VERT = `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.);}`;
+
+// ===== CURSOR SMOKE TRAIL (Emotion-style): ping-pong buffer that fades and rises =====
+const rtOpts = { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
+let trailA = new THREE.WebGLRenderTarget(4,4,rtOpts), trailB = new THREE.WebGLRenderTarget(4,4,rtOpts);
+const trailU = { uPrev:{value:null}, uMouse:{value:new THREE.Vector2(.5,.5)}, uAmt:{value:0}, uFade:{value:.96},
+  uRad:{value:.07}, uAsp:{value:1}, uTime:{value:0} };
+const trailScene = new THREE.Scene();
+trailScene.add(new THREE.Mesh(QUAD, new THREE.ShaderMaterial({ uniforms:trailU, vertexShader:VERT, fragmentShader:`
+precision highp float;varying vec2 vUv;uniform sampler2D uPrev;uniform vec2 uMouse;uniform float uAmt,uFade,uRad,uAsp,uTime;
+void main(){
+  vec2 drift=vec2(sin(vUv.y*9.+uTime)*.0008,-.0016);                 // smoke curls and rises
+  float p=texture2D(uPrev,vUv+drift).r*uFade;
+  float d=length((vUv-uMouse)*vec2(uAsp,1.));
+  gl_FragColor=vec4(min(p+exp(-d*d/(uRad*uRad))*uAmt,1.6),0.,0.,1.);
+}`})));
+
+// ===== HALFTONE CAMERA BACKGROUND (two-ink print with misregistration) =====
+const video = Object.assign(document.createElement('video'), { muted:true, playsInline:true });
+const bgU = { uCam:{value:new THREE.VideoTexture(video)}, uTrail:{value:null}, uHasCam:{value:0}, uCamAspect:{value:16/9},
+  uRes:{value:new THREE.Vector2()}, uTime:{value:0}, uLevel:{value:0}, uPulse:{value:0}, uStyle:{value:CONFIG.style},
+  uA:{value:hexV(CONFIG.palettes.intro.a)}, uB:{value:hexV(CONFIG.palettes.intro.b)}, uBg:{value:hexV(CONFIG.background)},
+  uDot:{value:9}, uGain:{value:1}, uMis:{value:3}, uWarp:{value:1}, uGlow:{value:.45}, uGrain:{value:.04},
+  uBlur:{value:0}, uScan:{value:1}, uEffect:{value:.25}, uSat:{value:.6}, uTint:{value:.3}, uDim:{value:.8}, uVignette:{value:1.2},
+  uClick:{value:new THREE.Vector3(.5,.5,-99)}, uRipple:{value:new THREE.Vector3(1,.9,55)},   // ripple: strength, speed, wave tightness
+  uIntro:{value:1}, uORot:{value:0}, uFS:{value:1.35}, uBloom:{value:0}, uMumGap:{value:1.25}, uGlowBehind:{value:.3}, uOS:{value:.27}, ...buildOrchid(), uIDot:{value:6}, uOC:{value:new THREE.Vector2(.64,.5)},
+  uXLow:{value:hexV(CONFIG.entrance.xrayLow)}, uXHigh:{value:hexV(CONFIG.entrance.xrayHigh)}, uXLip:{value:hexV(CONFIG.entrance.lipColor)},
+  uXCool:{value:hexV(CONFIG.entrance.coolInk)} };
+// Turns CONFIG.entrance.flowers / stems into the lists the shader draws
+function buildOrchid(){
+  const pad=(a,n)=>{ const v=a.slice(0,n).map(x=>new THREE.Vector4(...x)); while(v.length<n)v.push(new THREE.Vector4()); return v; };
+  const e=CONFIG.entrance;
+  return { uF:{value:pad(e.flowers,16)}, uFN:{value:Math.min(16,e.flowers.length)},
+           uSeg:{value:pad(e.stems,12)}, uSN:{value:Math.min(12,e.stems.length)} };
+}
+const bgScene = new THREE.Scene();
+bgScene.add(new THREE.Mesh(QUAD, new THREE.ShaderMaterial({ uniforms:bgU, vertexShader:VERT, fragmentShader:`
+precision highp float;varying vec2 vUv;
+uniform sampler2D uCam,uTrail;uniform float uHasCam,uCamAspect,uTime,uLevel,uPulse,uStyle,uDot,uGain,uMis,uWarp,uGlow,uGrain;
+uniform float uEffect,uSat,uTint,uDim,uVignette,uBlur,uScan;uniform vec3 uClick,uRipple;
+uniform vec2 uRes;uniform vec3 uA,uB,uBg;
+uniform float uIntro,uOS,uIDot,uORot,uFS,uBloom,uGlowBehind,uMumGap;uniform vec2 uOC;uniform vec3 uXLow,uXHigh,uXLip,uXCool;
+// ----- X-RAY ORCHID (moth orchid: narrow sepals, two wide petals, three-lobed lip with antennae, column) -----
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+float petal(vec2 p,float ang,float len,float wid,float roundness){
+  vec2 q=rot(ang)*p; float v=q.y/len; if(v<=0.||v>=1.)return 0.;
+  float w=wid*pow(sin(3.14159*pow(v,.75)),roundness), ax=abs(q.x)/max(w,1e-4);
+  float inside=smoothstep(1.,.93,ax);
+  float rim=smoothstep(.72,.98,ax)*.9+smoothstep(.8,1.,v)*.35;                 // edges curl, so they read brighter
+  float veins=(1.-smoothstep(0.,.1,abs(fract(q.x/w*3.5+.5)-.5)))*.22*(1.-v*.6); // veins follow the outline
+  float mid=(1.-smoothstep(0.,.05,ax))*.35;                                     // centre rib
+  return inside*(.22+rim+veins+mid);
+}
+vec2 flower(vec2 p){                                                            // x = whole flower, y = the lip only (coloured separately)
+  p/=1.+.02*sin(uTime*1.3);                                                     // slow breathing
+  float d=petal(p,0.,.95,.3,.8);                                                // top sepal
+  d+=petal(p,2.35,.95,.3,.8)+petal(p,-2.35,.95,.3,.8);                          // lower sepals
+  d+=petal(p,1.25,1.,.62,.45)+petal(p,-1.25,1.,.62,.45);                        // wide, rounded side petals
+  float lip=petal(p,3.1416,.55,.2,.6)+petal(p,2.6,.38,.17,.5)+petal(p,-2.6,.38,.17,.5); // lip + side lobes
+  lip+=(petal(p+vec2(0.,.52),2.9,.26,.012,.3)+petal(p+vec2(0.,.52),-2.9,.26,.012,.3))*1.5; // antennae
+  lip*=1.4;                                                                     // the lip is thick, so it reads denser
+  return vec2(d+lip+smoothstep(.1,0.,length(p*vec2(1.,.75)-vec2(0.,.02)))*.9, lip);
+}
+// The flowers and stems come from CONFIG.entrance.flowers / stems (traced from Lalitha's reference photo).
+// Returns x = x-ray density, y = density x "solidness" (each flower solid at its centre, dots at its own edges), z = lip density.
+uniform vec4 uF[16];uniform float uFN;uniform vec4 uSeg[12];uniform float uSN;
+// CHRYSANTHEMUM: three rings of petals. Closed (b=0): a tight ball of wide, cupped, incurved petals.
+// Opening (b->1): outer petals open first and stretch into thin rays with gaps, then the centre florets show.
+// The flower's outer size stays the same the whole time.
+vec2 mum(vec2 q,float b){
+  float r=length(q), a=atan(q.y,q.x); if(r>1.05) return vec2(0.);
+  float d=0.;
+  for(int k=0;k<3;k++){
+    float fk=float(k), bk=clamp(b*1.5-fk*.25,0.,1.); bk=bk*bk*(3.-2.*bk);
+    float n=k==0?21.:(k==1?16.:11.), sp=6.2832/n, off=fk*.37+.13*fk*fk;
+    float tip=mix(1.-fk*.24,1.-fk*.1,bk), base=mix(k==2?0.:tip*.42,.1+fk*.03,bk);   // closed: innermost petals fill the middle
+    if(r<base||r>tip) continue;
+    float t=(r-base)/(tip-base), da=mod(a-off+sp*.5,sp)-sp*.5;
+    float prof=mix(sqrt(max(0.,1.-(2.*t-1.)*(2.*t-1.))),pow(sin(3.1416*min(t*1.15,1.)),.6),bk);   // cupped -> strap petal
+    float w=sp*mix(.75,.3,bk)*max(prof,.02), ax=abs(da)/w; if(ax>1.) continue;
+    float rim=smoothstep(.65,1.,ax)*.7+smoothstep(.85,1.,t)*.3*bk;
+    float rib=(1.-smoothstep(0.,.12,ax))*.25*bk, curl=(1.-bk)*smoothstep(.5,1.,t)*.35;      // incurved tips catch light on the bud
+    d+=smoothstep(1.,.85,ax)*(.25+rim+rib+curl);
+  }
+  float disc=.17*smoothstep(.6,1.,b), cen=disc>.01?smoothstep(disc,disc*.6,r)*.9:0.;
+  return vec2(d+cen,cen);
+}
+vec4 orchid(vec2 uv){                                                           // w = soft glow around every bloom
+  vec2 p=rot(uORot)*((uv-uOC)*vec2(uRes.x/uRes.y,1.))/uOS;
+  p=rot(sin(uTime*.4)*.02)*p;                                                   // the whole spray sways
+  vec4 acc=vec4(0.);
+  for(int i=0;i<16;i++){ if(float(i)>=uFN)break;
+    float b=clamp(uBloom*1.6-float(i)/max(uFN,1.)*.6,0.,1.); b=b*b*(3.-2.*b);   // blooms open one after another
+    vec4 f=uF[i]; vec2 q=p-f.xy; float s=abs(f.z)*(f.z<0.?1.:uFS);              // size never changes while blooming
+    if(dot(q,q)>s*s*1.2)continue;                                               // skip flowers far from this pixel
+    q=rot(f.w)*q/s; vec2 d; float sol;
+    q*=uMumGap; d=mum(q,f.z<0.?0.:b); sol=smoothstep(1.05,.3,length(q));       // negative size = a bud that stays closed
+    acc.xyz+=vec3(d.x,d.x*sol,d.y);
+  }
+  for(int i=0;i<12;i++){ if(float(i)>=uSN)break;                                // stems: straight segments, zigzag like the photo
+    vec4 g=uSeg[i]; vec2 ab=g.zw-g.xy; float h=clamp(dot(p-g.xy,ab)/dot(ab,ab),0.,1.);
+    float st=smoothstep(.05,0.,length(p-g.xy-ab*h))*.9; acc.xyz+=vec3(st,st*.8,0.); }
+  return acc;
+}
+float lumAt(vec2 uv){
+  if(uHasCam>.5){
+    float s=(uRes.x/uRes.y)/uCamAspect;
+    if(s>1.)uv.y=(uv.y-.5)/s+.5;else uv.x=(uv.x-.5)*s+.5;
+    vec3 c=texture2D(uCam,vec2(1.-uv.x,uv.y)).rgb;
+    return smoothstep(.12,.85,dot(c,vec3(.299,.587,.114)));
+  }
+  // demo (no camera): the orchid stands in for the player
+  return (1.-exp(-orchid(uv).x*1.5))*.85;
+}
+vec3 camRGB(vec2 uv){
+  if(uHasCam<.5) return vec3(lumAt(uv));
+  float s=(uRes.x/uRes.y)/uCamAspect;
+  if(s>1.)uv.y=(uv.y-.5)/s+.5;else uv.x=(uv.x-.5)*s+.5;
+  return texture2D(uCam,vec2(1.-uv.x,uv.y)).rgb;
+}
+float ink(vec2 px,float cell,vec2 off,float gain){
+  vec2 q=px-off,c=floor(q/cell)*cell+cell*.5;
+  float L=lumAt((c+off)/uRes);
+  if(uStyle==1.){float r=cell*.5*L*gain;return smoothstep(r,r-1.,abs(q.y-c.y));}
+  if(uStyle==2.)return smoothstep(.35,.6,lumAt((px)/uRes));
+  float r=cell*.55*sqrt(L)*gain;return smoothstep(r,r-1.2,length(q-c));
+}
+void main(){
+  float e=.004;
+  float tr=texture2D(uTrail,vUv).r;
+  vec2 g=vec2(texture2D(uTrail,vUv+vec2(e,0)).r-texture2D(uTrail,vUv-vec2(e,0)).r,
+              texture2D(uTrail,vUv+vec2(0,e)).r-texture2D(uTrail,vUv-vec2(0,e)).r);
+  // click ripple: a ring of waves spreading from where a record was clicked
+  vec2 asp=vec2(uRes.x/uRes.y,1.), rd=(vUv-uClick.xy)*asp; float age=uTime-uClick.z, rl=length(rd), ring=rl-age*uRipple.y;
+  float wave=age<3.?sin(ring*uRipple.z)*exp(-ring*ring*30.)*exp(-age*1.4):0.;
+  vec2 px=(vUv-g*.06*uWarp-normalize(rd+1e-5)/asp*wave*.018*uRipple.x)*uRes;   // smoke + ripple bend the picture
+  float cell=uDot*(1.-.25*uLevel);
+  float gain=uGain*(.9+.6*uLevel+.4*uPulse);
+  vec2 mis=vec2(uMis,-uMis)*(1.+tr*3.+uPulse*2.);                     // inks slip apart under smoke + beats
+  float mA=ink(px,cell,vec2(0.),gain), mB=ink(px,cell,mis,gain*.9);
+  vec3 inkCol=uBg;
+  inkCol=1.-(1.-inkCol)*(1.-uB*mB*.75);                               // screen-blend the two inks
+  inkCol=1.-(1.-inkCol)*(1.-uA*mA);
+  // the musician sees themselves clearly; the print texture only sits lightly on top
+  vec3 cam=camRGB(px/uRes);
+  if(uBlur>.5){ vec3 acc=cam; for(int k=0;k<12;k++){ float a=float(k)*2.39996, r=uBlur*sqrt(float(k+1)/12.);   // soft focus (menu)
+    acc+=camRGB((px+vec2(cos(a),sin(a))*r)/uRes); } cam=acc/13.; }
+  float Y=dot(cam,vec3(.299,.587,.114));
+  vec3 clear=mix(vec3(Y),cam,uSat);                                   // how much natural colour to keep
+  clear=mix(clear,clear*mix(uB,uA,smoothstep(.2,.8,Y))*1.5,uTint);    // light palette tint
+  clear*=uDim;                                                        // darken so the UI stays readable
+  vec3 col=mix(clear,max(clear,inkCol),uEffect);
+  vec2 vq=vUv-.5;col*=1.-dot(vq,vq)*uVignette;
+  // entrance: x-ray orchid, solid in the middle, breaking into shrinking dots toward the edges
+  if(uIntro>.001){
+    // Flowers drawn with type-like marks: + crosses where faint, dashes in the middle, = double lines where dense.
+    // A soft glow sits behind them; the cursor trail "exposes" a smoother picture.
+    // Like the "Blooming" references: blooms filled with small type marks (dense runs of dashes, + crosses,
+    // little boxes), cream with cool accents, floating in a big blurry glow.
+    vec2 p=px/uRes; vec4 o=orchid(p); float xr=1.-exp(-o.x*1.6);
+    vec2 cs=vec2(uIDot*1.4,uIDot), cid=floor(px/cs), c=cid*cs+cs*.5, pc=c/uRes; vec4 oc=orchid(pc);
+    float xc=1.-exp(-oc.x*1.6), v=xc*mix(.4,1.,oc.y/max(oc.x,1e-3));
+    vec2 lc=(px-cid*cs)/cs; float hsh=fract(sin(dot(cid,vec2(12.9898,78.233)))*43758.5453);
+    float plus=max(step(abs(lc.x-.5),.08)*step(abs(lc.y-.5),.4),step(abs(lc.y-.5),.1)*step(abs(lc.x-.5),.38));
+    float dash=step(abs(lc.y-.5),.11)*step(lc.x,min(1.,.3+v));
+    float box=max(step(abs(abs(lc.x-.5)-.36),.06)*step(abs(lc.y-.5),.36),step(abs(abs(lc.y-.5)-.36),.09)*step(abs(lc.x-.5),.42));
+    float gly=0.;
+    if(v>.1&&v<.3) gly=hsh<.35?plus:(hsh<.5?step(length((lc-.5)*vec2(1.4,1.)),.12):0.);   // faint: scattered + and dots
+    else if(v>=.3&&v<.6) gly=hsh<.15?plus:dash;                                         // mid: dashes
+    else if(v>=.6) gly=hsh<.08?box:(hsh<.16?plus:max(dash,step(abs(lc.y-.5),.11)));      // dense: long runs, a few boxes
+    float lipK=smoothstep(.1,.5,oc.z/max(oc.x,1e-3));
+    vec3 ink=mix(mix(uXCool,uXHigh,smoothstep(.1,.6,v)),uXLip,lipK);
+    vec3 xcol=uBg;                                                               // no glow behind the flowers
+    xcol=mix(xcol,ink,gly*mix(.7,1.,xc));
+    float expose=smoothstep(.2,.9,tr)*smoothstep(.5,1.,uIntro);
+    xcol=mix(xcol,xcol+mix(uXHigh,uXLip,lipK)*xr*.5,expose);
+    col=mix(col,xcol,smoothstep(0.,.5,uIntro));
+  }
+  col+=mix(uA,vec3(1.),.6)*smoothstep(0.,1.2,tr)*uGlow;               // soft glow where the cursor passed
+  col*=mix(1.,.93+.07*sin(gl_FragCoord.y*1.3),uScan);
+  col+=(fract(sin(dot(gl_FragCoord.xy+uTime,vec2(12.9898,78.233)))*43758.5453)-.5)*uGrain;
+  gl_FragColor=vec4(col,1.);
+}`})));
+
+// ===== PARTICLES: one cloud that morphs into a shape per screen =====
+const scene = new THREE.Scene(), cam3 = new THREE.PerspectiveCamera(50,1,.1,100); cam3.position.z = 6;
+const N = reduce ? 1500 : 5000, F = { intro:[], learn:[], play:[], create:[] }, seed = new Float32Array(N);
+for (let i=0;i<N;i++){
+  seed[i]=Math.random();
+  F.intro.push((Math.random()-.5)*16,(Math.random()-.5)*9,(Math.random()-.5)*4-1);
+  F.learn.push((Math.random()-.5)*12,(i%5-2)*.38-.9,(Math.random()-.5)*.15);
+  const t=Math.random()*6.283,rr=2+(Math.random()-.5)*.3; F.play.push(Math.cos(t)*rr,Math.sin(t)*rr,(Math.random()-.5)*.3);
+  const y=1-2*(i+.5)/N,ra=Math.sqrt(1-y*y),ph=i*2.39996; F.create.push(Math.cos(ph)*ra*1.7,y*1.7,Math.sin(ph)*ra*1.7);
+}
+const SHAPE = { intro:[1,0,0,0], learn:[0,1,0,0], play:[0,0,1,0], create:[0,0,0,1], lab:[0,0,1,0] };
+const pg = new THREE.BufferGeometry();
+pg.setAttribute('position', new THREE.Float32BufferAttribute(F.intro,3));
+for (const k in F) pg.setAttribute('a_'+k, new THREE.Float32BufferAttribute(F[k],3));
+pg.setAttribute('aSeed', new THREE.BufferAttribute(seed,1));
+const pU = { uW:{value:new THREE.Vector4(1,0,0,0)}, uTime:{value:0}, uLevel:{value:0}, uBass:{value:0}, uPulse:{value:0},
+  uMouse:{value:new THREE.Vector2(99,99)}, uScale:{value:1}, uA:bgU.uA, uB:bgU.uB, uSize:{value:1}, uCenter:{value:new THREE.Vector2()} };
+scene.add(new THREE.Points(pg, new THREE.ShaderMaterial({ uniforms:pU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+vertexShader:`
+attribute vec3 a_intro,a_learn,a_play,a_create;attribute float aSeed;
+uniform vec4 uW;uniform float uTime,uLevel,uBass,uPulse,uScale,uSize;uniform vec2 uMouse,uCenter;varying float vS;
+void main(){
+  vec3 p=a_intro*uW.x+a_learn*uW.y+a_play*uW.z+a_create*uW.w;
+  p.y+=sin(p.x*1.6+uTime*3.)*uLevel*.7*uW.y;
+  float sp=uTime*.15*(uW.z+uW.w),c=cos(sp),s=sin(sp);p.xz=mat2(c,-s,s,c)*p.xz;
+  p+=normalize(p+1e-4)*(uBass*.9+uPulse*.5)*(.4+.6*fract(aSeed*13.))*(uW.z+uW.w);
+  p.xy+=vec2(sin(uTime*.3+aSeed*30.),cos(uTime*.25+aSeed*20.))*.12*uW.x;
+  p.xy+=uCenter*uW.z;                                                  // play: ring follows the hand
+  vec2 d=p.xy-uMouse;p.xy+=normalize(d+1e-4)*exp(-dot(d,d)*1.2)*.9;
+  vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+  gl_PointSize=(1.6+uLevel*3.+uPulse*2.)*uSize*uScale*(6./-mv.z);vS=aSeed;
+}`,
+fragmentShader:`uniform vec3 uA,uB;varying float vS;void main(){float d=length(gl_PointCoord-.5);if(d>.5)discard;
+  gl_FragColor=vec4(vS>.85?uB:uA,(1.-d*2.)*.85);}`})));
+
+// ===== SIZE =====
+const ctx = lines.getContext('2d');
+function resize(){
+  const w=innerWidth,h=innerHeight,pr=renderer.getPixelRatio();
+  renderer.setSize(w,h,false); bgU.uRes.value.set(w*pr,h*pr);
+  trailA.setSize(w/4|0,h/4|0); trailB.setSize(w/4|0,h/4|0); trailU.uAsp.value=w/h;
+  cam3.aspect=w/h; cam3.updateProjectionMatrix(); pU.uScale.value=pr*h/900;
+  lines.width=w*devicePixelRatio; lines.height=h*devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  skel.width=w*devicePixelRatio; skel.height=h*devicePixelRatio; skel.getContext('2d').setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  if (S.screen!=='loader'&&S.screen!=='select') buildWire(S.screen);
+}
+addEventListener('resize', resize); resize();
+const toWorld=(x,y)=>{const hh=Math.tan(25*Math.PI/180)*6;return[(x/innerWidth*2-1)*hh*cam3.aspect,(1-y/innerHeight*2)*hh]};
+
+// ===== INPUT =====
+addEventListener('pointermove', e => { S.mouse.x=e.clientX; S.mouse.y=e.clientY; });
+
+// ===== AUDIO (mic, or a fake beat in demo) =====
+let analyser, fbuf;
+async function startCamera(){ try{ const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720}});
+  video.srcObject=s; await video.play(); bgU.uHasCam.value=1; bgU.uCamAspect.value=video.videoWidth/video.videoHeight||16/9; }catch(e){} }
+async function startMic(){ try{ const s=await navigator.mediaDevices.getUserMedia({audio:true}); const ac=new AudioContext();
+  analyser=ac.createAnalyser(); analyser.fftSize=512; ac.createMediaStreamSource(s).connect(analyser);
+  fbuf=new Uint8Array(analyser.frequencyBinCount); }catch(e){} }
+function readAudio(t){
+  if(!analyser){ const beat=(t*CONFIG.fakeBpm/60)%1; return { level:.25+.15*Math.sin(t*1.3), bass:Math.exp(-beat*6)*.6 }; }
+  analyser.getByteFrequencyData(fbuf); let s=0,b=0;
+  for(let i=0;i<fbuf.length;i++)s+=fbuf[i]; for(let i=1;i<10;i++)b+=fbuf[i];
+  return { level:Math.min(s/fbuf.length/90,1), bass:Math.min(b/9/220,1) };
+}
+
+// ===== FIELD LINES (Active Theory arcs that lean toward the cursor) =====
+function drawField(cx,cy,R,t){
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  const K=T.fieldLines|0; if(!K)return;
+  const mx=S.mouse.x-cx, my=S.mouse.y-cy, md=Math.hypot(mx,my), pull=T.fieldBend*Math.exp(-md/500);
+  ctx.strokeStyle=CONFIG.fieldLineColor; ctx.lineWidth=1.3;
+  ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(cx,cy,R,0,6.283); ctx.stroke();
+  for(let i=0;i<K;i++){
+    const r0=R*1.15+i*R*.11, H=R*(.55+i*.06), bulge=R*(.18+.5*S.level+.3*S.pulse)*(1+i*.04);
+    ctx.globalAlpha=Math.max(0,.75-i/K*.7);
+    for(const s of [-1,1]){
+      const lean=(s*mx>0?1.6:.6)*pull;                                   // the side facing the cursor reaches further
+      ctx.beginPath(); ctx.moveTo(cx+s*r0*.7,cy-H);
+      ctx.quadraticCurveTo(cx+s*(r0+bulge*lean)+mx*.08*pull, cy+my*.15*pull, cx+s*r0*.7, cy+H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx-H,cy+s*r0*.7);
+      ctx.quadraticCurveTo(cx+mx*.15*pull, cy+s*(r0+bulge*.6*lean)+my*.08*pull, cx+H, cy+s*r0*.7); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha=1;
+}
+
+// ===== RECORD ROW (A24-style: discs on a rising diagonal, scroll to choose) =====
+// Each record is a printed label: grainy paper, a stippled orchid, a big script name, small label type.
+// The whole label spins. Where the name crosses the see-through hole it becomes an outline.
+const LABEL=CONFIG.label;
+softGlowBlur.setAttribute('stdDeviation',LABEL.glowSpread*.75);   // how far the record glow spreads
+const sstep=(e0,e1,x)=>{ const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t); };
+function petalJS(px,py,ang,len,wid,rnd){                                   // same petal as the entrance shader
+  const c=Math.cos(ang),s=Math.sin(ang), qx=c*px+s*py, qy=-s*px+c*py, v=qy/len; if(v<=0||v>=1)return 0;
+  const w=wid*Math.pow(Math.sin(Math.PI*Math.pow(v,.75)),rnd), ax=Math.abs(qx)/Math.max(w,1e-4);
+  const f=x=>x-Math.floor(x), veins=(1-sstep(0,.1,Math.abs(f(qx/w*3.5+.5)-.5)))*.22*(1-v*.6);
+  return sstep(1,.93,ax)*(.22+sstep(.72,.98,ax)*.9+sstep(.8,1,v)*.35+veins+(1-sstep(0,.05,ax))*.35);
+}
+function flowerJS(x,y){
+  let d=petalJS(x,y,0,.95,.3,.8)+petalJS(x,y,2.35,.95,.3,.8)+petalJS(x,y,-2.35,.95,.3,.8)+petalJS(x,y,1.25,1,.62,.45)+petalJS(x,y,-1.25,1,.62,.45);
+  let lip=(petalJS(x,y,Math.PI,.55,.2,.6)+petalJS(x,y,2.6,.38,.17,.5)+petalJS(x,y,-2.6,.38,.17,.5))*1.4;
+  return [d+lip+sstep(.1,0,Math.hypot(x,(y-.02)*.75))*.9, lip];
+}
+const labelArt={};                                                         // one stippled orchid per mode, drawn once
+function labelTexture(m,i){
+  if(labelArt[m.id])return labelArt[m.id];
+  const N=360, k=N/200, cell=LABEL.stipple, cv=document.createElement('canvas'); cv.width=cv.height=N; const g=cv.getContext('2d');
+  const ang=[0,.35,-.3,.6][i%4], lipCol=CONFIG.palettes[m.id].a; let seed=i+1; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let y=cell/2;y<N;y+=cell) for(let x=cell/2;x<N;x+=cell){
+    const ux=(x-N/2)/k, uy=-(y-N/2)/k, c=Math.cos(ang), s=Math.sin(ang);
+    const fx=(c*ux+s*uy)/LABEL.flowerSize, fy=(-s*ux+c*uy)/LABEL.flowerSize;
+    const [d,lip]=flowerJS(fx,fy); if(d<=0)continue;
+    const xr=1-Math.exp(-d*1.5), sol=sstep(1.05,.3,Math.hypot(fx,fy)), v=xr*(.25+.75*sol)*(.75+.5*rnd());  // grainy, fades to dots at the edges
+    const r=cell*.62*Math.sqrt(v); if(r<.35)continue;
+    g.fillStyle=lip/d>.3?lipCol:LABEL.ink; g.beginPath(); g.arc(x+(rnd()-.5),y+(rnd()-.5),r,0,6.283); g.fill();
+  }
+  return labelArt[m.id]=cv.toDataURL();
+}
+// light streaks that follow the grooves round the record (instead of straight marbling)
+function streakArcs(i,color){
+  let seed=(typeof i==='number'?i:+String(i).replace(/\D/g,'')||0)*97+11; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  let out=''; for(let k=0;k<LABEL.streaks;k++){
+    const r=LABEL.labelR+6+rnd()*(92-LABEL.labelR), a0=rnd()*6.283, span=.4+rnd()*1.8, a1=a0+span;
+    const x0=Math.cos(a0)*r, y0=Math.sin(a0)*r, x1=Math.cos(a1)*r, y1=Math.sin(a1)*r;
+    out+=`<path d="M${x0.toFixed(1)},${y0.toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 ${span>Math.PI?1:0},1 ${x1.toFixed(1)},${y1.toFixed(1)}" fill="none"
+      stroke="${color||LABEL.titleColor}" stroke-width="${(1+rnd()*3).toFixed(1)}" stroke-opacity="${(.25+rnd()*.75).toFixed(2)}" stroke-linecap="round"/>`; }
+  return out;
+}
+// Name printed round the record: along the top arc and the bottom arc, both upright,
+// tinted from cream into the record's colour and slightly see-through so it sits IN the vinyl
+function arcName(m,id){
+  const r=LABEL.arcRadius, a=CONFIG.palettes[m.id].a, n=m.name.toUpperCase(), fs=LABEL.arcSize*Math.min(1,7/Math.max(7,n.length));
+  const txt=(path)=>`<text font-family="Archivo" font-weight="${LABEL.titleWeight}" font-size="${fs}" letter-spacing="${LABEL.arcSpacing}"
+    dominant-baseline="middle" fill="url(#ink${id})"><textPath href="#${path}${id}" startOffset="50%" text-anchor="middle">${n}</textPath></text>`;
+  return `<defs><path id="arcTop${id}" d="M${-r},0 A${r},${r} 0 0 1 ${r},0"/><path id="arcBot${id}" d="M${-r},0 A${r},${r} 0 0 0 ${r},0"/>
+      <linearGradient id="ink${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${LABEL.titleColor}"/><stop offset=".5" stop-color="${LABEL.titleColor}"/>
+        <stop offset="1" stop-color="${a}"/></linearGradient></defs>
+    <g opacity="${LABEL.titleOpacity}" style="mix-blend-mode:screen">${txt('arcTop')}${LABEL.arcTwice?txt('arcBot'):''}</g>`;
+}
+// RINGS: the name wraps the whole record in rings of type, a big bold middle ring and smaller,
+// fainter rings outside and inside. Each ring is stretched to close exactly round the circle.
+function ringName(m,id){
+  const a=CONFIG.palettes[m.id].a, n=m.name.toUpperCase();
+  const ring=(k,r,size,reps,op,weight,flip)=>{ const C=2*Math.PI*r, one=reps<=1, word=one?n:Array(reps).fill(n).join(' • ')+' • ';   // one rep: the name once, letters spread evenly round the ring
+    const d=flip?`M0,${r} A${r},${r} 0 1,1 0,${-r} A${r},${r} 0 1,1 0,${r}`:`M0,${-r} A${r},${r} 0 1,1 0,${r} A${r},${r} 0 1,1 0,${-r}`;
+    return `<path id="rg${id}_${k}" d="${d}" fill="none"/><text font-family="Archivo" font-weight="${weight}" font-size="${size}" dominant-baseline="middle"
+      textLength="${(one?C*(1-1/(n.length+1)):C*.985).toFixed(1)}" lengthAdjust="${one?'spacing':'spacingAndGlyphs'}" fill="url(#ink${id})" opacity="${op}"><textPath href="#rg${id}_${k}">${word}</textPath></text>`; };
+  const R=LABEL.rings;
+  return `<defs><linearGradient id="ink${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${LABEL.titleColor}"/><stop offset=".55" stop-color="${LABEL.titleColor}"/>
+      <stop offset="1" stop-color="${a}"/></linearGradient></defs>
+    <g style="mix-blend-mode:screen" opacity="${LABEL.titleOpacity}">
+      ${ring(0,R.outer.r,R.outer.size,R.outer.reps,R.outer.opacity,700,false)}
+      ${ring(1,R.main.r,R.main.size,R.main.reps,1,900,false)}
+      ${ring(2,R.inner.r,R.inner.size,R.inner.reps,R.inner.opacity,700,true)}
+    </g>`;
+}
+// colourful water ripples instead of white rim and streaks: wobbly rings drifting off-centre,
+// several palette colours plus a few dark ripples, blurred and grainy
+function rippleRings(id,o){
+  // its own splash: rings spread from a point off to one side (not the record's centre), squashed like
+  // water seen at an angle, getting wider apart and fainter as they spread, cut off by the record's edge
+  let out=''; for(let k=0;k<o.count;k++){
+    const t=k/(o.count-1), r=o.start+Math.pow(t,1.35)*o.reach;
+    let d=''; for(let j=0;j<=72;j++){ const th=j/72*6.283, rr=r+o.wobble*(Math.sin(3*th+k*.7)+.5*Math.sin(5*th+k*1.3))*(.3+t);
+      d+=(j?'L':'M')+(o.cx+Math.cos(th)*rr).toFixed(1)+','+(o.cy+Math.sin(th)*rr*o.squash).toFixed(1); }
+    const col=o.colors[(k*3)%o.colors.length], w=(3+((k*7)%4)*2.2)*(1-t*.35), op=((.65+((k*5)%4)*.12)*(1-t*.55)).toFixed(2);
+    out+=`<path d="${d}Z" fill="none" stroke="${col}" stroke-width="${w.toFixed(1)}" stroke-opacity="${op}" stroke-linejoin="round"/>`;
+  }
+  return `<g clip-path="url(#face${id})"><g filter="url(#rippleBlur)" opacity="${o.opacity}">${out}</g></g>
+    <rect x="-100" y="-100" width="200" height="200" filter="url(#grain)" clip-path="url(#face${id})" opacity="${o.grain}"/>`;
+}
+// gray mist (Play): soft gray clouds that take the colour out where they sit, so gray and colour melt into each other
+function grayMist(id,o){
+  let blobs=''; o.clouds.forEach(([x,y,rx,ry])=>blobs+=`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${o.color}"/>`);
+  return `<g clip-path="url(#face${id})"><g filter="url(#mistBlur)" opacity="${o.mist}" style="mix-blend-mode:luminosity">${blobs}</g>
+      <g filter="url(#mistBlur)" opacity="${o.mist*.6}">${blobs}</g></g>
+    <rect x="-100" y="-100" width="200" height="200" filter="url(#grain)" clip-path="url(#face${id})" opacity="${o.grain}"/>`;
+}
+// spiky calligraphic lettering repeated round the outer edge (record-label decoration)
+function scriptRing(m,id,o){
+  const r=o.r, C=2*Math.PI*r, word=Array(o.reps).fill(o.text||m.sub.replace(/\.$/,'')).join('  ')+'  ';
+  return `<defs><path id="sr${id}" d="M0,${-r} A${r},${r} 0 1,1 0,${r} A${r},${r} 0 1,1 0,${-r}"/></defs>
+    <g style="mix-blend-mode:screen" opacity="${o.opacity}"><text font-family="${o.font}" font-size="${o.size}" fill="${LABEL.titleColor}" dominant-baseline="middle"
+      textLength="${(C*.98).toFixed(1)}" lengthAdjust="spacingAndGlyphs"><textPath href="#sr${id}">${word}</textPath></text></g>`;
+}
+// WINDOW letters (like the 'YOU & ME' cover): a coloured, frosted filter covers the whole record and the
+// big stacked letters are cut out of it, so you see straight through them, untouched, with a thin light edge
+function windowLines(m,o){ const N=m.name.toUpperCase(), n=N.replace(' ',''), half=Math.ceil(n.length/2);
+  const lines=N.includes(' ')?N.split(' '):n.length>3?[n.slice(0,half),n.slice(half)]:[n], fs=o.toneSize*(Math.max(...lines.map(l=>l.length))>4?.8:1), lh=fs*.9;
+  return extra=>lines.map((ln,k)=>`<text y="${((k-(lines.length-1)/2)*lh).toFixed(1)}" dominant-baseline="central" text-anchor="middle"
+      textLength="${o.toneWidth}" lengthAdjust="spacingAndGlyphs" font-family="Archivo" font-weight="900" font-stretch="100%" font-size="${fs}" ${extra}>${ln}</text>`).join(''); }
+function windowMask(m,id,o){ const t=windowLines(m,o);
+  return `<mask id="win${id}"><rect x="-120" y="-120" width="240" height="240" fill="#fff"/>${t('fill="#000"')}</mask>`; }
+function windowEdges(m,id,o){ const t=windowLines(m,o);
+  return `<g clip-path="url(#face${id})" style="mix-blend-mode:screen" opacity="${o.window.edge}">${t(`fill="none" stroke="${o.gray?o.gray.color:LABEL.titleColor}" stroke-width=".7"`)}</g>`; }
+// tone-on-tone stacked letters (like the 'YOU & ME' cover): huge letters that quietly darken the record
+// behind them, with a faint light edge, so they read as a window rather than as text on top
+function toneName(m,id,o){
+  const n=m.name.toUpperCase().replace(' ',''), half=Math.ceil(n.length/2), lines=n.length>3?[n.slice(0,half),n.slice(half)]:[n];
+  const fs=o.toneSize, lh=fs*.9;
+  const t=(extra)=>lines.map((ln,k)=>`<text y="${((k-(lines.length-1)/2)*lh).toFixed(1)}" dominant-baseline="central" text-anchor="middle"
+      textLength="${o.toneWidth}" lengthAdjust="spacingAndGlyphs" font-family="Archivo" font-weight="900" font-stretch="100%" font-size="${fs}" ${extra}>${ln}</text>`).join('');
+  return `<g clip-path="url(#face${id})">
+      <g style="mix-blend-mode:multiply" opacity="${o.toneDark}">${t('fill="#000"')}</g>
+      <g style="mix-blend-mode:screen" opacity="${o.toneEdge}">${t(`fill="none" stroke="${o.gray?o.gray.color:LABEL.titleColor}" stroke-width=".6"`)}</g></g>`;
+}
+// The very first record design (wireframe disc, circular text, number), kept for side-by-side comparison
+function originalDiscSVG(m,i){
+  let g=''; for(let r=94;r>36;r-=4) g+=`<circle r="${r}" fill="none" stroke="currentColor" stroke-opacity="${r%12?0.25:0.55}"/>`;
+  return `<svg viewBox="-110 -110 220 220" class="platter">
+    <mask id="out${i}"><rect x="-130" y="-130" width="260" height="260" fill="#fff"/><circle r="100" fill="#000"/></mask>
+    <g mask="url(#out${i})"><circle class="glow-ring" r="100.5" fill="none" stroke="var(--a)" stroke-width="${LABEL.glowSpread}" filter="url(#softGlow)"/></g>   <!-- glow only outside the edge -->
+    <g class="spin" style="color:var(--ink)">
+    <circle r="100" fill="rgba(11,10,12,.35)" stroke="currentColor" stroke-width="1.4"/>${g}
+    <circle r="32" fill="none" stroke="var(--a)" stroke-width="1.6"/><circle r="5" fill="none" stroke="currentColor"/></g>
+    <g style="color:var(--ink)">
+    <defs><path id="lpo${i}" d="M0,-84 a84,84 0 1,1 -.1,0"/></defs>
+    <text font-size="6.5" letter-spacing="2.4" fill="currentColor" font-family="Archivo" font-weight="700">
+      <textPath href="#lpo${i}">${(m.name+' · '+m.sub+' · ').toUpperCase().repeat(2)}</textPath></text>
+    <text y="-6" text-anchor="middle" font-family="Instrument Serif" font-size="20" fill="currentColor">${m.num}</text>
+    <text y="12" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="6" letter-spacing="1.5" fill="currentColor">${m.name.toUpperCase()}</text></g></svg>`;
+}
+const isOriginal=m=>CONFIG.compareOriginal===m.id;
+// FLOWER RECORD: solid colour disc, a dark flower printed across it, the name knocked out in the disc colour.
+// The flower comes from a reference picture for now (Lalitha will draw her own): dark pixels become the print.
+const FD=CONFIG.flowerDisc; let flowerPrint=null;
+const isFlower=m=>FD&&FD.mode===m.id;
+(function loadFlowerPrint(){ if(!FD)return; const img=new Image(); img.onload=()=>{
+  const N=512, cv=document.createElement('canvas'); cv.width=cv.height=N; const g=cv.getContext('2d');
+  const w=img.naturalWidth, h=img.naturalHeight, r=FD.r*w;
+  g.drawImage(img,FD.cx*w-r,FD.cy*h-r,r*2,r*2,0,0,N,N);
+  const d=g.getImageData(0,0,N,N), px=d.data, ink=hexV(FD.ink);
+  for(let k=0;k<px.length;k+=4){ const lum=(px[k]*.299+px[k+1]*.587+px[k+2]*.114)/255;
+    px[k]=ink.r*255; px[k+1]=ink.g*255; px[k+2]=ink.b*255; px[k+3]=Math.max(0,Math.min(1,(FD.threshold-lum)/.12))*255; }
+  g.putImageData(d,0,0); flowerPrint=cv.toDataURL();
+  document.querySelectorAll('image.flower-print').forEach(el=>el.setAttribute('href',flowerPrint)); };
+  img.src=FD.image; })();
+// SHATTER: crack the record into shards (radial cracks from near the centre + a jagged ring crack)
+function shardPolys(seed){
+  const SH=CONFIG.shatter, K=SH.pieces; let sd=seed*7919+13; const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  const base=rnd()*6.283, ang=[...Array(K)].map((_,j)=>base+j*6.283/K+(rnd()-.5)*.5), P=(a,r)=>[Math.cos(a)*r,Math.sin(a)*r];
+  const RS=[0,22,44,66,88,112], radial=ang.map(a=>RS.map((r,k)=>k?P(a+(rnd()-.5)*.14,r):[4,-3]));   // all cracks start at one impact point
+  const ringR=ang.map(()=>34+rnd()*24), polys=[];
+  for(let j=0;j<K;j++){
+    const j2=(j+1)%K, a0=ang[j], a1=ang[j2]+(j2===0?6.283:0), r0=ringR[j];
+    const ring=[0,.33,.66,1].map(t=>P(a0+(a1-a0)*t,r0+(rnd()-.5)*8));                     // jagged ring crack
+    const inA=radial[j].filter((_,k)=>RS[k]<r0), inB=radial[j2].filter((_,k)=>RS[k]<r0).reverse();
+    const outA=radial[j].filter((_,k)=>RS[k]>r0), outB=radial[j2].filter((_,k)=>RS[k]>r0).reverse();
+    const edge=[0,.25,.5,.75,1].map(t=>P(a0+(a1-a0)*t,115));
+    polys.push([...inA,...ring,...inB], [ring[0],...outA,...edge.slice(1,-1),...outB,...ring.slice().reverse()]);
+  }
+  return polys.map(pts=>{ const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length, cy=pts.reduce((s,p)=>s+p[1],0)/pts.length, L=Math.hypot(cx,cy)||1;
+    const push=(3+L*.08)*SH.spread; return { pts, cx, cy, dx:cx/L*push, dy:cy/L*push, rot:(rnd()-.5)*SH.rotate }; });
+}
+const isShatter=m=>CONFIG.shatter&&CONFIG.shatter.mode===m.id;
+function flowerDiscSVG(m,i){
+  const H=LABEL.hole, bg=CONFIG.palettes[m.id].a;
+  let grooves=''; for(let r=97;r>H+4;r-=2.4) grooves+=`<circle r="${r.toFixed(1)}" fill="none" stroke="${FD.ink}" stroke-width=".3" stroke-opacity=".12"/>`;
+  const content=`<g class="spin" mask="url(#offHole${i})">
+      <circle r="100" fill="${bg}"/>
+      <image class="flower-print" href="${flowerPrint||''}" x="-100" y="-100" width="200" height="200" clip-path="url(#face${i})"/>
+      ${grooves}
+      <circle r="99.4" fill="none" stroke="${FD.ink}" stroke-opacity=".5" stroke-width="${LABEL.rimWidth}"/>
+    </g>
+    ${nameIn(m,i,bg)}`;
+  const shards=isShatter(m)?shardPolys(String(i).length+3):null;
+  return `<svg viewBox="-110 -110 220 220" class="platter" overflow="visible">
+    <defs><clipPath id="face${i}"><circle r="100"/></clipPath>
+      <mask id="offHole${i}"><rect x="-110" y="-110" width="220" height="220" fill="#fff"/><circle r="${H}" fill="#000"/></mask>
+      <mask id="out${i}"><rect x="-130" y="-130" width="260" height="260" fill="#fff"/><circle r="100" fill="#000"/></mask>
+      ${shards?`<g id="cc${i}">${content}</g>`+shards.map((sh,k)=>`<clipPath id="sh${i}_${k}"><polygon points="${sh.pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}"/></clipPath>`).join(''):''}</defs>
+    <g mask="url(#out${i})"><circle class="glow-ring" r="100.5" fill="none" stroke="var(--a)" stroke-width="${LABEL.glowSpread}" filter="url(#softGlow)"/></g>
+    ${shards?shards.map((sh,k)=>`<g class="shard" data-dx="${sh.dx.toFixed(2)}" data-dy="${sh.dy.toFixed(2)}" data-rot="${sh.rot.toFixed(2)}" data-cx="${sh.cx.toFixed(1)}" data-cy="${sh.cy.toFixed(1)}"><g clip-path="url(#sh${i}_${k})"><use href="#cc${i}"/></g></g>`).join(''):content}
+    <circle class="hole-ring" r="${H}" fill="none" stroke="${FD.ink}" stroke-width="1"/>
+  </svg>`;
+}
+// CLEAR RECORD: frosted, milky see-through vinyl (camera shows through, lightened), bright thin edge,
+// faint grooves and a small paper label in the mode colour
+const CD=CONFIG.clearDisc, isClear=m=>CD&&CD.mode===m.id;
+function clearDiscSVG(m,i){
+  const H=LABEL.hole, a=CONFIG.palettes[m.id].a, L=CD.labelR;
+  let grooves=''; for(let r=97,k=0;r>L+3;r-=1.6,k++) grooves+=`<circle r="${r.toFixed(1)}" fill="none" stroke="#fff" stroke-width=".3" stroke-opacity="${(k%5===0?.22:.08).toFixed(2)}"/>`;
+  return `<svg viewBox="-110 -110 220 220" class="platter">
+    <defs><clipPath id="face${i}"><circle r="100"/></clipPath>
+      <mask id="offHole${i}"><rect x="-110" y="-110" width="220" height="220" fill="#fff"/><circle r="${H}" fill="#000"/></mask>
+      <mask id="out${i}"><rect x="-130" y="-130" width="260" height="260" fill="#fff"/><circle r="100" fill="#000"/></mask>
+      <radialGradient id="frost${i}"><stop offset=".35" stop-color="${CD.tint}" stop-opacity="${CD.frost*.75}"/><stop offset=".97" stop-color="${CD.tint}" stop-opacity="${CD.frost}"/>
+        <stop offset="1" stop-color="#fff" stop-opacity="${Math.min(1,CD.frost*2.2)}"/></radialGradient></defs>
+    <g mask="url(#out${i})"><circle class="glow-ring" r="100.5" fill="none" stroke="var(--a)" stroke-width="${LABEL.glowSpread}" filter="url(#softGlow)"/></g>
+    <g class="spin" mask="url(#offHole${i})">
+      <circle r="100" fill="url(#frost${i})"/>
+      ${grooves}
+      <circle r="${L+8}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2.5"/>   <!-- the raised ring around the label -->
+      <circle r="${L}" fill="${a}"/>
+      <circle r="${L}" fill="none" stroke="${CONFIG.background}" stroke-opacity=".35" stroke-width=".6"/>
+      <circle r="99.4" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="${LABEL.rimWidth}"/>
+    </g>
+    ${CD.nameStyle==='arch'?archName(m,i,CD.nameColor||a):CD.nameStyle==='blur'?blurName(m,i,CD.nameColor||a):nameIn(m,i,CD.nameColor||a)}
+    <circle r="${H}" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width=".8"/>
+  </svg>`;
+}
+// 70s record-label wordmark: first word arched over the hole, letters taller toward the ends,
+// the rest as a bold straight line under the hole, with a worn, speckled print texture
+function archName(m,id,color){
+  const A=CD.arch, words=m.name.toUpperCase().split(' '), top=words[0], rest=words.slice(1).join(' ');
+  const n=top.length, W=A.width, cw=W/n; let letters='';
+  for(let k=0;k<n;k++){
+    const x=-W/2+cw*(k+.5), t=x/(W/2), h=A.height*(1+A.stretch*t*t), yb=-A.lift+A.drop*t*t;   // base curves down at the ends
+    letters+=`<text x="0" y="0" transform="translate(${x.toFixed(1)},${yb.toFixed(1)}) scale(1,${(h/A.height).toFixed(3)})" text-anchor="middle"
+      textLength="${(cw*.96).toFixed(1)}" lengthAdjust="spacingAndGlyphs" font-family="Archivo" font-weight="900" font-stretch="62%" font-size="${A.height}" fill="${color}">${top[k]}</text>`;
+  }
+  const under=rest?`<text y="${A.under}" dominant-baseline="central" text-anchor="middle" font-family="Archivo" font-weight="900" font-stretch="75%"
+      font-size="${A.underSize}" letter-spacing="1.5" fill="${color}">${rest}</text>`:'';
+  return `<defs><filter id="worn${id}" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="${A.wear}" numOctaves="2" seed="${String(id).length+4}" result="n"/>
+      <feColorMatrix in="n" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -7 0 0 0 4.6" result="m"/><feComposite in="SourceGraphic" in2="m" operator="in"/></filter></defs>
+    <g filter="url(#worn${id})" clip-path="url(#face${id})">${letters}${under}</g>`;
+}
+// big, heavy, extra-wide capitals, stacked, tilted and softly out of focus (record-label style)
+function blurName(m,id,color){
+  const lines=m.name.toUpperCase().split(' '), fs=CD.nameSize, lh=fs*.86;
+  return `<defs><filter id="soft${id}" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="${CD.blur}"/></filter></defs>
+    <g transform="rotate(${CD.tilt})" filter="url(#soft${id})" opacity="${CD.nameOpacity}" clip-path="url(#face${id})">
+      ${lines.map((ln,k)=>`<text y="${((k-(lines.length-1)/2)*lh).toFixed(1)}" dominant-baseline="central" text-anchor="middle"
+        textLength="${CD.nameWidth}" lengthAdjust="spacingAndGlyphs" font-family="Archivo" font-weight="900" font-stretch="125%"
+        font-size="${fs}" fill="${color}">${ln}</text>`).join('')}</g>`;
+}
+// the name, in one flat colour (used by the flower record: the disc colour, so it reads as cut out of the dark flower)
+function nameIn(m,id,color){
+  if(LABEL.nameStyle==='arc'){ const r=LABEL.arcRadius, n=m.name.toUpperCase(), fs=LABEL.arcSize*Math.min(1,7/Math.max(7,n.length));
+    const t=p=>`<text font-family="Archivo" font-weight="${Math.max(LABEL.titleWeight,800)}" font-size="${fs}" letter-spacing="${LABEL.arcSpacing}" dominant-baseline="middle" fill="${color}"><textPath href="#${p}${id}" startOffset="50%" text-anchor="middle">${n}</textPath></text>`;
+    return `<defs><path id="fTop${id}" d="M${-r},0 A${r},${r} 0 0 1 ${r},0"/><path id="fBot${id}" d="M${-r},0 A${r},${r} 0 0 0 ${r},0"/></defs>${t('fTop')}${LABEL.arcTwice?t('fBot'):''}`; }
+  return `<text y="0" dominant-baseline="central" text-anchor="middle" textLength="${LABEL.titleWidth}" lengthAdjust="spacingAndGlyphs"
+    font-family="Archivo" font-weight="800" font-size="${LABEL.arcSize*2}" fill="${color}" clip-path="url(#face${id})">${m.name.toUpperCase()}</text>`;
+}
+function discSVG(m,i){
+  if(isOriginal(m)) return originalDiscSVG(m,i);
+  if(isFlower(m)) return flowerDiscSVG(m,i);
+  if(isClear(m)) return clearDiscSVG(m,i);
+  // Only the title and decoration. Title: big high-contrast serif capitals, cropped by the record's edge (clear-CD look).
+  // Base: translucent paper (half see-through) under a solid stippled orchid.
+  const PM=(LABEL.perMode||{})[m.id]||{}, TS=PM.titleScale||1;            // per-record extras (see CONFIG.label.perMode)
+  const LT=PM.gray?PM.gray.color:LABEL.titleColor;                         // the record's 'light' colour: cream, or gray on Play
+  const H=LABEL.hole, id=i, style=LABEL.nameStyle, lines=style==='display'?[m.name.toUpperCase()]:(style==='serif'||style==='sans')?m.name.toUpperCase().split(' '):[style==='script'?m.name:m.name.toUpperCase()];
+  // grooves: many fine rings so it reads as a record, kept well below the title's contrast
+  // Like the vinyl reference: bands of grooves alternate stronger and fainter, and light and dark lines alternate.
+  let grooves=''; for(let r=97,k=0;r>H+5;r-=1.8,k++){
+    const band=Math.floor(k/4)%3, light=k%2===1;                           // 3 band strengths, light/dark lines in turn
+    const op=LABEL.grooves*[1.8,.6,1.1][band]*(light?.9:1)*(.8+.4*((k*37)%11)/11);
+    if(PM.ripple&&light) continue;                                           // ripple record: no white groove lines
+    grooves+=`<circle r="${r.toFixed(1)}" fill="none" stroke="${light?LT:LABEL.ink}" stroke-width="${light?.45:.35}" stroke-opacity="${op.toFixed(3)}"/>`; }
+  // solid rings from the first design: every 4 units, every third one stronger
+  if(!PM.ripple) for(let r=94;r>LABEL.labelR+2;r-=4) grooves+=`<circle r="${r}" fill="none" stroke="${LT}" stroke-width=".5" stroke-opacity="${((r%12?.25:.55)*LABEL.solidLines).toFixed(3)}"/>`;
+  const fs=style==='display'?LABEL.display.size*TS:style==='sans'?(lines.length>1?50:62)*LABEL.titleWidth/180:style==='serif'?(lines.length>1?64:84):style==='script'?(m.name.length>8?40:58):(m.name.length>8?44:62);
+  const font=style==='display'?`font-family="${LABEL.display.font}" font-weight="700" transform="scale(1,${LABEL.display.stretch})"`:style==='sans'?`font-family="Archivo" font-weight="${LABEL.titleWeight}" font-stretch="100%"`:style==='serif'?`font-family="Bodoni Moda" font-weight="500"`:style==='script'?`font-family="Pinyon Script" transform="rotate(-8)"`:`font-family="Archivo" font-weight="900" font-stretch="62%"`;
+  const width=style==='display'?LABEL.display.width*TS:style==='sans'||style==='serif'?LABEL.titleWidth:style==='script'?190:196;                // serif runs past the edge and gets cropped
+  const nameText=extra=>lines.map((ln,k)=>`<text y="${(k-(lines.length-1)/2)*fs*.86}" dominant-baseline="central" text-anchor="middle"
+      textLength="${width}" lengthAdjust="spacingAndGlyphs" font-size="${fs}" ${font} ${extra}>${ln}</text>`).join('');
+  return `<svg viewBox="-110 -110 220 220" class="platter">
+    <defs><clipPath id="face${id}"><circle r="100"/></clipPath>
+      <!-- rim: light catches one side and fades into the mode colour, never a flat white line -->
+      <linearGradient id="rim${id}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${LT}" stop-opacity="${LABEL.edge}"/>
+        <stop offset=".35" stop-color="${CONFIG.palettes[m.id].a}" stop-opacity="${LABEL.edge*.55}"/>
+        <stop offset=".6" stop-color="${CONFIG.palettes[m.id].a}" stop-opacity="${LABEL.edge*.15}"/>
+        <stop offset="1" stop-color="${LT}" stop-opacity="${LABEL.edge*.6}"/></linearGradient>
+      <radialGradient id="body${id}"><stop offset=".3" stop-color="${CONFIG.palettes[m.id].a}" stop-opacity="${LABEL.vinyl*.55}"/>
+        <stop offset="1" stop-color="${CONFIG.palettes[m.id].a}" stop-opacity="${LABEL.vinyl}"/></radialGradient>
+      <mask id="offHole${id}"><rect x="-110" y="-110" width="220" height="220" fill="#fff"/><circle r="${H}" fill="#000"/></mask>
+      <clipPath id="onHole${id}"><circle r="${H}"/></clipPath>
+      ${PM.effect==='window'?windowMask(m,id,PM):''}</defs>
+    <mask id="out${i}"><rect x="-130" y="-130" width="260" height="260" fill="#fff"/><circle r="100" fill="#000"/></mask>
+    <g mask="url(#out${i})" ${PM.effect==='window'?'display="none"':''}><circle class="glow-ring" r="100.5" fill="none" stroke="var(--a)" stroke-width="${LABEL.glowSpread}" filter="url(#softGlow)"/></g>   <!-- glow only outside the edge -->
+    <g>   <!-- window record: only the frosted filter below is cut out by the letters; the vinyl and flower stay underneath -->
+    <g class="spin">
+      <g mask="url(#offHole${id})">
+        <!-- coloured see-through vinyl, with marbled streaks that turn with the record -->
+        <circle r="100" fill="${CONFIG.background}" fill-opacity="${LABEL.vinyl*.6}"/>
+        <circle r="100" fill="url(#body${id})"/>
+        ${PM.ripple?rippleRings(id,PM.ripple):`<g filter="url(#arcBlur)" opacity="${LABEL.marble}">${streakArcs(i,LT)}</g>`}
+        ${PM.gray?grayMist(id,PM.gray):''}
+        <image href="${labelTexture(m,i)}" x="-100" y="-100" width="200" height="200" clip-path="url(#face${id})" opacity="${LABEL.flowerOpacity}"/>
+        <!-- dark centre label -->
+        <circle r="${LABEL.labelR}" fill="${CONFIG.background}" fill-opacity=".88"/>
+        <circle r="${LABEL.labelR}" fill="none" stroke="${CONFIG.palettes[m.id].a}" stroke-opacity=".6" stroke-width=".6"/>
+        ${grooves}
+      </g>
+      <!-- thin light rim drawn over the outermost grooves -->
+      <g style="mix-blend-mode:screen" ${PM.ripple?'display="none"':''}>     <!-- bold light rim, blended into the vinyl -->
+        <circle r="${100-LABEL.rimWidth/2}" fill="none" stroke="url(#rim${id})" stroke-width="${LABEL.rimWidth}"/>
+        <circle r="${97-LABEL.rimWidth}" fill="none" stroke="url(#rim${id})" stroke-width="${LABEL.rimWidth*.3}" stroke-opacity=".6"/></g>
+    </g>
+    ${PM.effect==='window'?`<g mask="url(#win${id})"><circle r="100" fill="${CONFIG.palettes[m.id].a}" fill-opacity="${PM.window.tint}"/>
+      <rect x="-100" y="-100" width="200" height="200" filter="url(#grain)" clip-path="url(#face${id})" opacity="${PM.window.frost}"/></g>`:''}
+    </g>
+    ${PM.effect==='window'?windowEdges(m,id,PM):''}
+    <!-- the name stays upright and readable; only the vinyl underneath turns -->
+    ${style==='arc'?arcName(m,id):style==='rings'?ringName(m,id):''}
+    ${PM.ring?scriptRing(m,id,PM.ring):''}
+    ${PM.effect==='tone'?toneName(m,id,PM):''}
+    <g clip-path="url(#face${id})" ${style==='arc'||style==='rings'||PM.effect==='tone'||PM.effect==='window'?'display="none"':''}>
+      <g mask="url(#offHole${id})" opacity="${LABEL.titleOpacity}">${nameText(`fill="${LABEL.titleColor}"`)}</g>
+      <g clip-path="url(#onHole${id})">${nameText(`fill="none" stroke="${LABEL.titleColor}" stroke-width=".8"`)}</g>
+    </g>
+    <g clip-path="url(#face${id})" mask="url(#offHole${id})" filter="url(#sheenBlur)" opacity="${LABEL.sheen}">
+      <path d="M0,0 L-34,-100 A105,105 0 0,1 30,-104 Z" fill="${LABEL.titleColor}"/>
+      <path d="M0,0 L34,100 A105,105 0 0,1 -30,104 Z" fill="${LABEL.titleColor}" opacity=".6"/></g>
+    <circle r="${H+LABEL.holeWidth/2}" fill="none" stroke="url(#rim${id})" stroke-width="${LABEL.holeWidth}" style="mix-blend-mode:screen"/>   <!-- bold, blended hole outline -->
+  </svg>`;
+}
+const discs = CONFIG.modes.map((m,i)=>{
+  const el=document.createElement('button'); el.className='disc'; el.setAttribute('aria-label',m.name+' mode'); el.innerHTML=discSVG(m,i);
+  el.onclick=()=>{ i===S.sel ? chooseRecord(i) : (S.goal=i); };
+  row.appendChild(el); return { el, spin:el.querySelector('.spin'), angle:Math.random()*360, shards:[...el.querySelectorAll('.shard')], brk:0, holeRing:el.querySelector('.hole-ring') };
+});
+function showInfo(i){
+  const m=CONFIG.modes[i];
+  // big words rise into place line by line, staggered (letters slide up out of a hidden edge)
+  // letters nearest the side they come from arrive first (top: right to left, bottom: left to right)
+  const lineHTML=(t,d,rev)=>`<span class="ln">${[...t].map((c,k)=>`<span style="animation-delay:${d+(rev?t.length-1-k:k)*30}ms">${c===' '?'&nbsp;':c}</span>`).join('')}</span>`;
+  const side=i%2===0?1:-1; select.style.setProperty('--side',side);                    // alternate sides record by record
+  bigBack.innerHTML=lineHTML(m.big[0],0,side<0); bigFront.innerHTML=lineHTML(m.big[1],120,side>0);
+  [[bigBack,m.big[0]],[bigFront,m.big[1]]].forEach(([el,t])=>el.style.fontSize=`min(var(--bigsize),${(CONFIG.menu.maxWidth/(t.length*.52)).toFixed(1)}vw)`);   // long lines shrink to fit
+  modeBlurb.textContent=m.sub; aboutLabel.textContent=CONFIG.menu.about;
+  modePills.querySelectorAll('button').forEach((b,k)=>b.setAttribute('aria-pressed',k===i));
+  infoTitle.innerHTML=[...m.name].map((c,k)=>`<span style="animation-delay:${k*35}ms">${c===' '?'&nbsp;':c}</span>`).join('');
+  infoRows.innerHTML=m.rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
+  quotes.innerHTML=m.quotes.map(([k,v])=>`<div><small>★★★★★ · ${k}</small>${v}</div>`).join('');
+  setPalette(m.id);
+}
+// menu frame: tagline, note and pill picker are built once
+menuTag.innerHTML=CONFIG.menu.tag.join('<br>');
+// decorative filler: a tiny five-line staff with a few note heads (no words, no numbers)
+pickOrnament.innerHTML=[0,1,2,3,4].map(k=>`<line x1="0" x2="160" y1="${4+k*5.5}" y2="${4+k*5.5}" stroke="var(--paper)" stroke-width=".6"/>`).join('')+
+  [[22,15.5],[46,10],[70,21],[94,12.75],[118,7.25],[142,18.25]].map(([x,y],k)=>`<ellipse cx="${x}" cy="${y}" rx="3.4" ry="2.4" transform="rotate(-20 ${x} ${y})" fill="${k%2?'none':'var(--paper)'}" stroke="var(--paper)" stroke-width=".8"/>
+  <line x1="${x+3.1}" x2="${x+3.1}" y1="${y}" y2="${y-13}" stroke="var(--paper)" stroke-width=".7"/>`).join('');
+modePills.innerHTML=CONFIG.modes.map((m,k)=>`<button data-k="${k}">${m.name}</button>`).join('');
+modePills.querySelectorAll('button').forEach(b=>b.onclick=e=>{ e.stopPropagation(); S.goal=+b.dataset.k; });
+const i0side=()=>S.sel%2===0?1:-1;   // 1: top line leans left, bottom right; -1: mirrored
+function layoutRow(dt){
+  // keep the big words wrapped round the chosen record: first line just above its centre, second across it
+  const sr=discs[S.sel]&&discs[S.sel].el.getBoundingClientRect();
+  if(sr&&sr.height){
+    // anchored to the record (not the screen): each line sits a small, deliberate step off the record's centre
+    // (about 1/8 of its width), and the pair is centred on the record's OPTICAL centre, a little above the middle
+    const M=CONFIG.menu, side=i0side(), cx=sr.left+sr.width/2-innerWidth/2, cy=sr.top+sr.height/2, off=sr.width*M.offsetX;
+    bigBack.style.transform=`translateX(${(cx-side*off).toFixed(1)}px)`;  bigBack.style.top=(cy+sr.height*M.topY-bigBack.offsetHeight/2)+'px';
+    bigFront.style.transform=`translateX(${(cx+side*off).toFixed(1)}px)`; bigFront.style.top=(cy+sr.height*M.bottomY-bigFront.offsetHeight/2)+'px'; }
+  const prev=S.scroll; S.scroll+=(S.goal-S.scroll)*(1-Math.pow(.003,dt)); S.vel+=((S.scroll-prev)-S.vel)*.2;
+  const w=innerWidth,h=innerHeight,size=T.discSize*(w<700?.65:1),sp=size*1.15*T.discSpacing;
+  discs.forEach((d,i)=>{
+    const o=i-S.scroll, near=Math.max(0,1-Math.abs(o));
+    if(d.size!==size){ d.size=size; d.el.style.width=d.el.style.height=size+'px'; }
+    const ra=T.rowAngle*Math.PI/180, ox=o*sp, oy=-o*sp*T.discRise;               // the whole row can be rotated
+    const x=w*T.rowX+ox*Math.cos(ra)-oy*Math.sin(ra)-size/2, y=h*T.rowY+ox*Math.sin(ra)+oy*Math.cos(ra)-size/2, s=.8+.45*near;
+    d.el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotateX(${T.discTilt+(T.selectedTilt-T.discTilt)*near}deg) rotateZ(${-14+T.rowAngle+S.vel*-200}deg)`;
+    d.el.style.opacity=Math.max(.15,1-Math.abs(o)*.35); d.el.style.zIndex=10-Math.round(Math.abs(o));
+    d.angle+=dt*8*T.discSpin*(i===S.sel?1:0);   // only the chosen record turns; the others rest d.spin.setAttribute('transform',`rotate(${d.angle})`);   // a constant, slow spin
+    if(d.shards.length){                                                     // shattered while selected, whole otherwise
+      const want=(i===S.sel&&!d.reassemble&&near>.8)?1:0;
+      if(want){ d.bt=Math.min(1,(d.bt||0)+dt/CONFIG.shatter.breakTime);            // breaking: starts slow, then exponentially faster
+        const k=CONFIG.shatter.accel; d.brk=Math.max(d.brk*(d.bt<1?0:1),(Math.exp(k*d.bt)-1)/(Math.exp(k)-1)); }
+      else { d.bt=0; d.brk+=(0-d.brk)*(1-Math.pow(CONFIG.shatter.joinSpeed,dt)); }   // rejoining: quick
+      const b=d.brk;
+      d.shards.forEach(g=>{ const q=g.dataset; g.setAttribute('transform',`translate(${(q.dx*b).toFixed(2)} ${(q.dy*b).toFixed(2)}) rotate(${(q.rot*b).toFixed(2)} ${q.cx} ${q.cy})`); });
+      if(d.holeRing) d.holeRing.style.opacity=1-b;
+      if(d.reassemble&&d.brk<.06){ d.reassemble=false; d.brk=0; portalEnter(i); }   // pieces are back together: now go in
+    }
+  });
+  const sel=Math.round(Math.max(0,Math.min(discs.length-1,S.scroll)));
+  if(sel!==S.sel){ S.sel=sel; showInfo(sel); }
+  discs.forEach((d,i)=>d.el.classList.toggle('on',i===S.sel));
+  document.documentElement.style.setProperty('--glow',T.discGlow);
+}
+addEventListener('wheel', e=>{ if(S.screen!=='select'||arranging)return;
+  S.goal=Math.max(0,Math.min(discs.length-1,S.goal+e.deltaY*.003)); },{passive:true});
+
+// ===== ARRANGE: drag anything to move it, scroll over it to resize (press A or the Arrange pill) =====
+// Page parts are remembered as offsets + scale; the records and the orchid use their Tweak sliders.
+const ARRANGEABLE=['gateTitle','enterLive','plateName','info','quotes','micro','nav','guide','modeTitle','modeSub','readout'];
+const UNDELETABLE=['enterLive'];                                           // the only way into the app
+ARRANGEABLE.forEach(id=>document.getElementById(id).dataset.arr=id);
+let LAYOUT={}; try{ LAYOUT=JSON.parse(localStorage.getItem('mockupLayout')||'{}'); }catch(e){}
+const saveLayout=()=>{ try{ localStorage.setItem('mockupLayout',JSON.stringify(LAYOUT)); }catch(e){} };
+function applyLayout(){ ARRANGEABLE.forEach(id=>{ const el=document.getElementById(id), l=LAYOUT[id]||{x:0,y:0,s:1};
+  el.style.translate=`${l.x}px ${l.y}px`; el.style.scale=l.s; el.style.rotate=`${l.r||0}deg`; el.style.display=l.del?'none':''; }); }
+applyLayout();
+let arranging=false, drag=null;
+function toggleArrange(){ arranging=!arranging; document.body.classList.toggle('arranging',arranging); row.classList.toggle('arranging',arranging);
+  arrangeBtn.setAttribute('aria-pressed',arranging); arrangeHint.hidden=!arranging; arrangeHint.textContent=ARRANGE_HINT; if(!arranging)selectPart(null); }
+const ARRANGE_HINT='Drag to move · scroll to resize · Shift + scroll to rotate · click + Delete to remove (Ctrl+Z undo) · A to finish';
+function orchidHit(x,y){ if(bgU.uIntro.value<.5)return false;          // the orchid only exists on the entrance
+  const cx=T.orchidX*innerWidth, cy=T.orchidY*innerHeight; return Math.hypot(x-cx,y-cy)<bgU.uOS.value*innerHeight*4.4; }
+function arrangeTarget(e){                                                 // what is under the pointer?
+  const el=e.target.closest&&e.target.closest('[data-arr]'); if(el)return {kind:'el',id:el.dataset.arr};
+  if(e.target.closest&&e.target.closest('.disc')) return {kind:'records'};
+  if(orchidHit(e.clientX,e.clientY)) return {kind:'orchid'};
+  return null;
+}
+// delete: click a part to select it, then Delete / Backspace. Ctrl+Z brings back the last one; Reset brings back all.
+let selected=null; const deleted=[];
+function selectPart(id){ document.querySelectorAll('.arr-selected').forEach(x=>x.classList.remove('arr-selected'));
+  selected=id; if(id)document.getElementById(id).classList.add('arr-selected'); }
+addEventListener('keydown',e=>{ if(!arranging)return;
+  if((e.key==='Delete'||e.key==='Backspace')&&selected){ e.preventDefault();
+    if(UNDELETABLE.includes(selected)){ arrangeHint.textContent='That button is the only way in, so it can’t be deleted'; return; }
+    LAYOUT[selected]={...(LAYOUT[selected]||{x:0,y:0,s:1}),del:true}; deleted.push(selected); selectPart(null); applyLayout(); saveLayout(); }
+  if(e.key==='z'&&(e.ctrlKey||e.metaKey)&&deleted.length){ const id=deleted.pop(); LAYOUT[id].del=false; applyLayout(); saveLayout(); selectPart(id); } });
+addEventListener('pointerdown',e=>{ if(!arranging||e.target.closest('#corner,#tweak'))return; const t=arrangeTarget(e); selectPart(t&&t.kind==='el'?t.id:null); if(!t)return;
+  e.preventDefault(); drag={...t,x:e.clientX,y:e.clientY,l:{...(LAYOUT[t.id]||{x:0,y:0,s:1})},rx:T.rowX,ry:T.rowY,ox:T.orchidX,oy:T.orchidY}; },true);
+addEventListener('pointermove',e=>{ if(!drag)return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(drag.kind==='el'){ LAYOUT[drag.id]={...drag.l,x:drag.l.x+dx,y:drag.l.y+dy}; applyLayout(); }
+  if(drag.kind==='records'){ T.rowX=drag.rx+dx/innerWidth; T.rowY=drag.ry+dy/innerHeight; syncTweak(); }
+  if(drag.kind==='orchid'){ T.orchidX=drag.ox+dx/innerWidth; T.orchidY=drag.oy+dy/innerHeight; syncTweak(); } });
+addEventListener('pointerup',()=>{ if(drag){ drag=null; saveLayout(); saveT(); } });
+addEventListener('wheel',e=>{ if(!arranging)return; const t=arrangeTarget(e); if(!t)return; e.preventDefault();
+  if(e.shiftKey){ const deg=((e.deltaY||e.deltaX)>0?1:-1)*3;               // Shift + scroll rotates, 3 degrees per notch
+    const wrap=a=>((a+180)%360+360)%360-180;
+    if(t.kind==='el'){ const l=LAYOUT[t.id]||{x:0,y:0,s:1}; LAYOUT[t.id]={...l,r:wrap((l.r||0)+deg)}; applyLayout(); saveLayout(); }
+    if(t.kind==='records'){ T.rowAngle=wrap(T.rowAngle+deg); saveT(); syncTweak(); }
+    if(t.kind==='orchid'){ T.orchidRot=wrap(T.orchidRot+deg); saveT(); syncTweak(); }
+    return; }
+  const k=Math.exp(-e.deltaY*.0015);
+  if(t.kind==='el'){ const l=LAYOUT[t.id]||{x:0,y:0,s:1}; LAYOUT[t.id]={...l,s:Math.max(.3,Math.min(4,l.s*k))}; applyLayout(); saveLayout(); }
+  if(t.kind==='records'){ T.discSize=Math.max(120,Math.min(640,T.discSize*k)); saveT(); syncTweak(); }
+  if(t.kind==='orchid'){ T.orchidSize=Math.max(.3,Math.min(2.5,T.orchidSize*k)); saveT(); syncTweak(); } },{passive:false,capture:true});
+addEventListener('click',e=>{ if(arranging&&!e.target.closest('#corner,#tweak')){ e.stopPropagation(); e.preventDefault(); } },true); // nothing fires while arranging
+addEventListener('keydown', e=>{
+  if(e.key==='t'||e.key==='T'){ toggleTweak(); return; }
+  if(e.key==='a'||e.key==='A'){ toggleArrange(); return; }
+  if(S.screen!=='select')return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') S.goal=Math.min(discs.length-1,Math.round(S.goal)+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') S.goal=Math.max(0,Math.round(S.goal)-1);
+  if(e.key==='Enter') chooseRecord(S.sel);
+});
+
+// ===== GUIDE SKELETON: thin coloured line around whatever the app is following =====
+// Real tracking uses the same MediaPipe version and models as the app. Without a camera, a drawn hand follows the mouse.
+const MP='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1';
+const HAND_MODEL='https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const FACE_MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+const sctx=skel.getContext('2d');
+const TRACK={ hand:null, face:null, hands:[], faceOval:null, eyes:null, lastRun:0, ready:false, HC:null, FO:null };
+async function startTracking(){
+  try{
+    const mp=await import(MP+'/+esm'), fs=await mp.FilesetResolver.forVisionTasks(MP+'/wasm');
+    TRACK.hand=await mp.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:HAND_MODEL,delegate:'GPU'},runningMode:'VIDEO',numHands:2});
+    TRACK.face=await mp.FaceLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:FACE_MODEL,delegate:'GPU'},runningMode:'VIDEO',numFaces:1});
+    TRACK.HC=mp.HandLandmarker.HAND_CONNECTIONS; TRACK.FO=mp.FaceLandmarker.FACE_LANDMARKS_FACE_OVAL; TRACK.ready=true;
+  }catch(e){ console.warn('tracking unavailable, using the mouse',e); }
+}
+function runTracking(){                     // about 15 times a second, like the app
+  const now=performance.now(); if(!TRACK.ready||!bgU.uHasCam.value||now-TRACK.lastRun<66||video.readyState<2)return; TRACK.lastRun=now;
+  const toScreen=p=>{ const s=(innerWidth/innerHeight)/bgU.uCamAspect.value;            // same crop + mirror as the background
+    const fx=s>1?1-p.x:.5+(.5-p.x)/s, fy=s>1?.5+(p.y-.5)*s:p.y; return [fx*innerWidth,fy*innerHeight]; };
+  const h=TRACK.hand.detectForVideo(video,now); TRACK.hands=(h.landmarks||[]).map(l=>l.map(toScreen));
+  const f=TRACK.face.detectForVideo(video,now); const fl=f.faceLandmarks&&f.faceLandmarks[0];
+  TRACK.faceOval=fl?fl.map(toScreen):null;
+}
+// a resting open hand, used when there is no camera (wrist at 0,0, fingers up)
+const FAKE_HAND=[[0,0],[-28,-14],[-48,-34],[-60,-54],[-70,-70],[-20,-62],[-24,-96],[-26,-118],[-28,-136],[0,-66],[0,-104],[0,-128],[0,-148],
+  [18,-62],[22,-98],[24,-120],[26,-138],[34,-54],[44,-82],[50,-100],[54,-116]];
+const FAKE_HC=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
+function drawSkeleton(t){
+  sctx.clearRect(0,0,innerWidth,innerHeight);
+  const want=CONFIG.guides[S.screen]||[]; const live=TRACK.ready&&bgU.uHasCam.value;
+  const col=getComputedStyle(document.documentElement).getPropertyValue('--a').trim();
+  sctx.strokeStyle=col; sctx.fillStyle=col; sctx.lineWidth=T.skeletonWidth; sctx.lineJoin=sctx.lineCap='round';
+  sctx.shadowColor=col; sctx.shadowBlur=T.skeletonGlow;
+  const line=(pts,pairs)=>{ sctx.beginPath(); pairs.forEach(([a,b])=>{ sctx.moveTo(...pts[a]); sctx.lineTo(...pts[b]); }); sctx.stroke(); };
+  const joints=pts=>pts.forEach(p=>{ sctx.beginPath(); sctx.arc(p[0],p[1],T.skeletonWidth*1.4,0,6.283); sctx.fill(); });
+  let seen=[];
+  if(want.includes('hand')){
+    let hands=live?TRACK.hands:[FAKE_HAND.map(([x,y],i)=>[S.mouse.x+x*.8+(i%4?Math.sin(t*3+i)*1.5:0),S.mouse.y+60+y*.8])];
+    const pairs=live?TRACK.HC.map(c=>[c.start,c.end]):FAKE_HC;
+    // hand drawn as dots: a big dot on every joint, small dots spaced along each bone
+    const dotted=(pts,pairs)=>{ const gap=CONFIG.handDots.gap, sr=T.skeletonWidth*CONFIG.handDots.small;
+      pairs.forEach(([a,b])=>{ const [x0,y0]=pts[a],[x1,y1]=pts[b], n=Math.max(1,Math.floor(Math.hypot(x1-x0,y1-y0)/gap));
+        for(let k=1;k<n;k++){ sctx.beginPath(); sctx.arc(x0+(x1-x0)*k/n,y0+(y1-y0)*k/n,sr,0,6.283); sctx.fill(); } });
+      pts.forEach(p=>{ sctx.beginPath(); sctx.arc(p[0],p[1],T.skeletonWidth*CONFIG.handDots.joint,0,6.283); sctx.fill(); }); };
+    hands.forEach(h=>CONFIG.handDots.on?dotted(h,pairs):(line(h,pairs),joints(h))); if(hands.length)seen.push('hand');
+    if(CONFIG.motionControls&&live&&hands.length&&S.screen==='select') handPicksRecord(hands[0]);
+  }
+  if(want.includes('head')){
+    if(live&&TRACK.faceOval){ const o=TRACK.faceOval; line(o,TRACK.FO.map(c=>[c.start,c.end]));
+      // tilt line: through both eyes, stopping where it meets the head outline on each side
+      const L=o[33],R=o[263], mx=(L[0]+R[0])/2, my=(L[1]+R[1])/2, dl=Math.hypot(R[0]-L[0],R[1]-L[1])||1, ux=(R[0]-L[0])/dl, uy=(R[1]-L[1])/dl;
+      let lo=0,hi=0; TRACK.FO.forEach(c=>{ const q=o[c.start], along=(q[0]-mx)*ux+(q[1]-my)*uy, off=Math.abs(-(q[0]-mx)*uy+(q[1]-my)*ux);
+        if(off<dl*.35){ lo=Math.min(lo,along); hi=Math.max(hi,along); } });
+      sctx.beginPath(); sctx.moveTo(mx+ux*lo,my+uy*lo); sctx.lineTo(mx+ux*hi,my+uy*hi); sctx.stroke();
+      seen.push('head');
+    } else if(!live){ const tilt=(S.mouse.x/innerWidth-.5)*.5, cx=innerWidth*.5, cy=innerHeight*.3;      // stand-in head
+      sctx.save(); sctx.translate(cx,cy); sctx.rotate(tilt); sctx.beginPath(); sctx.ellipse(0,0,70,92,0,0,6.283);
+      sctx.moveTo(-69.6,-10); sctx.lineTo(69.6,-10); sctx.stroke(); sctx.restore(); seen.push('head'); }   // ends at the head's edge
+  }
+  sctx.shadowBlur=0;
+  // the label says what is guiding right now
+  const on=want.length>0; show(guide,on&&S.screen!=='loader');
+  if(on){ const missing=want.filter(w=>!seen.includes(w));
+    guide.classList.toggle('lost',missing.length>0);
+    guideText.textContent=missing.length?'Show '+missing.map(w=>CONFIG.guideWords[w]).join(' + '):'Following '+want.map(w=>CONFIG.guideWords[w]).join(' + '); }
+}
+// ART HEAD: drawing-class construction lines (Loomis method) built from the face points.
+// Solid: skull ball, jaw, centre line. Dashed: brow, eye and nose-base lines that wrap around the head.
+function drawArtHead(f){
+  const sub=(a,b)=>[a[0]-b[0],a[1]-b[1]], add=(a,b)=>[a[0]+b[0],a[1]+b[1]], mul=(a,k)=>[a[0]*k,a[1]*k], dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
+  const len=a=>Math.hypot(a[0],a[1])||1, norm=a=>mul(a,1/len(a)), mid=(a,b)=>mul(add(a,b),.5);
+  const up=norm(sub(f.top,f.chin)), right=norm(sub(f.R,f.L)), h=len(sub(f.top,f.chin)), w=len(sub(f.R,f.L));
+  const c=add(mid(f.L,f.R),mul(up,h*.12)), r=w*.52;                        // the skull ball
+  const smooth=pts=>{ sctx.beginPath(); sctx.moveTo(...pts[0]);
+    for(let i=1;i<pts.length-1;i++){ const m=mid(pts[i],pts[i+1]); sctx.quadraticCurveTo(...pts[i],...m); }
+    sctx.lineTo(...pts[pts.length-1]); sctx.stroke(); };
+  const wrapLine=(p,half)=>{                                                // a cross line that curves around the ball through point p
+    const along=dot(sub(p,c),up), axis=add(c,mul(up,along));
+    const a=add(axis,mul(right,-half)), b=add(axis,mul(right,half)), bend=sub(p,mul(up,half*.12));
+    const ctrl=sub(mul(bend,2),mid(a,b)); sctx.beginPath(); sctx.moveTo(...a); sctx.quadraticCurveTo(...ctrl,...b); sctx.stroke(); };
+  sctx.beginPath(); sctx.arc(c[0],c[1],r,0,6.283); sctx.stroke();
+  smooth(f.jaw);
+  const topBall=add(add(c,mul(up,r)),mul(right,dot(sub(f.top,c),right)*.6));
+  smooth([topBall,...f.mid]);
+  sctx.save(); sctx.setLineDash([3,5]); sctx.lineWidth=Math.max(1,T.skeletonWidth*.8);
+  const chord=p=>{ const d=dot(sub(p,c),up); return Math.sqrt(Math.max(r*r-d*d,(w*.42)**2)); };
+  wrapLine(f.brow,chord(f.brow)); wrapLine(mid(...f.eyes),w*.5); wrapLine(f.noseBase,w*.42);
+  sctx.restore();
+}
+
+// hand on the menu: move left/right to slide the records, pinch thumb and index to choose
+let pinchWas=false;
+function handPicksRecord(h){
+  const x=h[8][0]/innerWidth; S.goal=Math.max(0,Math.min(discs.length-1,(x-.15)/.7*(discs.length-1)));
+  const pinch=Math.hypot(h[4][0]-h[8][0],h[4][1]-h[8][1])<Math.hypot(h[0][0]-h[9][0],h[0][1]-h[9][1])*.3;
+  if(pinch&&!pinchWas) enterMode(S.sel); pinchWas=pinch;
+}
+
+// ===== MODE SCREENS (bare wireframes only) =====
+let notes=[];
+function buildWire(id){
+  const w=innerWidth,h=innerHeight,st='stroke="var(--ink)" stroke-opacity=".7" fill="none"'; let s='';
+  if(id==='learn'){ const y0=h*.66; for(let i=0;i<5;i++) s+=`<line x1="0" x2="${w}" y1="${y0+i*14}" y2="${y0+i*14}" ${st}/>`;
+    s+=`<line x1="${w*.3}" x2="${w*.3}" y1="${y0-40}" y2="${y0+96}" stroke="var(--a)" stroke-width="2"/><g id="notes"></g>`;
+    notes=Array.from({length:14},(_,i)=>({x:w*.3+i*110,line:(i*3)%9})); }
+  if(id==='create'){ for(let i=0;i<3;i++) s+=`<circle class="cr" data-k="${i}" cx="${w/2}" cy="${h*.52}" ${st} stroke-dasharray="${i?'1 9':''}"/>`;
+    s+=`<text x="${w/2}" y="${h*.52+5}" fill="var(--ink)" text-anchor="middle" font-family="Archivo" font-weight="800" font-size="12" letter-spacing="3">HUM SOMETHING</text>`; }
+  wire.innerHTML=s;
+}
+function tickMode(t,dt){
+  const id=S.screen;
+  if(id==='learn'){ const g=document.getElementById('notes'); if(!g)return; const y0=innerHeight*.66;
+    g.innerHTML=notes.map(n=>{ n.x-=70*dt; if(n.x<-20)n.x+=14*110; const on=Math.abs(n.x-innerWidth*.3)<14;
+      return `<ellipse cx="${n.x}" cy="${y0+56-n.line*7}" rx="${on?9+S.level*10:7}" ry="${on?6+S.level*6:5}" fill="${on?'var(--a)':'none'}" stroke="var(--ink)"/>`; }).join('');
+    readout.innerHTML=`Timing<b>${(S.level*40-12).toFixed(0)} ms</b>Key<b>A minor</b>`; }
+  if(id==='play'||id==='lab'){ const mc=CONFIG.motionControls;            // off: show resting values, nothing follows the hand
+    const tempo=mc?Math.round(60+(1-S.mouse.y/innerHeight)*80):CONFIG.fakeBpm, pitch=mc?(S.mouse.x/innerWidth*12-6).toFixed(1):'0.0';
+    readout.innerHTML=`Tempo · hand height<b>${tempo} bpm</b>Pitch · hand side<b>${pitch>0?'+':''}${pitch} st</b>`; }
+  if(id==='create'){ wire.querySelectorAll('.cr').forEach(c=>{const k=+c.dataset.k;
+      c.setAttribute('r',innerHeight*.28+k*18+S.level*40*(k+1)+Math.sin(t*2+k)*4)});
+    readout.innerHTML=`Heard<b>${S.level>.35?'E4':'—'}</b>Layers<b>3</b>`; }
+}
+
+// ===== SCREEN SWITCHING =====
+const show=(el,on)=>el.classList.toggle('hide',!on);
+const palA=new THREE.Color(), palB=new THREE.Color();
+function setPalette(id){ S.palette=id; const p=CONFIG.palettes[id]; palA.set(p.a); palB.set(p.b);
+  document.documentElement.style.setProperty('--a',p.a); document.documentElement.style.setProperty('--b',p.b); }
+function goSelect(){ S.screen='select'; document.body.classList.add('on-select'); show(select,true); show(mode,false); show(nav,true); show(corner,true);
+  pU.target=SHAPE.intro; showInfo(S.sel); renderNav(); }
+// ===== RECORD -> MODE TRANSITION: ripple, the record rushes at you, the mode shows through its hole =====
+function ripple(x,y){ bgU.uClick.value.set(x/innerWidth,1-y/innerHeight,bgU.uTime.value);
+  bgU.uRipple.value.set(T.rippleStrength,.9,55); }
+// a shattered record first pulls its pieces back together, then zooms in
+function chooseRecord(i){ const d=discs[i]; if(d.shards.length&&d.brk>.05){ d.reassemble=true; return; } portalEnter(i); }
+function portalEnter(i){
+  if(S.transitioning)return; const d=discs[i].el, r=d.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  ripple(cx,cy);
+  if(reduce||T.portalTime<=0){ enterMode(i); return; }
+  S.transitioning=true;
+  const size=T.discSize*(innerWidth<700?.65:1)*1.25, holeR=size*(isOriginal(CONFIG.modes[i])?32:LABEL.hole)/220;   // the hole radius, in the record's 220-wide drawing
+  const p=document.createElement('div'); p.className='portal'; p.innerHTML=discSVG(CONFIG.modes[i],'p'+i);
+  Object.assign(p.style,{left:cx-size/2+'px',top:cy-size/2+'px',width:size+'px',height:size+'px'});
+  document.body.appendChild(p); d.style.visibility='hidden'; const name=p.querySelector('g[font-family]');
+  select.style.transition='opacity .2s'; enterMode(i);                     // the mode is there, but only visible through the hole
+  const maxS=Math.hypot(innerWidth,innerHeight)/holeR*1.15, t0=performance.now(), dur=T.portalTime*1000, tilt0=T.selectedTilt;
+  (function step(now){
+    const t=Math.min(1,(now-t0)/dur), e=t*t*t;                             // ease in: slow start, very fast finish
+    const s=1+(maxS-1)*e, flat=Math.min(1,t/.3), tilt=tilt0*(1-flat);
+    p.style.transform=`scale(${s}) rotateX(${tilt}deg) rotate(${t*90}deg)`;
+    if(name) name.style.opacity=1-Math.min(1,t/.35);                      // the name fades before it gets huge
+    mode.style.clipPath=`ellipse(${holeR*s}px ${holeR*s*Math.cos(tilt*Math.PI/180)}px at ${cx}px ${cy}px)`;
+    if(t<1) requestAnimationFrame(step);
+    else { p.remove(); mode.style.clipPath=''; d.style.visibility=''; select.style.transition=''; S.transitioning=false; }
+  })(t0);
+}
+function enterMode(i){ const m=CONFIG.modes[i]; S.sel=i; S.screen=m.id; document.body.classList.remove('on-select'); show(select,false); show(mode,true);
+  modeTitle.textContent=m.name; modeSub.textContent=m.sub; setPalette(m.id); pU.target=SHAPE[m.id]; buildWire(m.id); renderNav(); }
+function renderNav(){
+  const items=[['select','Records'],...CONFIG.modes.map(m=>[m.id,m.name])];
+  nav.innerHTML=items.map(([id,l])=>`<button class="pill" data-id="${id}" aria-pressed="${S.screen===id}">${l}</button>`).join('');
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{ const id=b.dataset.id;
+    id==='select'?goSelect():enterMode(CONFIG.modes.findIndex(m=>m.id===id)); });
+}
+pU.target=SHAPE.intro;
+
+// ===== LOADER =====
+let loadT=0;
+// both buttons turn the camera on; "live" also listens to the mic, demo plays a fake beat instead
+function enter(live){ startCamera(); startTracking(); if(live) startMic(); show(loader,false); goSelect(); }
+enterLive.onclick=()=>enter(true);
+
+// ===== TWEAK PANEL =====
+function buildTweak(){
+  tweak.innerHTML=Object.entries(CONFIG.tweak).map(([k,[,mn,mx,st]])=>
+    `<label>${k} <output id="o_${k}">${T[k]}</output><input type="range" min="${mn}" max="${mx}" step="${st}" value="${T[k]}" data-k="${k}"></label>`).join('')+
+    `<label>Style <select id="styleSel"><option value="0">Dots</option><option value="1">Lines</option><option value="2">Flat duotone</option></select></label>
+     <button class="pill" id="copyT">Copy values</button>`;
+  tweak.insertAdjacentHTML('beforeend',' <button class="pill" id="resetT">Reset</button>');
+  resetT.onclick=()=>{ for(const k in CONFIG.tweak)T[k]=CONFIG.tweak[k][0]; LAYOUT={}; applyLayout(); saveLayout(); saveT(); buildTweak(); };
+  tweak.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{T[inp.dataset.k]=+inp.value;document.getElementById('o_'+inp.dataset.k).textContent=inp.value;saveT();});
+  styleSel.value=bgU.uStyle.value; styleSel.onchange=()=>bgU.uStyle.value=+styleSel.value;
+  copyT.onclick=()=>navigator.clipboard?.writeText(JSON.stringify({...T,style:bgU.uStyle.value},null,1));
+}
+function toggleTweak(){ if(tweak.hidden)buildTweak(); tweak.hidden=!tweak.hidden; tweakBtn.setAttribute('aria-pressed',!tweak.hidden); }
+tweakBtn.onclick=toggleTweak; arrangeBtn.onclick=toggleArrange;
+function syncTweak(){ if(tweak.hidden)return; tweak.querySelectorAll('input').forEach(inp=>{ const k=inp.dataset.k;
+  inp.value=T[k]; document.getElementById('o_'+k).textContent=(+T[k]).toFixed(2).replace(/\.?0+$/,''); }); }
+
+// ===== MAIN LOOP =====
+const clock=new THREE.Clock(); let last=0;
+function frame(){
+  const t=clock.getElapsedTime(), dt=Math.min(t-last,.05); last=t;
+  // audio
+  const a=readAudio(t); S.avg+=(a.level-S.avg)*.05;
+  if(a.level>S.avg*1.45&&a.level>.12&&S.pulse<.2){ S.pulse=1; micro.classList.add('flash'); setTimeout(()=>micro.classList.remove('flash'),90); }
+  S.pulse*=Math.pow(.02,dt); S.level+=(a.level-S.level)*.15; S.bass+=(a.bass-S.bass)*.25;
+  // loader counter
+  if(S.screen==='loader'){ loadT+=dt; if(loadT>.6)show(gate,true); }   // no countdown: the title fades in after a beat
+  // entrance orchid: fully there on the entrance, dissolves into dots when you go in
+  if(S.screen==='loader') S.leftLoader=null; else if(S.leftLoader==null) S.leftLoader=performance.now();   // fade on the real clock
+  bgU.uIntro.value=S.screen==='loader'?1:Math.max(0,1-(performance.now()-S.leftLoader)/800);
+  const narrow=innerWidth<700; bgU.uOC.value.set(T.orchidX,1-T.orchidY); bgU.uORot.value=T.orchidRot*Math.PI/180; bgU.uFS.value=T.flowerSize; bgU.uMumGap.value=T.flowerGap;
+  // blooms open as the cursor nears the Enter button
+  if(S.screen==='loader'){ const br=enterLive.getBoundingClientRect(), dist=Math.hypot(S.mouse.x-(br.left+br.width/2),S.mouse.y-(br.top+br.height/2));
+    const target=T.bloomRange>0?1-Math.min(1,Math.max(0,(dist-40)/T.bloomRange)):1;
+    bgU.uBloom.value+=(target-bgU.uBloom.value)*(1-Math.pow(.15,dt)); }
+  bgU.uOS.value=(narrow?.2:.27)*T.orchidSize; bgU.uIDot.value=T.orchidDots*renderer.getPixelRatio();
+  // smoke trail
+  const m=S.mouse, sp=Math.hypot(m.x-m.px,m.y-m.py); m.px=m.x; m.py=m.y;
+  trailU.uMouse.value.set(m.x/innerWidth,1-m.y/innerHeight); trailU.uAmt.value=Math.min(sp/30,1)*.35*(S.look?S.look.trail:T.trailAmount);
+  trailU.uFade.value=T.trailFade; trailU.uRad.value=T.trailSize; trailU.uTime.value=t; trailU.uPrev.value=trailA.texture;
+  renderer.setRenderTarget(trailB); renderer.render(trailScene,quadCam); renderer.setRenderTarget(null);
+  [trailA,trailB]=[trailB,trailA]; bgU.uTrail.value=trailA.texture;
+  // palette + uniforms
+  bgU.uA.value.lerp(palA.set(CONFIG.palettes[S.palette].a),.05); bgU.uB.value.lerp(palB.set(CONFIG.palettes[S.palette].b),.05);
+  Object.assign(bgU, {}); bgU.uTime.value=pU.uTime.value=t; bgU.uLevel.value=pU.uLevel.value=S.level;
+  pU.uBass.value=S.bass; bgU.uPulse.value=pU.uPulse.value=S.pulse;
+  bgU.uDot.value=T.dotSize*renderer.getPixelRatio(); bgU.uGain.value=T.dotGain; bgU.uMis.value=T.misregister*renderer.getPixelRatio();
+  // QUIET MENU: on the record menu the camera is pushed back (dark, soft-focus, almost colourless) and the
+  // decoration is switched off; inside a mode it eases back to the normal Tweak look
+  const ML=CONFIG.menuLook, onMenu=S.screen==='select', want={ dim:onMenu?ML.dim:T.dim, sat:onMenu?ML.sat:T.camColor, tint:onMenu?ML.tint:T.tint,
+    effect:onMenu?ML.effect:T.effect, blur:onMenu?ML.blur:0, scan:onMenu?0:1, grain:onMenu?ML.grain:T.grain, glow:onMenu?0:T.glow,
+    trail:onMenu?0:T.trailAmount, particles:onMenu?0:T.particles, vignette:onMenu?ML.vignette:T.vignette };
+  S.look=S.look||{...want}; const lk=1-Math.pow(.02,dt); for(const k in want) S.look[k]+=(want[k]-S.look[k])*lk;
+  const L=S.look;
+  bgU.uEffect.value=L.effect; bgU.uSat.value=L.sat; bgU.uTint.value=L.tint; bgU.uDim.value=L.dim; bgU.uVignette.value=L.vignette;
+  bgU.uBlur.value=L.blur*renderer.getPixelRatio(); bgU.uScan.value=L.scan;
+  bgU.uWarp.value=T.trailWarp; bgU.uGlow.value=L.glow; bgU.uGrain.value=L.grain; pU.uSize.value=L.particles;
+  const [wx,wy]=toWorld(m.x,m.y); pU.uMouse.value.set(wx,wy);
+  pU.uCenter.value.lerp(new THREE.Vector2(...(S.screen==='play'||S.screen==='lab'?[wx,wy]:[0,0])),.08);
+  const w=pU.uW.value,k=1-Math.pow(.04,dt),tg=pU.target; w.set(w.x+(tg[0]-w.x)*k,w.y+(tg[1]-w.y)*k,w.z+(tg[2]-w.z)*k,w.w+(tg[3]-w.w)*k);
+  // screen-specific
+  const R=Math.min(innerWidth,innerHeight);
+  if(S.screen==='loader'){ ctx.clearRect(0,0,innerWidth,innerHeight);
+    if(arranging){ ctx.setLineDash([4,6]); ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--a');   // orchid handle
+      ctx.beginPath(); ctx.arc(T.orchidX*innerWidth,T.orchidY*innerHeight,bgU.uOS.value*innerHeight*4.4,0,6.283); ctx.stroke(); ctx.setLineDash([]); } }
+  else if(S.screen==='select'){ layoutRow(dt); ctx.clearRect(0,0,innerWidth,innerHeight); }   // no field lines on the records
+  else if(S.screen==='play'||S.screen==='lab') drawField(m.x,m.y,R*.05+S.bass*20,t);
+  else if(S.screen==='create') drawField(innerWidth/2,innerHeight*.52,R*.06,t);
+  else ctx.clearRect(0,0,innerWidth,innerHeight);
+  tickMode(t,dt);
+  runTracking(); drawSkeleton(t);
+  // draw
+  renderer.clear(); renderer.render(bgScene,quadCam); renderer.render(scene,cam3);
+  requestAnimationFrame(frame);
+}
+frame();
+</script>
+</body>
+</html>

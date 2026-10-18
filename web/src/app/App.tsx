@@ -12,6 +12,7 @@ import { start as startTouchDesigner } from '@/modules/touchdesigner';
 import { start as startVision } from '@/modules/vision';
 import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { AnalysisWarnings } from './AnalysisSummary';
+import { apiFetch } from './api-fetch';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
 import { HandsCard } from './HandsCard';
@@ -145,7 +146,7 @@ export function App() {
           {tab === 'create' && (
             <div className="stage-main">
               <PanelBoundary name="Create">
-                <CreatePanel />
+                <CreatePanel fetchFn={apiFetch} />
               </PanelBoundary>
             </div>
           )}

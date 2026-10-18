@@ -19,9 +19,11 @@ export interface TrackSummary {
   local: boolean;
 }
 
+export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
+
 export interface ApiDeps {
-  /** Default: the page's own fetch. */
-  fetchFn?: (input: string, init?: RequestInit) => Promise<Response>;
+  /** Default: the page's own fetch. The app passes its own fetch that adds the login token while someone is signed in. */
+  fetchFn?: FetchFn;
   /** Default: window.localStorage (which may be missing or throw). */
   storage?: () => Storage | null | undefined;
   timeoutMs?: number;

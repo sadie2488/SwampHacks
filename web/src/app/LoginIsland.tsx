@@ -36,18 +36,43 @@ function problemWords(error: unknown): string {
 function LoginControls() {
   const { isLoading, isAuthenticated, user, error, loginWithRedirect, logout, getAccessTokenSilently, getIdTokenClaims } = useAuth0();
   const [problem, setProblem] = useState<string | null>(null);
+  // True once the stored login ran out and Auth0 would not renew it: the person is then shown as signed out.
+  const [ended, setEnded] = useState(false);
+  const signedIn = isAuthenticated && !ended;
 
-  // While logged in, let apiFetch attach a token to requests. Both lookups only read what the login already stored.
+  // While logged in, let apiFetch attach a token to requests. The first two lookups only read what the login already
+  // stored; stored tokens are never renewed by themselves, so when they are missing or out of date, ask Auth0 for new
+  // ones (cacheMode 'off', because a still-valid access token would otherwise be handed back with no new ID token).
   useEffect(() => {
-    if (!isAuthenticated) return;
-    setTokenProvider(() =>
-      pickToken({
-        accessToken: () => getAccessTokenSilently({ cacheMode: 'cache-only' }),
-        idToken: () => getIdTokenClaims(),
-      }),
-    );
-    return () => setTokenProvider(null);
-  }, [isAuthenticated, getAccessTokenSilently, getIdTokenClaims]);
+    if (!signedIn) return;
+    let live = true;
+    let inFlight: Promise<string | null> | null = null;
+    const check = async () => {
+      try {
+        return await pickToken({
+          accessToken: () => getAccessTokenSilently({ cacheMode: 'cache-only' }),
+          idToken: () => getIdTokenClaims(),
+          refresh: () => getAccessTokenSilently({ cacheMode: 'off' }),
+        });
+      } catch {
+        if (live) {
+          setTokenProvider(null);
+          setEnded(true);
+          setProblem('Your login has run out. Please log in again.');
+        }
+        return null;
+      }
+    };
+    // requests sent at the same moment share one check (and so at most one refresh)
+    const provider = () => (inFlight ??= check().finally(() => (inFlight = null)));
+    setTokenProvider(provider);
+    // check once now, so an old login shows as signed out straight away instead of at the next save
+    void provider();
+    return () => {
+      live = false;
+      setTokenProvider(null);
+    };
+  }, [signedIn, getAccessTokenSilently, getIdTokenClaims]);
 
   // A login that failed on the way back (for example, "not allowed") leaves its answer in the address: remove it.
   useEffect(() => {
@@ -87,7 +112,7 @@ function LoginControls() {
   const message = problem ?? (error ? problemWords(error) : null);
   return (
     <div className="login-box">
-      {isAuthenticated ? (
+      {signedIn ? (
         <>
           <span data-testid="login-user">Hi {nameOf(user)}</span>
           <button type="button" data-testid="btn-logout" onClick={logOut}>
