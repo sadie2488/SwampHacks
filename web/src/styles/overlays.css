@@ -1,0 +1,165 @@
+/* The header's home logo, the TouchDesigner sparkle, and the two overlays (the guide, what your hands say).
+   Only opacity and transform animate; no blur anywhere (the overlays are plain see-through colour). */
+
+/* the logo is the way home (the record menu) */
+.brand-home {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.brand-home:focus-visible,
+.td-sparkle:focus-visible {
+  outline: 2px solid var(--paper-white);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+/* TouchDesigner: a small circle with a sparkle; the mode colour fills it while it is on */
+.td-sparkle-wrap {
+  display: inline-flex;
+}
+
+.td-sparkle {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color 0.3s,
+    border-color 0.3s,
+    color 0.3s;
+}
+
+.td-sparkle:focus-visible {
+  border-radius: 50%;
+}
+
+.td-sparkle:hover {
+  border-color: var(--a);
+  color: var(--a-text);
+}
+
+.td-sparkle[aria-pressed='true'] {
+  border-color: var(--a);
+  background: var(--a);
+  color: var(--on-a, var(--night));
+}
+
+.td-sparkle-icon {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+/* Guide and Hands: quiet outlined pills, filled with the mode colour while their overlay is open */
+.overlay-pill {
+  border-color: var(--rule-strong);
+  padding: 6px 12px;
+  font-size: 10px;
+}
+
+.overlay-pill[aria-pressed='true'] {
+  border-color: var(--a);
+  background: var(--a);
+  color: var(--on-a, var(--night));
+}
+
+/* ---------- the guide: a few big, calm lines over the screen; see-through, clicks pass through it ---------- */
+.guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 120px var(--m) calc(var(--m) * 2);
+  background: linear-gradient(90deg, rgba(11, 10, 12, 0.18) 0%, rgba(11, 10, 12, 0.62) 38%, rgba(11, 10, 12, 0.78) 100%);
+  color: var(--paper-white);
+  pointer-events: none;
+  animation: guide-in 0.5s ease-out both;
+}
+
+.guide-overlay-inner {
+  width: min(62rem, 100%);
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.guide-overlay-kicker,
+.guide-overlay-close {
+  margin: 0;
+  font: 700 11px/1.4 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--a-text);
+}
+
+.guide-overlay-title {
+  margin: 0.1em 0 0.35em;
+  font: 400 clamp(64px, 9vw, 148px) / 0.9 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.guide-overlay-lines {
+  margin: 0 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-overlay-lines li {
+  display: grid;
+  gap: 4px;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.guide-big {
+  font: 400 clamp(26px, 2.9vw, 44px) / 1.05 var(--serif);
+}
+
+.guide-small {
+  font: 400 14px/1.4 var(--sans);
+  color: var(--muted);
+}
+
+@keyframes guide-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+}
+
+/* ---------- what your hands say: a see-through panel on the right, under the header ---------- */
+.hands-overlay {
+  position: fixed;
+  z-index: 19;
+  top: 92px;
+  right: var(--m);
+  width: min(23.5rem, calc(100vw - 2 * var(--m)));
+  max-height: calc(100vh - 92px - var(--m));
+  overflow: auto;
+  animation: guide-in 0.4s ease-out both;
+}
+
+.hands-overlay .hands-card {
+  margin: 0;
+  background: rgba(11, 10, 12, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-overlay,
+  .hands-overlay {
+    animation: none;
+  }
+}

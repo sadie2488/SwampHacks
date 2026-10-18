@@ -1,5 +1,5 @@
 /* Where each part sits inside a mode.
-   Wide (1100 px and up): side panel | giant title | practice (or hands) on the first row, the sheet band under
+   Wide (1100 px and up): side panel | giant title | practice on the first row, the sheet band under
    them across the whole width. Create and the Lab: side panel down the left, title then the work on the right.
    Medium: the title on its own row, then two columns. Narrow: one column, title first. */
 @media (min-width: 760px) {
@@ -9,8 +9,7 @@
     grid-template-areas:
       'title title'
       'side right'
-      'sheet sheet'
-      '. right2';
+      'sheet sheet';
   }
 
   .stage:not(.stage-song) {
@@ -27,13 +26,9 @@
     grid-area: side;
   }
 
-  .stage-learn .practice-card,
-  .stage-play .hands-card {
+  /* the hands meters now live in their own overlay (header button), so Play's practice card takes the right column */
+  .stage-song .practice-card {
     grid-area: right;
-  }
-
-  .stage-play .practice-card {
-    grid-area: right2;
   }
 
   .stage-song .sheet-strip {
@@ -51,8 +46,7 @@
     grid-template-columns: 20rem minmax(0, 1fr) 23.5rem;
     grid-template-areas:
       'side title right'
-      'sheet sheet sheet'
-      '. . right2';
+      'sheet sheet sheet';
   }
 
   .stage:not(.stage-song) {
