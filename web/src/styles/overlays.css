@@ -1,14 +1,20 @@
 /* The header's home logo, the TouchDesigner sparkle, and the two overlays (the guide, what your hands say).
    Only opacity and transform animate; no blur anywhere (the overlays are plain see-through colour). */
 
-/* the logo is the way home (the record menu) */
-.brand-home {
+/* the logo is the way home (the record menu); it must look exactly like the plain script logo, not a pill button */
+.brand-home,
+.brand-home:hover:not(:disabled),
+.brand-home:active:not(:disabled) {
+  min-height: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: none;
   color: inherit;
   font: inherit;
-  letter-spacing: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: none;
   cursor: pointer;
 }
 
