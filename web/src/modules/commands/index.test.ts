@@ -101,4 +101,23 @@ describe('commands module on the bus', () => {
     doubleClap();
     expect(commands).toEqual([]);
   });
+
+  it('the right hand moves the tempo smoothly from where it is, but not while a practice run listens', () => {
+    const hand = (value: number) => sendSignal({ id: 'vision.hand.right.height', kind: 'slider', value, confidence: 0.9 });
+    const tempo = () => bus.last('controls')?.['playback.tempo'];
+    try {
+      bus.emit('practice', { state: 'listening' });
+      for (let i = 0; i < 10; i++) hand(1);
+      expect(commands).toEqual([]);
+      expect(tempo()).toBe(1);
+      bus.emit('practice', { state: 'done' });
+      hand(1);
+      const first = commands[0]?.value as number;
+      expect(first).toBeGreaterThan(1.02); // it moves...
+      expect(first).toBeLessThan(1.5); // ...but does not jump straight to the top
+      expect(tempo()).toBe(first);
+    } finally {
+      bus.emit('practice', { state: 'idle' });
+    }
+  });
 });

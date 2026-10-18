@@ -49,7 +49,8 @@ def test_the_workers_never_save_compiled_code(monkeypatch):
     made = {}
     monkeypatch.setattr(pitch_pool, "WORKERS", 3)
     monkeypatch.setattr(pitch_pool, "_pool", None)
-    monkeypatch.setattr(pitch_pool, "_broken", False)
+    monkeypatch.setattr(pitch_pool, "_failures", 0)
+    monkeypatch.setattr(pitch_pool, "_retry_at", 0.0)
     monkeypatch.setattr(pitch_pool, "ProcessPoolExecutor", lambda **kwargs: made.update(kwargs) or object())
     pitch_pool._get_pool()
     assert made["initializer"] is numba_cache.read_only
@@ -69,12 +70,13 @@ def test_a_crashed_worker_clears_the_cache_and_the_notes_come_from_this_process(
     audio = np.zeros(int(40 * sr), dtype=np.float32)
     monkeypatch.setattr(pitch_pool, "WORKERS", 3)
     monkeypatch.setattr(pitch_pool, "_pool", _CrashedPool())
-    monkeypatch.setattr(pitch_pool, "_broken", False)
+    monkeypatch.setattr(pitch_pool, "_failures", 0)
+    monkeypatch.setattr(pitch_pool, "_retry_at", 0.0)
     monkeypatch.setattr(numba_cache, "clear", lambda: cleared.append(True) or 0)
     monkeypatch.setattr(pitch_pool, "_pyin", lambda a, options: ("f0", "voiced", "prob"))
     assert pitch_pool.pyin(audio, sr=sr, hop_length=hop) == ("f0", "voiced", "prob")
     assert cleared == [True]
-    assert pitch_pool._get_pool() is None  # the pool stays off for this server run
+    assert pitch_pool._get_pool() is None  # the pool rests a while before a fresh one is tried
 
 
 def test_other_pool_trouble_keeps_the_cache(monkeypatch):
@@ -85,7 +87,8 @@ def test_other_pool_trouble_keeps_the_cache(monkeypatch):
     cleared = []
     monkeypatch.setattr(pitch_pool, "WORKERS", 3)
     monkeypatch.setattr(pitch_pool, "_pool", StuckPool())
-    monkeypatch.setattr(pitch_pool, "_broken", False)
+    monkeypatch.setattr(pitch_pool, "_failures", 0)
+    monkeypatch.setattr(pitch_pool, "_retry_at", 0.0)
     monkeypatch.setattr(numba_cache, "clear", lambda: cleared.append(True) or 0)
     monkeypatch.setattr(pitch_pool, "_pyin", lambda a, options: ("f0", "voiced", "prob"))
     assert pitch_pool.pyin(np.zeros(40 * 22050, dtype=np.float32), sr=22050, hop_length=512)[0] == "f0"

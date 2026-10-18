@@ -1,6 +1,7 @@
 // Turns one part of a song analysis into MusicXML for OpenSheetMusicDisplay.
 // Notes stay in concert pitch everywhere else; the written transposition (clarinet, guitar) happens only here.
 import type { Part, SongAnalysis, Tonic } from '@/contracts';
+import { isCompound, quartersPerBar, quartersPerBeat, secPerQuarter } from './bar-grid';
 
 export interface ScoreOptions {
   /**
@@ -130,7 +131,8 @@ function splitTicks(ticks: number): number[] {
 
 /**
  * Build the sheet music for one part of an analysis.
- * Times come from onset_beat/duration_beat, or from seconds and the tempo when those are missing.
+ * Times come from onset_beat/duration_beat (quarter notes), or from seconds and the tempo when those are missing.
+ * Bars are every `quartersPerBar` quarter notes from beat 0 (see bar-grid.ts, which practice feedback uses too).
  * Everything is rounded to a sixteenth-note grid; gaps become rests; long notes are tied over barlines.
  */
 export function buildScore(analysis: SongAnalysis, partId: string, options: ScoreOptions = {}): Score {
@@ -140,16 +142,18 @@ export function buildScore(analysis: SongAnalysis, partId: string, options: Scor
   const { clef, semitones } = displayStyle(part, options.instrument);
   const numerator = analysis.time_signature?.numerator ?? 4;
   const denominator = analysis.time_signature?.denominator ?? 4;
-  const beatTicks = 16 / denominator;
-  const measureTicks = numerator * beatTicks;
-  const bpm = analysis.tempo_bpm > 0 ? analysis.tempo_bpm : 120;
+  const ts = { numerator, denominator };
+  const beatTicks = DIVISIONS_PER_QUARTER; // onset_beat counts quarter notes in every time signature
+  const measureTicks = Math.round(quartersPerBar(ts) * DIVISIONS_PER_QUARTER);
+  const bpm = analysis.tempo_bpm > 0 ? analysis.tempo_bpm : 120; // counts the felt beat (a dotted quarter in 6/8)
+  const quarterSec = secPerQuarter({ tempo_bpm: bpm, time_signature: ts });
   const fifths = keyFifths(analysis.key?.tonic, analysis.key?.mode, semitones);
 
   // 1. notes -> events on the tick grid (notes that start together become one chord; overlaps are cut short)
   const raw: Array<{ start: number; end: number; pitch: number }> = [];
   for (const n of part.notes) {
-    const onsetBeat = n.onset_beat ?? (n.onset_sec * bpm) / 60;
-    const durationBeat = n.duration_beat ?? (n.duration_sec * bpm) / 60;
+    const onsetBeat = n.onset_beat ?? n.onset_sec / quarterSec;
+    const durationBeat = n.duration_beat ?? n.duration_sec / quarterSec;
     if (!Number.isFinite(onsetBeat) || !Number.isFinite(durationBeat) || !Number.isFinite(n.pitch)) continue;
     const start = Math.max(0, Math.round(onsetBeat * beatTicks));
     const end = Math.max(start + 1, Math.round((onsetBeat + durationBeat) * beatTicks));
@@ -236,9 +240,10 @@ export function buildScore(analysis: SongAnalysis, partId: string, options: Scor
   };
 
   const mode = analysis.key?.mode === 'minor' ? 'minor' : 'major';
+  const beatUnit = isCompound(ts) ? '<beat-unit>quarter</beat-unit><beat-unit-dot/>' : `<beat-unit>${BEAT_UNIT[denominator] ?? 'quarter'}</beat-unit>`;
   const tempoXml =
-    `<direction placement="above"><direction-type><metronome><beat-unit>${BEAT_UNIT[denominator] ?? 'quarter'}</beat-unit>` +
-    `<per-minute>${Math.round(bpm)}</per-minute></metronome></direction-type><sound tempo="${Math.round((bpm * 4) / denominator)}"/></direction>`;
+    `<direction placement="above"><direction-type><metronome>${beatUnit}` +
+    `<per-minute>${Math.round(bpm)}</per-minute></metronome></direction-type><sound tempo="${Math.round(bpm * quartersPerBeat(ts))}"/></direction>`;
   const attributesXml =
     `<attributes><divisions>${DIVISIONS_PER_QUARTER}</divisions><key><fifths>${fifths}</fifths><mode>${mode}</mode></key>` +
     `<time><beats>${numerator}</beats><beat-type>${denominator}</beat-type></time>` +
