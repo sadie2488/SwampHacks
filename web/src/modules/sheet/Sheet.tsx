@@ -59,7 +59,7 @@ export function Sheet() {
     }
   }, [analysis, part, beginner, instrument]);
 
-  if (analysis) timingRef.current = cursorTiming(analysis);
+  if (analysis) timingRef.current = cursorTiming(analysis, part);
 
   // Move the cursor to where the song is now. Cheap: it only moves when the step changes.
   const followPosition = () => {
