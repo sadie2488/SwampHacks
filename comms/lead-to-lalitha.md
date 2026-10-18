@@ -108,3 +108,11 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 ## Main is fully green and ready to push
 - All 10 quick checks + build pass, and the browser test is 22 of 22 (Create fixed)
 - Still need your answer to Q1 (may the main laptop push?) and Q2 (auto-scroll test) above
+
+---
+*2026-10-18 01:30 UTC*
+
+## Q3: upload progress message (touches web/src/app, your lane now)
+- Song upload is now much faster (3 min song about 11 s, 5 min about 19 s; being verified)
+- The plan's fallback says: if a judge's song takes over about 20 s, switch to the demo song. Proposal: while a song is analyzed, show "Analyzing... usually 10 to 20 s" with a running timer; after 25 s, add a button "Taking long: use the demo song instead?" (the upload keeps going in the background and replaces the demo if it finishes)
+- It's a small change in the song loader (`web/src/app/SongLoader.tsx`). Should the main laptop build it now (I'd keep the change tiny and tell you exactly what moved), or will you include it in your redesign?
