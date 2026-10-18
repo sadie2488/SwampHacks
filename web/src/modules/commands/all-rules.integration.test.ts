@@ -423,16 +423,14 @@ describe('Create mode rules: the effect on the layers', () => {
     expect(createState().phase).toBe('recording');
   });
 
-  it('right hand position controls layer volume', () => {
+  // Switched off (Lalitha): volume by hand is out of scope; the slider on the layer chip sets the volume.
+  it('right hand position controls layer volume is switched off: moving the hand sideways does nothing', () => {
+    expect(ruleNamed('right hand position controls layer volume').enabled).toBe(false);
     recordedLayer();
     const start = layer()!.volume;
     holdSlider('vision.hand.right.x', 0, 80);
-    const low = layer()!.volume;
-    expect(low).toBeLessThan(start - 0.3);
-    expect(low).toBeGreaterThanOrEqual(0);
-    holdSlider('vision.hand.right.x', 1, 80);
-    expect(layer()!.volume).toBeGreaterThan(0.9);
-    expect(layer()!.volume).toBeLessThanOrEqual(1);
+    expect(fromRule('right hand position controls layer volume')).toEqual([]);
+    expect(layer()!.volume).toBe(start);
   });
 
   it('left thumbs-up keeps the current pitch', () => {

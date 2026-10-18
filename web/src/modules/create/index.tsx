@@ -1,6 +1,9 @@
 // Create mode (lane D): hum a melody, hear it as an instrument, stack layers into a loop.
 // start() listens to the bus and drives the sound; CreatePanel is the screen. Every button sends a command on the bus,
 // so gestures and voice use the same path.
+// The screen is one open playground (see ui/overture/CreateStage.tsx and create-stage.css for the places): the hum
+// column on the left, instruments and the big Record button in the middle, the layers strip under them, the save line
+// bottom right. Every control keeps its data-testid.
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { bus, resumeAudio, sendCommand, type Stop } from '@/bus';
 import type { Mode } from '@/contracts';
@@ -19,18 +22,6 @@ export { useCreateCountIn } from './app-store';
 export function start(): Stop {
   return startController({ engine: createToneEngine(), store, settings });
 }
-
-/** The main action of the screen: one big inviting button in the mode colour. */
-const BIG_BUTTON: React.CSSProperties = {
-  fontSize: '1.4rem',
-  padding: '0.8em 1.6em',
-  borderRadius: '999px',
-  border: 'none',
-  background: 'var(--mode-a, #c9a8ff)',
-  color: '#1a1420',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
 
 // ---- small helpers for the screen ----
 
@@ -93,165 +84,190 @@ export function CreatePanel({ fetchFn }: { fetchFn?: FetchFn } = {}) {
   };
 
   return (
-    <section data-testid="create-panel" aria-label="Create mode">
-      <h2>Create</h2>
-      {mode !== 'create' && <p role="note">Create mode is not active yet, so these buttons will not do anything.</p>}
+    <section data-testid="create-panel" aria-label="Create mode" className="create-stage">
+      <h2 className="create-stage-title">Create</h2>
+      {mode !== 'create' && (
+        <p role="note" className="create-note">
+          Create mode is not active yet, so these buttons will not do anything.
+        </p>
+      )}
 
-      <p>
-        You are humming: <output data-testid="hum-note" aria-live="off">{humNote}</output>
-      </p>
-      <p data-testid="create-status" role="status">
-        {describeState(state)}
-        {state.message ? `. ${state.message}` : ''}
-      </p>
-      <p>
-        Loop: {state.bars} bars of 4/4 at {state.bpm} beats per minute
-      </p>
-
-      <div role="group" aria-label="Loop controls">
-        <button type="button" data-testid="btn-record" style={BIG_BUTTON} aria-pressed={recording} onClick={press(() => sendCommand('create.loop.record', 'button', { how: 'toggle' }))}>
-          {recording ? 'Stop' : 'Record a layer'}
-        </button>{' '}
-        <button type="button" data-testid="btn-stop-loop" onClick={press(() => sendCommand('create.loop.stop', 'button', { how: 'trigger' }))}>
-          Stop loop
-        </button>{' '}
-        <button type="button" data-testid="btn-add-layer" onClick={press(() => sendCommand('create.layer.add', 'button', { how: 'trigger' }))}>
-          Add layer
-        </button>{' '}
-        <button type="button" data-testid="btn-beat" aria-pressed={beatOn} onClick={press(() => sendCommand('create.beat', 'button', { how: 'toggle' }))}>
-          Beat: {beatOn ? 'on' : 'off'}
-        </button>{' '}
-        <button type="button" data-testid="btn-fake-hum" disabled={faking} onClick={press(startFake)}>
+      {/* left: the hum rings (ModeVisual draws them above this column), the words, and the note heard */}
+      <div className="hum-col">
+        <p className="hum-words">Hum something</p>
+        <p className="hum-heard">
+          Heard <output data-testid="hum-note" aria-live="off">{humNote}</output>
+        </p>
+        <p className="hum-small">
+          <label>
+            <input type="checkbox" data-testid="toggle-snap" checked={options.snap} onChange={(e) => settings.set({ snap: e.target.checked })} /> Snap to the key
+          </label>
+          {!options.songKey && options.snap && <span> (no song key is loaded, so the key is guessed from your hum)</span>}
+        </p>
+        {options.take && (
+          <p data-testid="take-summary" className="hum-small">
+            {takeSummaryText(options.take)}
+          </p>
+        )}
+        <button type="button" className="pill hum-fake" data-testid="btn-fake-hum" disabled={faking} onClick={press(startFake)}>
           {faking ? 'Humming…' : 'Simulate humming'}
         </button>
       </div>
 
-      <p>
-        <label>
-          <input type="checkbox" data-testid="toggle-snap" checked={options.snap} onChange={(e) => settings.set({ snap: e.target.checked })} /> Snap to the key
-        </label>
-        {!options.songKey && options.snap && <span> (no song key is loaded, so the key is guessed from your hum)</span>}
-      </p>
-      {options.take && (
-        <p data-testid="take-summary">{takeSummaryText(options.take)}</p>
-      )}
+      {/* middle: WHAT (the instrument of the selected layer) above HOW (the big Record button) */}
+      <div className="make-col">
+        <div role="group" aria-label="Instrument for the current layer" className="instrument-row">
+          {INSTRUMENT_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              className="instrument-pill"
+              data-testid={`btn-instrument-${id}`}
+              aria-pressed={instrument === id}
+              disabled={cur?.kind === 'beat'}
+              onClick={press(() => sendCommand('create.instrument', 'button', { how: 'set', value: id }))}
+            >
+              {label(id)}
+            </button>
+          ))}
+        </div>
 
-      <div role="group" aria-label="Instrument for the current layer">
-        {INSTRUMENT_IDS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            data-testid={`btn-instrument-${id}`}
-            aria-pressed={instrument === id}
-            disabled={cur?.kind === 'beat'}
-            onClick={press(() => sendCommand('create.instrument', 'button', { how: 'set', value: id }))}
-          >
-            {label(id)}
+        <div role="group" aria-label="Loop controls" className="record-row">
+          <button type="button" data-testid="btn-record" className="record-big" aria-pressed={recording} onClick={press(() => sendCommand('create.loop.record', 'button', { how: 'toggle' }))}>
+            {recording ? 'Stop' : 'Record a layer'}
           </button>
-        ))}
+          <div className="record-side">
+            <p data-testid="create-status" role="status" className="create-status">
+              {describeState(state)}
+              {state.message ? `. ${state.message}` : ''}
+            </p>
+            <p className="loop-info">
+              Loop: {state.bars} bars of 4/4 at {state.bpm} beats per minute
+            </p>
+            <p className="record-extras">
+              <button type="button" className="pill" data-testid="btn-beat" aria-pressed={beatOn} onClick={press(() => sendCommand('create.beat', 'button', { how: 'toggle' }))}>
+                Beat: {beatOn ? 'on' : 'off'}
+              </button>
+              <label>
+                Instrument{' '}
+                <select
+                  data-testid="select-instrument"
+                  value={instrument}
+                  disabled={cur?.kind === 'beat'}
+                  onChange={(e) => run(() => sendCommand('create.instrument', 'button', { how: 'set', value: e.target.value }))}
+                >
+                  {INSTRUMENT_IDS.map((id) => (
+                    <option key={id} value={id}>
+                      {label(id)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Effect{' '}
+                <select data-testid="select-effects" value={effects} onChange={(e) => run(() => sendCommand('create.effects', 'button', { how: 'set', value: e.target.value }))}>
+                  {EFFECT_IDS.map((id) => (
+                    <option key={id} value={id}>
+                      {label(id)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p>
-        <label>
-          Instrument for the current layer{' '}
-          <select
-            data-testid="select-instrument"
-            value={instrument}
-            disabled={cur?.kind === 'beat'}
-            onChange={(e) => run(() => sendCommand('create.instrument', 'button', { how: 'set', value: e.target.value }))}
-          >
-            {INSTRUMENT_IDS.map((id) => (
-              <option key={id} value={id}>
-                {label(id)}
-              </option>
-            ))}
-          </select>
-        </label>{' '}
-        <label>
-          Effect{' '}
-          <select
-            data-testid="select-effects"
-            value={effects}
-            onChange={(e) => run(() => sendCommand('create.effects', 'button', { how: 'set', value: e.target.value }))}
-          >
-            {EFFECT_IDS.map((id) => (
-              <option key={id} value={id}>
-                {label(id)}
-              </option>
-            ))}
-          </select>
-        </label>
-      </p>
-
-      <h3>Layers</h3>
-      {state.layers.length === 0 ? (
-        <p>No layers yet. Press Record, or Add layer, to start.</p>
-      ) : (
-        <ol>
-          {state.layers.map((layer, i) => (
-            <li key={layer.id} data-testid={`layer-${i}`} aria-current={layer.id === state.currentId ? 'true' : undefined}>
-              <button type="button" data-testid={`layer-${i}-select`} aria-pressed={layer.id === state.currentId} onClick={() => store.dispatch({ type: 'selectLayer', id: layer.id })}>
-                {layer.name}
-                {layer.id === state.currentId ? ' (current)' : ''}
-              </button>{' '}
-              <span data-testid={`layer-${i}-instrument`}>{label(layer.instrument)}</span>
-              {layer.effects !== 'none' && <span>, {layer.effects}</span>}
-              {', notes: '}
-              <span data-testid={`layer-${i}-notes`}>{layer.notes.length}</span>{' '}
-              <label>
-                Volume{' '}
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={layer.volume}
-                  data-testid={`layer-${i}-volume`}
-                  onChange={(e) => {
-                    // the volume control always means "the current layer", so make this one current first
-                    if (layer.id !== store.getState().currentId) store.dispatch({ type: 'selectLayer', id: layer.id });
-                    sendCommand('create.layer.volume', 'button', { how: 'set', value: Number(e.target.value) });
-                  }}
-                />
-              </label>{' '}
-              <label>
-                <input type="checkbox" data-testid={`layer-${i}-mute`} checked={layer.muted} onChange={(e) => store.dispatch({ type: 'setMuted', id: layer.id, muted: e.target.checked })} /> Mute
-              </label>
-              {' '}
-              <label>
-                <input
-                  type="checkbox"
-                  data-testid={`layer-${i}-hand-pitch`}
-                  aria-label={`${layer.name} hand pitch`}
-                  checked={layer.handPitchEnabled ?? false}
-                  disabled={layer.notes.length === 0}
-                  onChange={(e) => store.dispatch({ type: 'setHandPitchEnabled', id: layer.id, enabled: e.target.checked })}
-                /> Hand controls pitch
-              </label>{' '}
-              {layer.handPitchEnabled && <span data-testid={`layer-${i}-pitch-value`}>{(layer.pitchSemitones ?? 0) > 0 ? '+' : ''}{(layer.pitchSemitones ?? 0).toFixed(1)} semitones</span>}
-              {' '}
-              <label>
-                <input
-                  type="checkbox"
-                  data-testid={`layer-${i}-instrument-voice`}
-                  aria-label={`${layer.name} instrument voice`}
-                  checked={layer.instrumentVoiceEnabled ?? false}
-                  disabled={layer.notes.length === 0}
-                  onChange={(e) => {
-                    if (layer.id !== store.getState().currentId) store.dispatch({ type: 'selectLayer', id: layer.id });
-                    sendCommand('create.instrument.voice', 'button', { how: 'set', value: e.target.checked });
-                  }}
-                /> Voice controls
-              </label>
-            </li>
-          ))}
+      {/* under them: Play / Stop for the loop, then one chip per layer and "+ Add layer" at the end */}
+      <div className="layers-row">
+        <h3 className="layers-title">Layers</h3>
+        <div className="loop-pills">
+          <button type="button" className="pill" data-testid="btn-play-loop" disabled={state.phase !== 'idle'} onClick={press(() => sendCommand('create.loop.play', 'button', { how: 'trigger' }))}>
+            Play loop
+          </button>
+          <button type="button" className="pill" data-testid="btn-stop-loop" onClick={press(() => sendCommand('create.loop.stop', 'button', { how: 'trigger' }))}>
+            Stop loop
+          </button>
+        </div>
+        <ol className="layer-strip">
+          {state.layers.map((layer, i) => {
+            const current = layer.id === state.currentId;
+            return (
+              <li key={layer.id} data-testid={`layer-${i}`} className="layer-chip" aria-current={current ? 'true' : undefined}>
+                <button type="button" data-testid={`layer-${i}-select`} className="chip-name" aria-pressed={current} onClick={() => store.dispatch({ type: 'selectLayer', id: layer.id })}>
+                  {layer.name}
+                </button>
+                <span className="chip-meta">
+                  {' · '}
+                  <span data-testid={`layer-${i}-instrument`}>{label(layer.instrument)}</span>
+                  {layer.effects !== 'none' && <span>, {layer.effects}</span>}
+                  {' · '}
+                  <span data-testid={`layer-${i}-notes`}>{layer.notes.length}</span>
+                  {' notes'}
+                </span>
+                <span className="chip-tools">
+                  <label className="chip-mute" title="Mute this layer">
+                    <input type="checkbox" className="mute-dot" data-testid={`layer-${i}-mute`} checked={layer.muted} onChange={(e) => store.dispatch({ type: 'setMuted', id: layer.id, muted: e.target.checked })} /> Mute
+                  </label>
+                  <label className="chip-volume" title="Volume of this layer">
+                    Volume{' '}
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.05}
+                      value={layer.volume}
+                      data-testid={`layer-${i}-volume`}
+                      onChange={(e) => {
+                        // the volume control always means "the current layer", so make this one current first
+                        if (layer.id !== store.getState().currentId) store.dispatch({ type: 'selectLayer', id: layer.id });
+                        sendCommand('create.layer.volume', 'button', { how: 'set', value: Number(e.target.value) });
+                      }}
+                    />
+                  </label>
+                  <label className="chip-small">
+                    <input
+                      type="checkbox"
+                      data-testid={`layer-${i}-hand-pitch`}
+                      aria-label={`${layer.name} hand pitch`}
+                      checked={layer.handPitchEnabled ?? false}
+                      disabled={layer.notes.length === 0}
+                      onChange={(e) => store.dispatch({ type: 'setHandPitchEnabled', id: layer.id, enabled: e.target.checked })}
+                    />{' '}
+                    Hand pitch
+                  </label>
+                  {layer.handPitchEnabled && (
+                    <span data-testid={`layer-${i}-pitch-value`}>
+                      {(layer.pitchSemitones ?? 0) > 0 ? '+' : ''}
+                      {(layer.pitchSemitones ?? 0).toFixed(1)} semitones
+                    </span>
+                  )}
+                  <label className="chip-small">
+                    <input
+                      type="checkbox"
+                      data-testid={`layer-${i}-instrument-voice`}
+                      aria-label={`${layer.name} instrument voice`}
+                      checked={layer.instrumentVoiceEnabled ?? false}
+                      disabled={layer.notes.length === 0}
+                      onChange={(e) => {
+                        if (layer.id !== store.getState().currentId) store.dispatch({ type: 'selectLayer', id: layer.id });
+                        sendCommand('create.instrument.voice', 'button', { how: 'set', value: e.target.checked });
+                      }}
+                    />{' '}
+                    Voice
+                  </label>
+                </span>
+              </li>
+            );
+          })}
+          <li className="layer-chip layer-chip-add">
+            <button type="button" data-testid="btn-add-layer" className="chip-add" onClick={press(() => sendCommand('create.layer.add', 'button', { how: 'trigger' }))}>
+              + Add layer
+            </button>
+          </li>
         </ol>
-      )}
-      <p>
-        <button type="button" data-testid="btn-play-loop" disabled={state.phase !== 'idle'} onClick={press(() => sendCommand('create.loop.play', 'button', { how: 'trigger' }))}>
-          Play loop
-        </button>
-      </p>
+        {state.layers.length === 0 && <p className="layers-hint">No layers yet. Press Record, or Add layer, to start.</p>}
+      </div>
 
       <SavedTracks store={store} fetchFn={fetchFn} />
     </section>
