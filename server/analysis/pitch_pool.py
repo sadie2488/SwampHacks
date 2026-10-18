@@ -9,6 +9,11 @@ Short recordings, a machine with few cores, or any trouble with the workers: one
 so the notes never depend on the pool. `start()` launches the workers early (server start) so the first
 upload does not pay for them; `stop()` lets them go.
 
+The workers never save compiled code (`numba_cache.read_only`): six processes compiling pYIN at once next to
+the server used to damage librosa's compiled-code cache and crash the server. Start them after this process
+has compiled pYIN (the server's warm-up does that), so they only load it. A worker that dies abruptly is
+taken as a sign of a damaged cache: the cache is deleted (rebuilt on next use) and this process carries on.
+
 One upload uses the pool at a time (a second one waits its turn), so an upload's time limit only counts
 its own work. The limit grows with the length of the recording. When the workers fail or run out of time,
 they are stopped (not left running) and the upload finishes in one pass; a fresh pool is tried again on a
@@ -22,7 +27,10 @@ import os
 import threading
 import time
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from itertools import repeat
+
+from . import numba_cache
 
 log = logging.getLogger("music.server.pitch_pool")
 
@@ -69,7 +77,7 @@ def _get_pool() -> ProcessPoolExecutor | None:
     with _lock:
         usable = _failures < MAX_FAILURES and time.monotonic() >= _retry_at
         if _pool is None and usable and WORKERS > 1:
-            _pool = ProcessPoolExecutor(max_workers=WORKERS)
+            _pool = ProcessPoolExecutor(max_workers=WORKERS, initializer=numba_cache.read_only)
         return _pool
 
 
@@ -153,6 +161,8 @@ def _pyin_in_pool(pool: ProcessPoolExecutor, audio, options: dict, timeout: floa
         outs = list(pool.map(_pyin, chunks, repeat(options), timeout=timeout))
     except Exception as err:  # noqa: BLE001 - a broken or stuck pool must not fail the upload
         _give_up(type(err).__name__)
+        if isinstance(err, BrokenProcessPool):  # a worker died: most likely damaged compiled code
+            numba_cache.clear()
         return None
     _worked()
     return tuple(np.concatenate([out[k][a:b] for out, (a, b) in zip(outs, spans)]) for k in range(3))

@@ -60,7 +60,7 @@ export function Practice() {
         Practice: play along
       </p>
       <h2 id="practice-heading">
-        <span className="sr-only">Practice: </span>Play it with the reef
+        <span className="sr-only">Practice: </span>Play along
       </h2>
       <ol className="practice-steps">
         {STEPS.map((step, i) => (

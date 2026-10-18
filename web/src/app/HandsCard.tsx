@@ -52,7 +52,7 @@ export function HandsCard() {
         What your hands say
       </p>
       <h2 id="hands-heading">
-        <span className="sr-only">What your hands say: </span>Wave at the reef
+        <span className="sr-only">What your hands say: </span>Conduct with your hands
       </h2>
       {METERS.map((m) => {
         const v = values[m.id];
