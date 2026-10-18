@@ -55,6 +55,121 @@ export function pickHand(lm: Landmarks | null | undefined): (Point & { side: Sid
   return best;
 }
 
+/** A hand that may drive the cursor: its side, palm centre (0-1 camera units) and its 21 points. */
+export interface SeenHand extends Point {
+  side: Side;
+  points: ReadonlyArray<Point>;
+}
+
+/** Every hand in a landmarks frame with a usable palm. */
+export function handsOf(lm: Landmarks | null | undefined): SeenHand[] {
+  const out: SeenHand[] = [];
+  for (const h of lm?.hands ?? []) {
+    const c = palmCentre(h.points);
+    if (c) out.push({ ...c, side: h.handedness === 'Left' ? 'left' : 'right', points: h.points });
+  }
+  return out;
+}
+
+/** How fast each hand's recent movement fades (per frame); higher remembers longer. */
+export const MOTION_DECAY = 0.8;
+/** The other hand must be moving this many times more than the active one to take over (hysteresis)... */
+export const SWITCH_RATIO = 1.8;
+/** ...and by at least this much (0-1 camera units per frame, smoothed), so two still hands never trade the cursor. */
+export const SWITCH_MIN = 0.004;
+
+/**
+ * Which hand drives the cursor. One hand seen: that one. Both seen: the one that has moved more lately, with hysteresis
+ * so the cursor does not flicker between them; when neither has a history yet, the hand raised higher.
+ * `switched` is true on the frame the active hand changes from one side to the other (the pointer drops any grab then).
+ */
+export function createHandPicker() {
+  const last: Record<Side, Point | null> = { left: null, right: null };
+  const motion: Record<Side, number> = { left: 0, right: 0 };
+  let active: Side | null = null;
+  return {
+    get active() {
+      return active;
+    },
+    reset() {
+      last.left = last.right = null;
+      motion.left = motion.right = 0;
+      active = null;
+    },
+    pick(hands: ReadonlyArray<SeenHand>): { hand: SeenHand; switched: boolean } | null {
+      const by: Partial<Record<Side, SeenHand>> = {};
+      for (const h of hands) if (!by[h.side]) by[h.side] = h;
+      for (const side of ['left', 'right'] as const) {
+        const h = by[side];
+        if (!h) {
+          last[side] = null;
+          motion[side] = 0;
+          continue;
+        }
+        const p = last[side];
+        const step = p ? Math.hypot(h.x - p.x, h.y - p.y) : 0;
+        motion[side] = motion[side] * MOTION_DECAY + step * (1 - MOTION_DECAY);
+        last[side] = { x: h.x, y: h.y };
+      }
+      const prev = active;
+      if (by.left && by.right) {
+        if (!active || !by[active]) active = by.left.y < by.right.y ? 'left' : 'right';
+        const other: Side = active === 'left' ? 'right' : 'left';
+        if (motion[other] > SWITCH_MIN && motion[other] > motion[active] * SWITCH_RATIO) active = other;
+      } else if (by.left) active = 'left';
+      else if (by.right) active = 'right';
+      else active = null;
+      if (!active) return null;
+      return { hand: by[active] as SeenHand, switched: prev !== null && prev !== active };
+    },
+  };
+}
+
+// Hand-shape thresholds, the same numbers as the vision module's fist / open-palm / thumbs-up (kept here, not imported,
+// because the UI may not reach into a module's internals). A finger's ratio is tip-to-wrist over middle-joint-to-wrist.
+const FIST_ON = 0.85;
+const FIST_OFF = 1.05;
+const OPEN_ON = 1.25;
+const OPEN_OFF = 1.12;
+const THUMB_UP_ON = 0.12;
+const FINGERS: ReadonlyArray<[number, number]> = [[8, 6], [12, 10], [16, 14], [20, 18]];
+
+function curls(p: ReadonlyArray<Point>, aspect: number): number[] {
+  const d = (a: Point, b: Point) => Math.hypot((a.x - b.x) * aspect, a.y - b.y);
+  return FINGERS.map(([tip, pip]) => d(p[tip], p[0]) / Math.max(1e-6, d(p[pip], p[0])));
+}
+/** Thumb pointing up with its tip clearly above its middle joint (the fingers already curled). */
+function thumbUp(p: ReadonlyArray<Point>, aspect: number): boolean {
+  const ip = p[3];
+  const tip = p[4];
+  const size = Math.max(1e-6, Math.hypot((p[0].x - p[9].x) * aspect, p[0].y - p[9].y));
+  return ip.y - tip.y > Math.abs(tip.x - ip.x) * aspect && (ip.y - tip.y) / size >= THUMB_UP_ON;
+}
+
+/**
+ * Open hand and fist for each hand, read straight from its landmarks with the same thresholds (and hysteresis) as the
+ * vision signals, so either hand works the cursor the same way. A thumbs-up (thumb pointing up) is never a fist.
+ */
+export function createShapeTracker() {
+  const st: Record<Side, { fist: boolean; open: boolean }> = { left: { fist: false, open: false }, right: { fist: false, open: false } };
+  return {
+    update(side: Side, points: ReadonlyArray<Point>, aspect: number): { fist: boolean; open: boolean } {
+      if (points.length < 21) return (st[side] = { fist: false, open: false });
+      const c = curls(points, aspect);
+      const hi = Math.max(...c);
+      const lo = Math.min(...c);
+      const s = st[side];
+      let fist = s.fist ? hi < FIST_OFF : hi < FIST_ON;
+      if (fist && thumbUp(points, aspect)) fist = false;
+      const open = !fist && (s.open ? lo > OPEN_OFF : lo > OPEN_ON);
+      return (st[side] = { fist, open });
+    },
+    clear(side: Side) {
+      st[side] = { fist: false, open: false };
+    },
+  };
+}
+
 /** One step of the exponential filter. With no previous point it jumps straight there. */
 export function smoothPoint(prev: Point | null, next: Point, k = SMOOTH): Point {
   if (!prev) return next;
@@ -108,6 +223,8 @@ export interface HoldOutput<T> {
   click?: T;
   /** Scroll by this much now (a grab that moves). */
   wheel?: { dx: number; dy: number };
+  /** While dragging: how far the hand moved since the last frame, in screen px (the record menu turns on dx). */
+  move?: { dx: number; dy: number };
 }
 
 /**
@@ -173,7 +290,7 @@ export function createHoldMachine<T>(holdMs = HOLD_MS) {
         const dy = i.y - last.y;
         last = { x: i.x, y: i.y };
         // like dragging a page: move the hand up and the content moves up (scrolls down)
-        return dx || dy ? { progress: 0, wheel: { dx: -dx * WHEEL_SCALE, dy: -dy * WHEEL_SCALE } } : { progress: 0 };
+        return dx || dy ? { progress: 0, wheel: { dx: -dx * WHEEL_SCALE, dy: -dy * WHEEL_SCALE }, move: { dx, dy } } : { progress: 0 };
       }
       return { progress: 0 };
     },
