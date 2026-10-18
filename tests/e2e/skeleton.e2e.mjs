@@ -209,7 +209,7 @@ async function withRealCameraPage(blockTrackingModels, fn) {
   const p = await context.newPage();
   const pageProblems = [];
   p.on('pageerror', (e) => pageProblems.push(e.message));
-  if (blockTrackingModels) await p.route(/jsdelivr|storage\.googleapis/, (route) => route.abort());
+  if (blockTrackingModels) await p.route(/jsdelivr|storage\.googleapis|\/models\/.*\.task/, (route) => route.abort()); // local model copies too
   try {
     await p.goto(`${BASE}/`);
     await fn(p);
