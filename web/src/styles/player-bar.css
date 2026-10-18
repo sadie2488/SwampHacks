@@ -1,40 +1,38 @@
-/* The player bar: a paper card floating at the bottom of the window on Learn and Play. */
+/* The player bar: a dark bar floating at the bottom of the window on Learn and Play. The round play button is the
+   one filled thing in the mode colour; the song's title reads in the big serif. */
 .player-bar {
   position: fixed;
   z-index: 10;
   left: 50%;
-  bottom: 1.25rem;
-  width: min(60rem, calc(100vw - 2rem));
-  transform: translateX(-50%) rotate(-0.3deg);
+  bottom: 16px;
+  width: min(62rem, calc(100vw - 2rem));
+  transform: translateX(-50%);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.6rem 1.4rem;
-  padding: 0.9rem 1.4rem;
-  background: var(--paper);
-  border: var(--border);
-  border-radius: 22px;
-  box-shadow: 7px 7px 0 var(--ink);
+  padding: 12px 20px 12px 14px;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
 }
 
 .play-button,
 .play-button:hover:not(:disabled) {
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 3.9rem;
+  height: 3.9rem;
   padding: 0;
   border-radius: 50%;
-  background: var(--coral);
-  box-shadow: 4px 4px 0 var(--ink);
   display: grid;
   place-items: center;
 }
 
 .play-button::after {
   content: '';
-  margin-left: 0.35rem;
-  border-left: 1.25rem solid #fff;
-  border-top: 0.8rem solid transparent;
-  border-bottom: 0.8rem solid transparent;
+  margin-left: 0.3rem;
+  border-left: 1.1rem solid currentColor;
+  border-top: 0.7rem solid transparent;
+  border-bottom: 0.7rem solid transparent;
 }
 
 .player-info {
@@ -43,17 +41,16 @@
 
 .song-title {
   margin: 0;
-  font: 800 1.55rem/1.15 var(--display);
-  letter-spacing: -0.02em;
+  font: 400 28px/1 var(--serif);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .song-meta {
-  margin: 0.2rem 0 0;
-  font: 500 0.75rem/1.4 var(--mono);
-  letter-spacing: 0.06em;
+  margin: 0.3rem 0 0;
+  font: 800 10px/1.4 var(--sans);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -69,12 +66,11 @@
   letter-spacing: 0;
 }
 
+/* how far into the song: a thin paper-white line (information, so not in the mode colour) */
 .progress {
-  margin-top: 0.55rem;
-  height: 0.8rem;
-  border: var(--border);
-  border-radius: 99px;
-  background: #fff;
+  margin-top: 0.5rem;
+  height: 3px;
+  background: var(--rule);
   overflow: hidden;
 }
 
@@ -82,19 +78,20 @@
   display: block;
   height: 100%;
   width: 0;
-  background: repeating-linear-gradient(135deg, var(--mustard) 0 8px, #ffd56e 8px 16px);
+  background: var(--paper-white);
 }
 
 .player-status {
   margin: 0.3rem 0 0;
   font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .player-controls {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .player-row {
@@ -102,14 +99,15 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .player-label,
 .player-label > span {
-  font: 500 0.7rem var(--mono);
-  letter-spacing: 0.1em;
+  font: 800 10px var(--sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--muted);
 }
 
 .player-label.volume {

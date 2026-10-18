@@ -1,6 +1,7 @@
 // The thinking behind the Practice panel, kept free of React so it can be tested on its own:
 // turning bars into song seconds, the plain-words lines, the local coaching sentence, and asking the server for coaching.
-import type { Feedback, SongAnalysis } from '@/contracts';
+import type { Feedback, Part, SongAnalysis } from '@/contracts';
+import { barStartAt, sheetGrid } from '@/modules/sheet/bar-grid';
 
 export const COACH_URL = '/api/feedback/coach';
 export const COACH_TIMEOUT_MS = 10_000;
@@ -28,41 +29,26 @@ export function cleanBars(bars: unknown): Bars | null {
 export const barsText = (bars: Bars): string => (bars[0] === bars[1] ? `bar ${bars[0]}` : `bars ${bars[0]}-${bars[1]}`);
 export const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** The time of grid point `index` (0-based), continuing at the same spacing past the end of the list. */
-function gridTime(grid: number[], spacing: number, index: number): number {
-  return index < grid.length ? grid[index] : grid[grid.length - 1] + (index - (grid.length - 1)) * spacing;
+/** The part practice feedback compares against (melody, else vocals, else any pitched part), so its bar numbers match. */
+function practicePart(a: SongAnalysis): Part | undefined {
+  const parts = a.parts ?? [];
+  return parts.find((p) => p.kind === 'melody') ?? parts.find((p) => p.kind === 'vocals') ?? parts.find((p) => p.kind !== 'drums') ?? parts[0];
 }
 
 /**
  * Where bars `from` to `to` (1-based, both included) start and end, in song seconds at 1.0x speed.
- * Uses the song's downbeats; without them the beats and the time signature; without those the tempo.
- * Returns null when the bars lie outside the song.
+ * Uses the sheet's bar grid (the same one the sheet cursor and the practice feedback use), so "bar 5"
+ * is the same bar everywhere, pickups and 6/8 included. Returns null when the bars lie outside the song.
  */
 export function barRangeSec(analysis: SongAnalysis | undefined, bars: unknown): [number, number] | null {
   const range = cleanBars(bars);
   if (!analysis || !range) return null;
   const [from, to] = range;
-  const perBar = isNum(analysis.time_signature?.numerator) && analysis.time_signature.numerator > 0 ? analysis.time_signature.numerator : 4;
-  const beatSec = isNum(analysis.tempo_bpm) && analysis.tempo_bpm > 0 ? 60 / analysis.tempo_bpm : 0.5;
-  const downbeats = (analysis.downbeats ?? []).filter(isNum);
-  const beats = (analysis.beats ?? []).filter(isNum);
-
-  // The start of bar n, for n from 1 up to one past the last bar we need.
-  let barStart: (n: number) => number;
-  if (downbeats.length > 0) {
-    const spacing = downbeats.length > 1 ? downbeats[downbeats.length - 1] - downbeats[downbeats.length - 2] : perBar * beatSec;
-    barStart = (n) => gridTime(downbeats, spacing, n - 1);
-  } else if (beats.length > 0) {
-    const spacing = beats.length > 1 ? beats[beats.length - 1] - beats[beats.length - 2] : beatSec;
-    barStart = (n) => gridTime(beats, spacing, (n - 1) * perBar);
-  } else {
-    barStart = (n) => (n - 1) * perBar * beatSec;
-  }
-
-  const start = round3(barStart(from));
+  const grid = sheetGrid(analysis, practicePart(analysis));
+  const start = round3(barStartAt(grid, from));
   const duration = isNum(analysis.duration_sec) && analysis.duration_sec > 0 ? analysis.duration_sec : Infinity;
   if (start >= duration) return null;
-  const end = round3(Math.min(barStart(to + 1), duration));
+  const end = round3(Math.min(barStartAt(grid, to + 1), duration));
   return end > start ? [start, end] : null;
 }
 

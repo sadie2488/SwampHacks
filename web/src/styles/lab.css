@@ -1,0 +1,104 @@
+/* Create and the Command Lab, in the Overture look (their own files keep the plain layout rules). */
+[data-testid='create-panel'] [role='group'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.6rem 0;
+}
+
+[data-testid='create-panel'] > h2:first-child {
+  font-size: 40px;
+}
+
+.command-lab {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.command-lab > section {
+  margin: 0;
+  min-width: 0;
+}
+
+/* the lab's own title and introduction: the big mode title already names the page, so these stay small */
+.command-lab > h1 {
+  margin: 0;
+  font: 800 10px/1.3 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.command-lab > p {
+  margin: -0.5rem 0 0;
+  max-width: 46rem;
+}
+
+.command-lab code {
+  font: 600 0.85em ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  background: rgba(242, 238, 230, 0.08);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 0.3em;
+}
+
+.lab-list > li {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(242, 238, 230, 0.03);
+}
+
+.lab-hint {
+  color: var(--muted);
+}
+
+.lab-reading meter {
+  width: 12rem;
+  max-width: 100%;
+}
+
+.lab-camera {
+  max-width: 640px;
+  overflow: hidden;
+  background: var(--night);
+  border: 1px solid var(--rule);
+}
+
+.lab-lamp {
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+}
+
+.lab-lamp[data-on='true'] {
+  background: var(--paper-white);
+  box-shadow: none;
+}
+
+[data-testid^='control-'][data-flash='true'] {
+  background: rgba(242, 238, 230, 0.14);
+}
+
+[data-testid^='rule-'][data-fired='true'] {
+  background: rgba(242, 238, 230, 0.12);
+  border-color: var(--paper-white);
+}
+
+[data-testid='lab-issues'] li[data-level='error'] {
+  border-color: var(--error);
+}
+
+[data-testid='lab-issues'] li[data-level='warning'] {
+  border-color: var(--warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  select,
+  input::file-selector-button {
+    transition: none;
+  }
+}

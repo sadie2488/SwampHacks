@@ -11,14 +11,15 @@
   border: 0;
 }
 
-/* The app sits above the landscape. It is full width so the paper strip can reach both edges of the window,
-   and it clips sideways so that strip never makes the page scroll left and right. */
+/* The app sits above the moving background, in the section's own dark tint. It is full width so the sheet's paper
+   band can reach both edges, and it clips sideways so nothing makes the page scroll left and right. */
 .app {
   position: relative;
   z-index: 1;
   min-height: 100vh;
   overflow-x: clip;
-  padding: 1.6rem clamp(1rem, 3.2vw, 3rem) 3rem;
+  padding: 20px var(--m) 3rem;
+  background: var(--bg);
 }
 
 .app-header,
@@ -29,53 +30,63 @@
   margin: 0 auto;
 }
 
-/* ---------- header: the paper name tag on the left, the mode pills in the middle, log in on the right ---------- */
-
+/* ---------- header inside a mode: logo + Records on the left, the mode pills, then sound and login ---------- */
 .app-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 1rem 1.5rem;
-  margin-bottom: 1.6rem;
+  gap: 12px 20px;
+  margin-bottom: 18px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 h1.brand {
-  justify-self: start;
   margin: 0;
-  padding: 0.3rem 1rem 0.4rem;
-  font: 800 1.75rem/1.1 var(--display);
-  letter-spacing: -0.02em;
+  font: 400 42px/0.8 var(--script);
   white-space: nowrap;
-  background: var(--paper);
-  border: var(--border);
-  border-radius: 14px;
-  box-shadow: 4px 4px 0 var(--ink);
-  transform: rotate(-1.2deg);
+  color: var(--paper-white);
 }
 
-.brand-accent {
-  color: var(--coral-text);
+.records-pill {
+  border-color: var(--rule-strong);
+  padding: 6px 12px;
+  font-size: 10px;
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 4px;
 }
 
-.tabs button {
-  font-size: 1rem;
-  padding: 0.5rem 1.25rem;
-  box-shadow: 3px 3px 0 var(--ink);
+.app[data-screen='mode'] .tabs {
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border: 1px solid var(--rule);
 }
 
-.tabs button[aria-selected='true'] {
-  background: var(--mustard);
+.app[data-screen='mode'] .tabs [role='tab'] {
+  border-color: transparent;
+}
+
+.app[data-screen='mode'] .tabs [role='tab'][aria-selected='true'] {
+  background: var(--a);
+  color: var(--on-a);
 }
 
 .header-end {
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .login-box {
@@ -94,14 +105,12 @@ h1.brand {
   }
 }
 
-/* ---------- page layout: floating cards, the sheet strip, the player bar ---------- */
-
-/* Learn and Play leave room at the bottom so the floating player bar never hides the end of the page. */
+/* ---------- the stage: mode title, panels, the sheet band ---------- */
 .stage {
   --dock-space: 10rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.75rem;
+  gap: 20px;
   align-items: start;
 }
 
@@ -113,7 +122,6 @@ h1.brand {
   display: contents;
 }
 
-/* Cards paint above the paper strip where they meet. */
 .card {
   position: relative;
   z-index: 2;
@@ -124,172 +132,8 @@ h1.brand {
   min-width: 0;
 }
 
-/* Medium window: two columns, the strip across both. */
-@media (min-width: 760px) {
-  .stage {
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
-    column-gap: 2rem;
-  }
-
-  .side-card {
-    grid-area: 1 / 1;
-  }
-
-  .stage-learn .practice-card,
-  .stage-play .hands-card {
-    grid-area: 1 / 2;
-    justify-self: end;
-    width: min(100%, 24rem);
-  }
-
-  .stage-play .practice-card {
-    grid-area: 3 / 2;
-    justify-self: end;
-    width: min(100%, 24rem);
-  }
-
-  .stage-song .sheet-strip {
-    grid-area: 2 / 1 / 3 / -1;
-  }
-
-  .stage-main {
-    grid-area: 1 / 2;
-  }
-}
-
-/* Wide window, like the mockup: the song card top left, practice top right, the landscape showing between them,
-   the strip right under them, reaching a little up behind the cards (its staff always starts below them). */
-@media (min-width: 1100px) {
-  .stage {
-    grid-template-columns: 20rem minmax(0, 1fr) 23.5rem;
-  }
-
-  .stage {
-    row-gap: 1rem;
-  }
-
-  .stage-learn .practice-card,
-  .stage-play .hands-card {
-    grid-area: 1 / 3;
-    justify-self: stretch;
-    width: auto;
-  }
-
-  .stage-play .practice-card {
-    grid-area: 3 / 3;
-    justify-self: stretch;
-    width: auto;
-  }
-
-  .stage-song .sheet-strip {
-    margin-top: -2.75rem;
-    padding-top: 3.75rem;
-  }
-
-  .stage-main {
-    grid-area: 1 / 2 / auto / -1;
-  }
-}
-
 @media (max-width: 759px) {
   .stage {
-    --dock-space: 11rem;
+    --dock-space: 11.5rem;
   }
 }
-
-/* ---------- paper-tag cards ---------- */
-
-.card,
-[data-testid='create-panel'],
-.command-lab > section,
-.camera-preview-waiting {
-  background: var(--paper);
-  border: var(--border);
-  border-radius: 22px;
-  box-shadow: 7px 7px 0 var(--ink);
-  padding: 1.15rem 1.35rem 1.25rem;
-  margin: 0;
-}
-
-/* each card sits a little crooked, like paper pinned to a board */
-.side-card {
-  transform: rotate(-0.7deg);
-}
-
-.practice-card,
-.hands-card {
-  transform: rotate(0.6deg);
-}
-
-[data-testid='create-panel'] {
-  transform: rotate(-0.25deg);
-}
-
-.command-lab > section:nth-of-type(odd) {
-  transform: rotate(-0.3deg);
-}
-
-.command-lab > section:nth-of-type(even) {
-  transform: rotate(0.25deg);
-}
-
-/* The small mono label above each card's title ("PICK A SONG"). */
-.kicker {
-  margin: 0;
-  font: 500 0.72rem/1.3 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--teal-deep);
-}
-
-h2.kicker,
-h3.kicker {
-  margin: 0;
-  font: 500 0.72rem/1.3 var(--mono);
-  letter-spacing: 0.12em;
-}
-
-.kicker + h2 {
-  margin-top: 0.2rem;
-}
-
-.small-note {
-  margin: 0.4rem 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-h1,
-h2,
-h3 {
-  font-family: var(--display);
-  letter-spacing: -0.02em;
-}
-
-h2 {
-  margin: 0 0 0.6rem;
-  font-size: 1.6rem;
-  font-weight: 800;
-  line-height: 1.15;
-}
-
-h3 {
-  margin: 0.9rem 0 0.4rem;
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-
-p {
-  margin: 0.5rem 0;
-}
-
-/* Inside a card, the practice and history parts are plain sections, not cards of their own. */
-.practice-card .panel {
-  margin: 0;
-  padding: 0;
-}
-
-.practice-card .history {
-  margin-top: 1rem;
-}
-

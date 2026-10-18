@@ -12,23 +12,23 @@
 }
 
 .hand-meter-value {
-  font: 500 0.78rem var(--mono);
+  font: 400 18px var(--serif);
   color: var(--muted);
 }
 
 .bar {
   margin-top: 0.3rem;
-  height: 0.85rem;
-  border: var(--border);
-  border-radius: 99px;
-  background: #fff;
+  height: 4px;
+  border: 0;
+  border-radius: 0;
+  background: var(--rule);
   overflow: hidden;
 }
 
 .bar > span {
   display: block;
   height: 100%;
-  background: var(--coral);
+  background: var(--paper-white);
 }
 
 .hands-card h3.kicker {
@@ -47,19 +47,19 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.4rem 0;
-  border-top: 2px dashed var(--line);
+  border-top: 1px solid var(--rule);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .fired-list em {
   flex: none;
-  font: 500 0.7rem var(--mono);
+  font: 800 10px var(--sans);
   font-style: normal;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: var(--mustard);
-  border: 2px solid var(--ink);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
   border-radius: 99px;
   padding: 0.15rem 0.6rem;
 }

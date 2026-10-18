@@ -1,29 +1,33 @@
-// The app shell: header, mode tabs, the song view shared by Learn and Play, and the other modules' panels.
+// The app shell (the Overture look): the entrance, the record menu, and inside a mode the header with the mode pills,
+// the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
+// screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
 import { useEffect, useState } from 'react';
-import { bus, isFakeMode, reportStatus, type Stop } from '@/bus';
+import { bus, isFakeMode, resumeAudio } from '@/bus';
 import type { Mode } from '@/contracts';
-import { start as startAudioLive } from '@/modules/audio-live';
 import { CommandLab } from '@/modules/command-lab';
-import { start as startCommands } from '@/modules/commands';
-import { CreatePanel, start as startCreate } from '@/modules/create';
-import { start as startPlayback } from '@/modules/playback';
-import { Sheet } from '@/modules/sheet';
-import { start as startTouchDesigner } from '@/modules/touchdesigner';
-import { start as startVision } from '@/modules/vision';
+import { CreatePanel } from '@/modules/create';
 import { Backdrop } from '@/ui/backdrop/Backdrop';
+import { bigWordPlaces } from '@/ui/overture/carousel';
+import { Entrance } from '@/ui/overture/Entrance';
+import { GuideLayer } from '@/ui/overture/GuideLayer';
+import { MODES, modeLook, type ModeId, type Screen } from '@/ui/overture/modes';
+import { RecordMenu } from '@/ui/overture/RecordMenu';
+import { ModeTitle } from '@/ui/overture/ModeTitle';
+import { initialScreen, readScreenHints, rememberEntered } from '@/ui/overture/screen';
+import { SoundToggle } from '@/ui/overture/SoundToggle';
+import { needleDrop, swell, unlockSounds } from '@/ui/overture/sounds';
+import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
 import { apiFetch } from './api-fetch';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
-import { HandsCard } from './HandsCard';
-import { History } from './History';
 import { LoginButton } from './LoginButton';
+import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
-import { Practice } from './Practice';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
-import { Transport } from './Transport';
+import { SongView } from './SongView';
 
-type Tab = 'learn' | 'play' | 'create' | 'lab';
+type Tab = ModeId;
 
 const TABS: Array<{ id: Tab; label: string; testid: string }> = [
   { id: 'learn', label: 'Learn', testid: 'tab-learn' },
@@ -34,104 +38,87 @@ const TABS: Array<{ id: Tab; label: string; testid: string }> = [
 
 /** The Command Lab counts as "play" for everything that listens to the mode. */
 const modeOf = (tab: Tab): Mode => (tab === 'lab' ? 'play' : tab);
-
-const MODULES: Array<[name: string, start: () => Stop]> = [
-  ['playback', startPlayback],
-  ['commands', startCommands],
-  ['vision', startVision],
-  ['audio-live', startAudioLive],
-  ['touchdesigner', startTouchDesigner],
-  ['create', startCreate],
-];
-
-/** Learn and Play: the practice card, the player bar at the bottom, and the sheet music on its paper strip. */
-function SongView({ tab }: { tab: Tab }) {
-  return (
-    <>
-      {tab === 'play' && (
-        <PanelBoundary name="hands">
-          <HandsCard />
-        </PanelBoundary>
-      )}
-      <div className="song-controls">
-        <div className="card practice-card">
-          <PanelBoundary name="practice">
-            <Practice />
-          </PanelBoundary>
-          <PanelBoundary name="practice history">
-            <History />
-          </PanelBoundary>
-        </div>
-        <Transport />
-      </div>
-      {/* the sheet sits on a calm torn-paper strip, in front of the landscape */}
-      <section className="sheet-strip" aria-labelledby="sheet-heading">
-        <div className="sheet-strip-inner">
-          <h2 id="sheet-heading" className="kicker">
-            Sheet music
-          </h2>
-          <PanelBoundary name="sheet music">
-            <Sheet />
-          </PanelBoundary>
-        </div>
-      </section>
-    </>
-  );
-}
+const indexOf = (tab: Tab) => Math.max(0, MODES.findIndex((m) => m.id === tab));
+/** "inert" keeps hidden screens out of the keyboard order (React 18 passes it through as a plain attribute). */
+const inert = (on: boolean) => (on ? { inert: '' } : {}) as object;
 
 export function App() {
   const [tab, setTab] = useState<Tab>('learn');
+  const [screen, setScreen] = useState<Screen>(() => initialScreen(readScreenHints()));
+  const [menuSel, setMenuSel] = useState(0);
   const [loader, setLoader] = useState<LoaderState>(idleLoader);
+  // restarts the "content rises in" animation on every arrival in a mode (two names so it can restart in place)
+  const [arrive, setArrive] = useState<{ kind: string; n: number }>({ kind: 'none', n: 0 });
   const songTab = tab === 'learn' || tab === 'play';
-
-  // Start every module once. A module that fails to start must not take the page down with it.
-  useEffect(() => {
-    const stops = MODULES.map(([name, start]) => {
-      try {
-        return start();
-      } catch (e) {
-        console.error(`[app] the ${name} module could not start`, e);
-        reportStatus(name, 'error', 'This part could not start.');
-        return () => {};
-      }
-    });
-    return () => {
-      for (const stop of stops) {
-        try {
-          stop();
-        } catch (e) {
-          console.error('[app] a module did not stop cleanly', e);
-        }
-      }
-    };
-  }, []);
+  useModules();
 
   useEffect(() => {
     bus.emit('mode', modeOf(tab));
   }, [tab]);
 
+  const openMode = (id: Tab) => {
+    unlockSounds();
+    if (screen === 'mode' && id === tab) return;
+    const kind = screen === 'menu' ? 'portal' : screen === 'mode' ? 'mode' : 'enter';
+    const update = () => {
+      setTab(id);
+      setMenuSel(indexOf(id));
+      setScreen('mode');
+      setArrive((a) => ({ kind, n: a.n + 1 }));
+    };
+    if (screen === 'menu') {
+      const p = bigWordPlaces(menuSel, window.innerWidth, window.innerHeight);
+      needleDrop();
+      swell(PORTAL_MS);
+      changeScreen('portal', update, { ...p.centre, hole: p.hole });
+    } else changeScreen(kind, update);
+  };
+  const openMenu = () =>
+    changeScreen('back', () => {
+      setMenuSel(indexOf(tab));
+      setScreen('menu');
+    });
+  const enter = (camera: boolean) => {
+    rememberEntered();
+    unlockSounds();
+    resumeAudio().catch(() => {});
+    // the click is the person's go-ahead; if they refuse a permission the app simply carries on without it
+    if (camera) bus.emit('enable', { module: 'vision', on: true });
+    bus.emit('enable', { module: 'audio-live', on: true });
+    changeScreen('enter', () => setScreen('menu'));
+  };
+
+  const shownMode: ModeId = screen === 'menu' ? MODES[menuSel].id : tab;
   return (
-    <div className="app">
-      <Backdrop />
-      <header className="app-header">
-        <h1 className="brand">
-          Swamp<span className="brand-accent">Hacks</span> Music
-        </h1>
+    <div className="app" data-screen={screen} data-mode={shownMode} data-arrive={arrive.n ? `${arrive.kind}-${arrive.n % 2}` : undefined}>
+      <Backdrop screen={screen} mode={shownMode} menuIndex={menuSel} />
+      <GuideLayer screen={screen} mode={tab} />
+      {screen === 'entrance' && <Entrance onEnter={enter} />}
+      {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
+      <header className="app-header" {...inert(screen === 'entrance')}>
+        <div className="brand-block">
+          <h1 className="brand">Overture</h1>
+          <button type="button" className="pill records-pill" title="Back to the four records" onClick={openMenu}>
+            Records
+          </button>
+        </div>
         <div role="tablist" aria-label="Mode" className="tabs">
           {TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls="mode-panel" data-testid={t.testid} onClick={() => setTab(t.id)}>
+            <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={screen !== 'menu' ? tab === t.id : menuSel === indexOf(t.id)} aria-controls="mode-panel" data-testid={t.testid} onClick={() => openMode(t.id)} onPointerEnter={() => screen === 'menu' && setMenuSel(indexOf(t.id))} onFocus={() => screen === 'menu' && setMenuSel(indexOf(t.id))}>
               {t.label}
             </button>
           ))}
         </div>
         <div className="header-end">
+          <SoundToggle />
           <LoginButton />
         </div>
       </header>
 
-      <main className="app-main">
+      <main className="app-main" {...inert(screen !== 'mode')}>
         <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>
-          {/* the left card: the song picker (Learn and Play), the devices, and the camera picture right under them */}
+          <ModeTitle look={modeLook(tab)} guides={screen === 'mode'} />
+          {/* the left panel: the song picker (Learn and Play), the devices, and the camera picture right under them */}
           <div className="card side-card">
             {songTab && (
               <>
