@@ -12,7 +12,9 @@
     --player-h: 102px;
     --sheet-h: clamp(150px, 26vh, 260px);
     /* room the panels leave at the bottom for the sheet band and the player */
-    --low: calc(var(--player-h) + var(--sheet-h) + 14px);
+    /* the bottom row of toggles and Learn pills (20px up, 28px tall): the player bar and the sheet band sit above it */
+    --row-h: 44px;
+    --low: calc(var(--player-h) + var(--sheet-h) + 14px + var(--row-h));
     height: 100dvh;
     min-height: 0;
     overflow: hidden;
@@ -79,7 +81,7 @@
     z-index: 11;
     left: calc(var(--gut) + var(--toggles-w));
     right: var(--gut);
-    bottom: calc(var(--player-h) + 6px);
+    bottom: calc(var(--player-h) + 6px + var(--row-h));
     height: var(--sheet-h);
     margin: 0;
     padding: 10px 18px 0;
@@ -104,7 +106,7 @@
   .stage-song .player-bar {
     left: calc(var(--gut) + var(--toggles-w));
     right: var(--gut);
-    bottom: 12px;
+    bottom: calc(12px + var(--row-h));
     width: auto;
     max-width: 62rem;
     margin: 0 auto;

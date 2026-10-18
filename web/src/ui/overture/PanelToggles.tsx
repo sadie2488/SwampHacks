@@ -7,7 +7,8 @@ import type { ModeId } from './modes';
 export type PanelName = 'song' | 'devices' | 'practice' | 'feedback' | 'player' | 'sheet' | 'layers' | 'tracks';
 
 export const PANELS_FOR: Record<ModeId, PanelName[]> = {
-  learn: ['song', 'practice', 'feedback', 'sheet', 'player', 'devices'],
+  // one row along the bottom: these four on the left, then Practice and Song at the right next to Restart and Show letters
+  learn: ['feedback', 'sheet', 'player', 'devices', 'practice', 'song'],
   // Play has no panels at all: it is used purely by hands and voice (the demo song loads itself when none is loaded)
   play: [],
   create: ['devices', 'layers', 'tracks'],
