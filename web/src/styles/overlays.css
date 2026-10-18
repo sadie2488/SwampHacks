@@ -47,7 +47,7 @@
 
 .td-sparkle:hover {
   border-color: var(--a);
-  color: var(--a-text);
+  color: var(--a);
 }
 
 .td-sparkle[aria-pressed='true'] {
@@ -75,6 +75,11 @@
   color: var(--on-a, var(--night));
 }
 
+/* inside a mode the header stays above both overlays, sharp and clickable */
+.app[data-screen='mode'] .app-header {
+  z-index: 21;
+}
+
 /* ---------- the guide: a few big, calm lines over the screen; see-through, clicks pass through it ---------- */
 .guide-overlay {
   position: fixed;
@@ -84,7 +89,7 @@
   justify-content: flex-end;
   align-items: flex-end;
   padding: 120px var(--m) calc(var(--m) * 2);
-  background: linear-gradient(90deg, rgba(11, 10, 12, 0.18) 0%, rgba(11, 10, 12, 0.62) 38%, rgba(11, 10, 12, 0.78) 100%);
+  background: linear-gradient(90deg, rgba(11, 10, 12, 0.4) 0%, rgba(11, 10, 12, 0.55) 20%, rgba(11, 10, 12, 0.94) 27%, rgba(11, 10, 12, 0.95) 100%);
   color: var(--paper-white);
   pointer-events: none;
   animation: guide-in 0.5s ease-out both;
@@ -102,7 +107,7 @@
   font: 700 11px/1.4 var(--sans);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--a-text);
+  color: var(--a);
 }
 
 .guide-overlay-title {
@@ -154,7 +159,13 @@
 
 .hands-overlay .hands-card {
   margin: 0;
-  background: rgba(11, 10, 12, 0.72);
+  background: var(--bg);
+  border-color: var(--a);
+}
+
+/* --a-text is set on :root (so elsewhere it is the entrance ink); the Lab sets its own lighter blue for small text */
+.app[data-mode='lab'] :is(.guide-overlay-kicker, .guide-overlay-close, .td-sparkle:hover) {
+  color: var(--a-text);
 }
 
 @media (prefers-reduced-motion: reduce) {
