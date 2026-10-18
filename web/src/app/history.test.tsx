@@ -7,6 +7,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bus, resetControls, type Topics } from '@/bus';
 import type { Feedback, SongAnalysis } from '@/contracts';
+import { FeedbackPanel } from './FeedbackPanel';
 import { History } from './History';
 import { Practice } from './Practice';
 import { LOCAL_KEY, SAVE_NOTE, stopSessionSaver } from './session-save';
@@ -297,6 +298,7 @@ describe('after a practice run', () => {
     await mount(
       <>
         <Practice />
+        <FeedbackPanel />
         <History />
       </>,
     );

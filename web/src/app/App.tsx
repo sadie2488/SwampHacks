@@ -87,6 +87,8 @@ export function App() {
   useEffect(() => {
     if (screen === 'mode' && tab === 'learn') openPanel('player');
   }, [screen, tab, arrive.n, openPanel]);
+  // feedback after a practice run opens its own panel so it is seen; nothing else closes
+  useEffect(() => bus.on('feedback', (f) => f && openPanel('feedback')), [openPanel]);
   useEffect(() => unlockOnFirstGesture(), []);
 
   const openMode = (id: Tab) => {
@@ -188,18 +190,32 @@ export function App() {
           <ModeTitle look={modeLook(tab)} guides={screen === 'mode'} />
           {/* the mode's own picture over the camera (staff and notes, hum rings, hand readout), driven by real data */}
           {screen === 'mode' && <ModeVisual mode={tab} />}
-          {/* the left panel: the song picker (Learn only), the devices, and the camera picture right under them */}
-          <div className="card side-card float-panel" {...panelProps(tab === 'lab' || isOpen(songTab ? 'song' : 'devices'))}>
-            {songTab && (
-              <>
+          {/* the left column: the song picker (Learn only), the devices, and the camera picture right under them.
+              Learn splits them into two panels (Song, Devices); the other modes keep one card. */}
+          {tab === 'learn' ? (
+            <div className="side-column">
+              <div className="card side-card float-panel" {...panelProps(isOpen('song'))}>
                 <SongLoader state={loader} setState={setLoader} />
                 <AnalysisWarnings />
-              </>
-            )}
-            <Devices fake={isFakeMode()} touchdesigner={tab === 'lab'} />
-            <CameraPreview />
-          </div>
-          {songTab && <SongView mode="learn" open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
+              </div>
+              <div className="card side-card devices-card float-panel" {...panelProps(isOpen('devices'))}>
+                <Devices fake={isFakeMode()} touchdesigner={false} />
+                <CameraPreview />
+              </div>
+            </div>
+          ) : (
+            <div className="card side-card float-panel" {...panelProps(tab === 'lab' || isOpen(songTab ? 'song' : 'devices'))}>
+              {songTab && (
+                <>
+                  <SongLoader state={loader} setState={setLoader} />
+                  <AnalysisWarnings />
+                </>
+              )}
+              <Devices fake={isFakeMode()} touchdesigner={tab === 'lab'} />
+              <CameraPreview />
+            </div>
+          )}
+          {songTab && <SongView mode="learn" open={{ practice: isOpen('practice'), feedback: isOpen('feedback'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
           {tab === 'create' && (
             <div className="stage-main float-panel create-slot" data-layers={isOpen('layers')} data-tracks={isOpen('tracks')} {...panelProps(isOpen('layers') || isOpen('tracks'))}>
               <PanelBoundary name="Create">

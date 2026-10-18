@@ -7,6 +7,7 @@ import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
 import { bus, reportStatus, resetControls, type TransportState, type Topics } from '@/bus';
 import type { CommandEvent, Feedback, SongAnalysis } from '@/contracts';
+import { FeedbackPanel } from './FeedbackPanel';
 import { Practice } from './Practice';
 import { builtInCoaching } from './practice-logic';
 
@@ -26,7 +27,16 @@ const click = async (id: string) => {
   await settle();
 };
 const emit = <K extends keyof Topics>(topic: K, value: Topics[K]) => act(async () => void bus.emit(topic, value));
-const mount = () => act(async () => root.render(<Practice />));
+// the Practice panel and the Feedback panel next to it (the feedback card moved out of Practice into its own panel)
+const mount = () =>
+  act(async () =>
+    root.render(
+      <>
+        <Practice />
+        <FeedbackPanel />
+      </>,
+    ),
+  );
 async function until(check: () => unknown, what: string) {
   for (let i = 0; i < 100; i++) {
     if (check()) return;

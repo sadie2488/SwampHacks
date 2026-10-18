@@ -3,14 +3,30 @@
   z-index: 1;
 }
 
+/* The Learn pills sit in the bottom-left gutter column, right above the panel toggles (see .panel-toggles in
+   styles/stage-fit.css: left gutter, bottom 20px, one pill per Learn panel, 6px apart), so they read as one column.
+   --learn-toggles is how many toggles Learn has; a toggle is 12px/1.2 text + 5px padding + 1.5px border each way. */
 .learn-tools {
+  --toggle-h: calc(12px * 1.2 + 10px + 3px);
   position: fixed;
-  z-index: 12;
-  top: var(--top, 92px);
-  left: 50%;
-  transform: translateX(-50%);
+  z-index: 20;
+  left: var(--gut, 28px);
+  bottom: calc(20px + var(--learn-toggles, 6) * (var(--toggle-h) + 6px));
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.learn-tools .pill {
+  padding: 5px 12px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
+}
+
+.learn-tools .pill[aria-pressed='true'] {
+  background: var(--paper-white);
+  color: var(--night);
 }
 
 .learn-pause-mark {

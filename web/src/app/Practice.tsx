@@ -1,9 +1,8 @@
-// Practice: play along with the song and get friendly feedback. This panel only talks to the listening part through
-// the bus (practiceControl in; practice and feedback out) and to the server for the coach's wording.
+// Practice: play along with the song. This panel only talks to the listening part through the bus (practiceControl
+// in; practice out). The feedback after a run lives in its own panel (FeedbackPanel).
 import { useEffect, useState } from 'react';
 import { bus, getStatus, sendCommand, type Topics } from '@/bus';
-import { FeedbackCard } from './FeedbackCard';
-import { afterAudioWakes, useBusValue, useModuleStatus } from './hooks';
+import { afterAudioWakes, useModuleStatus } from './hooks';
 import { MIC_FAILED_MESSAGE, MIC_STARTING_MESSAGE, NO_SONG_MESSAGE, practiceWords, startMicThen } from './practice-logic';
 
 type Action = Topics['practiceControl']['action'];
@@ -13,7 +12,6 @@ const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFi
 const STEPS = ['Turn on the microphone', "Use headphones so the microphone doesn't hear the song", 'Clap along to calibrate the delay', 'Play along with the song'];
 
 export function Practice() {
-  const feedback = useBusValue('feedback');
   const [practice, setPractice] = useState(() => bus.last('practice'));
   // The delay stays on screen even if a later message does not repeat it.
   const [latency, setLatency] = useState<number | undefined>(() => (finite(bus.last('practice')?.latencyOffsetMs) ? bus.last('practice')!.latencyOffsetMs : undefined));
@@ -96,7 +94,6 @@ export function Practice() {
         </p>
       )}
       {latency !== undefined && <p data-testid="practice-latency">Delay measured: {Math.round(latency)} ms</p>}
-      {feedback && <FeedbackCard feedback={feedback} />}
     </section>
   );
 }

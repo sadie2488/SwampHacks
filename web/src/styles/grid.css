@@ -62,3 +62,19 @@
     padding: 0 8px;
   }
 }
+
+/* Learn's columns hold two cards each (Song over Devices, Practice over Feedback) */
+.side-column {
+  grid-area: side;
+}
+
+.stage-song .right-column {
+  grid-area: right;
+}
+
+.side-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

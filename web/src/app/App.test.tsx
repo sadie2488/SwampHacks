@@ -501,4 +501,39 @@ describe('practice panel', () => {
     ]);
     stop();
   });
+
+  it('keeps the feedback card in its own Feedback panel, which opens by itself when feedback arrives (nothing else closes)', async () => {
+    await emit('feedback', undefined as unknown as Topics['feedback']); // the bus remembers the last run: start with none
+    await click('tab-learn');
+    const panel = container.querySelector<HTMLElement>('.feedback-card-panel')!;
+    const practice = $('btn-practice-start')!.closest('.practice-card')!;
+    expect(panel).not.toBeNull();
+    expect(panel.getAttribute('data-open')).toBe('false');
+    expect($('feedback-empty')).not.toBeNull();
+    const before = [...container.querySelectorAll<HTMLElement>('.float-panel:not(.feedback-card-panel)')].map((p) => p.getAttribute('data-open'));
+
+    await emit('feedback', structuredClone(rulesTempo) as unknown as Topics['feedback']);
+    expect(panel.getAttribute('data-open')).toBe('true');
+    expect($('feedback-card')).not.toBeNull();
+    expect(panel.contains($('feedback-card'))).toBe(true);
+    expect(practice.contains($('feedback-card'))).toBe(false);
+    expect([...container.querySelectorAll<HTMLElement>('.float-panel:not(.feedback-card-panel)')].map((p) => p.getAttribute('data-open'))).toEqual(before);
+    const toggle = $('toggle-feedback');
+    if (toggle) expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('on Learn, the Song panel holds the song picker only and the devices sit in their own Devices panel', async () => {
+    await click('tab-learn');
+    const song = $('use-demo')!.closest('.side-card')!;
+    const devices = $('btn-enable-vision')!.closest('.side-card')!;
+    expect(devices.classList.contains('devices-card')).toBe(true);
+    expect(song).not.toBe(devices);
+    expect(song.contains($('btn-enable-audio'))).toBe(false);
+    expect(devices.contains($('status-vision'))).toBe(true);
+    expect(devices.contains($('status-audio-live'))).toBe(true);
+    // the other modes keep one left card with the devices in it
+    await click('tab-create');
+    expect($('use-demo')).toBeNull();
+    expect($('btn-enable-vision')!.closest('.side-card')!.classList.contains('devices-card')).toBe(false);
+  });
 });
