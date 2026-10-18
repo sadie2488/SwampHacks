@@ -9,8 +9,11 @@ export const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${
 export const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 export const FACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 
-/** Frames per second sent to the worker. */
-export const TRACKING_FPS = 15;
+/**
+ * Frames per second sent to the worker. 24 (was 15) cuts the hand cursor's lag by about a third; the worker still
+ * only takes a new picture when it is idle, so a slow machine simply runs below this cap rather than piling up frames.
+ */
+export const TRACKING_FPS = 24;
 
 export type ToWorker =
   | { type: 'init'; wasmUrl: string; handModelUrl: string; faceModelUrl: string; delegate?: 'auto' | 'CPU' | 'GPU' }

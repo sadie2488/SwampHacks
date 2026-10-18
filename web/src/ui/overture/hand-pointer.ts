@@ -11,8 +11,13 @@ export const MAGNET_PX = 48;
  * drags at once (and that grab never clicks); one that stays inside it clicks after HOLD_MS.
  */
 export const DRAG_PX = 12;
-/** Each frame the cursor moves this share of the way to the hand: lower is steadier, higher is snappier. */
-export const SMOOTH = 0.35;
+/**
+ * Each display frame (rAF, ~60 Hz) the cursor moves this share of the way to the latest tracked hand point: lower is
+ * steadier, higher is snappier. Because it runs every display frame, not only when the worker publishes new landmarks,
+ * it also fills in the motion between worker frames so the cursor glides instead of stepping. 0.55 (was 0.35) reaches
+ * ~90% of a move in 3 frames (~50 ms) instead of 6 while still soaking up single-frame jitter.
+ */
+export const SMOOTH = 0.55;
 /** Wheel distance sent per pixel the grabbing hand moves. */
 export const WHEEL_SCALE = 2.5;
 /** The smallest hit area a target gets (px), matching the CSS hit-area rule. */
