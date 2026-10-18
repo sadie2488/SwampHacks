@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from './config';
-import { countKeywords, KeywordGate, loneKeyword, matchKeywords } from './keywords';
+import { countKeywords, KeywordGate, loneKeyword, matchKeywords, modeWords, SOUND_ALIKES } from './keywords';
 
 describe('matching words', () => {
   it('finds each of the six keywords, in any capitals', () => {
@@ -165,5 +165,120 @@ describe('Create mode without the fist', () => {
     expect(gate.accept(['play'], 1)).toEqual([]);
     gate.arm();
     expect(gate.accept(['please play it'], 0, false, [false])).toEqual(['play']);
+  });
+});
+
+describe('sound-alikes, guesses and modes', () => {
+  const make = () => {
+    let now = 1000;
+    const gate = new KeywordGate(() => now);
+    return { gate, tick: (ms: number) => (now += ms) };
+  };
+
+  it('every sound-alike maps to its word (and only in its own mode)', () => {
+    let n = 0;
+    for (const [word, alikes] of Object.entries(SOUND_ALIKES)) {
+      const words = modeWords(CONFIG.keywords.createWords.includes(word));
+      expect(words).toContain(word);
+      for (const a of alikes) {
+        n++;
+        expect(matchKeywords(a, words), a).toEqual([word]);
+        expect(matchKeywords(`${a.toUpperCase()}!`, words), a).toEqual([word]);
+        expect(loneKeyword(a, words), a).toBe(word);
+        expect(matchKeywords(a, modeWords(!CONFIG.keywords.createWords.includes(word))), a).toEqual([]);
+      }
+    }
+    expect(n).toBeGreaterThan(100);
+  });
+
+  it('the listed mis-hearings all work', () => {
+    const play = modeWords(false);
+    const create = modeWords(true);
+    const cases: [string, string, readonly string[]][] = [
+      ['paws', 'pause', play], ['pores', 'pause', play], ['plate', 'play', play], ['played', 'play', play],
+      ['slow', 'slower', play], ['fast', 'faster', play], ['hire', 'higher', play], ['lore', 'lower', play], ['lover', 'lower', play],
+      ['text', 'next', create], ['necks', 'next', create], ['star', 'start', create], ['stark', 'start', create],
+      ['beet', 'beat', create], ['bead', 'beat', create], ['base', 'bass', create], ['sense', 'synth', create], ['sin', 'synth', create],
+      ['plug', 'pluck', create], ['river', 'reverb', create], ['the lay', 'delay', create], ['filtered', 'filter', create],
+      ['pianos', 'piano', create], ['drum', 'drums', create],
+    ];
+    for (const [heard, word, words] of cases) expect(loneKeyword(heard, words), heard).toBe(word);
+  });
+
+  it('matches whole words only', () => {
+    expect(matchKeywords('basement starfish texting', modeWords(true))).toEqual([]);
+    expect(matchKeywords('display slowpoke', modeWords(false))).toEqual([]);
+  });
+
+  it('checks every guess of a finished phrase: a word only in guess 3 still fires', () => {
+    const { gate } = make();
+    gate.arm();
+    expect(gate.accept([['nice weather', 'nice whether', 'pause the weather']], 0, false, [true])).toEqual(['pause']);
+  });
+
+  it('in Create without the fist, a guess 3 that is the word alone fires; narration in every guess does not', () => {
+    const { gate } = make();
+    expect(gate.accept([['stuff', 'stop', 'start']], 0, true, [true])).toEqual(['start']);
+    expect(gate.accept([['lets', "let's", "let's start the drums"]], 1, true, [true])).toEqual([]);
+  });
+
+  it('a word from the other mode does nothing', () => {
+    const { gate, tick } = make();
+    gate.arm();
+    expect(gate.accept(['start'], 0, false)).toEqual([]);
+    expect(gate.accept(['drums'], 1, false)).toEqual([]);
+    tick(1000);
+    expect(gate.accept(['play'], 2, true)).toEqual([]);
+    expect(gate.accept(['pause'], 3, true)).toEqual([]);
+    gate.disarm();
+    expect(gate.accept(['faster'], 4, true)).toEqual([]);
+  });
+
+  it('Create without the fist: "start" fires, "let\'s start the drums" does not; with the fist it does', () => {
+    const { gate, tick } = make();
+    expect(gate.accept(['start'], 0, true)).toEqual(['start']);
+    tick(1000);
+    expect(gate.accept(["let's start the drums"], 1, true)).toEqual([]);
+    expect(gate.accept(['now star please'], 2, true)).toEqual(['start']); // lead-in, sound-alike and "please"
+    tick(1000);
+    gate.arm();
+    expect(gate.accept(["let's start the drums"], 3, true)).toEqual(['start', 'drums']);
+  });
+
+  it('an interim then final result of one phrase fires once', () => {
+    const { gate, tick } = make();
+    gate.arm();
+    expect(gate.accept(['paws'], 0, false, [false])).toEqual(['pause']);
+    tick(1000); // past the cooldown, so only the "once per phrase" rule holds it back
+    expect(gate.accept([['pause', 'paws', 'pores']], 0, false, [true])).toEqual([]);
+    expect(gate.accept([['pause', 'pores']], 1, false, [true])).toEqual(['pause']); // the next phrase
+  });
+
+  it('interim results only use the best guess', () => {
+    const { gate } = make();
+    gate.arm();
+    expect(gate.accept([['nice weather', 'play']], 0, false, [false])).toEqual([]);
+  });
+
+  it('plain talk fires nothing, in either mode, armed or not', () => {
+    const { gate } = make();
+    const talk = ['I like this song', 'this is so cool', 'can you hear me', 'thank you everyone'];
+    talk.forEach((t, i) => expect(gate.accept([t], i, true)).toEqual([]));
+    gate.arm();
+    talk.forEach((t, i) => expect(gate.accept([t], 10 + i, true)).toEqual([]));
+    talk.forEach((t, i) => expect(gate.accept([t], 20 + i, false)).toEqual([]));
+  });
+
+  it('logs one line per finished phrase with the guesses and the verdict', () => {
+    const { gate } = make();
+    const lines: string[] = [];
+    gate.log = (l) => lines.push(l);
+    gate.accept(['sta'], 0, true, [false]);
+    gate.accept([['star', 'start', 'stark']], 0, true, [true]);
+    gate.accept(["let's start"], 1, true, [true]);
+    expect(lines).toEqual([
+      '[speech] heard: "star" | alts: "start", "stark" -> start (said alone)',
+      '[speech] heard: "let\'s start" | alts: - -> none (not said alone; hold the fist for phrases)',
+    ]);
   });
 });
