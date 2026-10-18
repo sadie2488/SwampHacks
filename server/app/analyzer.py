@@ -12,6 +12,9 @@ The steps, using the building blocks in `server/analysis/`:
    The same second run happens when the first one finds no melody at all, and its notes are used if
    they clear a few bars that keep noise from becoming a melody.
 `sections` is left out: nothing cheap and trustworthy produces it yet.
+Speed (a 5 minute full mix in about 20 s instead of 60): the key and the drum removal run in helper
+threads next to steps 2 and 3, and the melody's pitch tracking is spread over worker processes
+(`analysis/pitch_pool.py`). The result is the same as doing it all in order.
 
 Honest failures, all in plain words:
 - Step 2 cannot work (silence, too short, unreadable file), or it only invents a tempo for noise (no
@@ -30,6 +33,7 @@ import logging
 import shutil
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from pathlib import Path
 
@@ -162,8 +166,21 @@ def _full_duration(tempo_key, path: Path, analyzed_sec: float) -> float:
     return analyzed_sec
 
 
-def _melody_part(melody, y, sr: int, result: dict) -> tuple[list[dict], list[str]]:
-    """The `parts` list and any warnings from the melody step. This step never fails the upload."""
+def _start_drums_out(helpers, y, sr: int):
+    """Start taking the drums out of `y` in a helper thread: a future, or None if that cannot start."""
+    try:
+        separation = importlib.import_module("analysis.separation")
+        return helpers.submit(separation.harmonic_part, y, sr)
+    except Exception:  # the melody step then does it itself, or does without
+        log.info("Could not start taking the drums out in the background.", exc_info=True)
+        return None
+
+
+def _melody_part(melody, y, sr: int, result: dict, drums_out=None) -> tuple[list[dict], list[str]]:
+    """The `parts` list and any warnings from the melody step. This step never fails the upload.
+
+    `drums_out`: the sound with the drums taken out, already being made in the background (a future), or None.
+    """
     try:
         notes = melody.extract_melody(y, sr, result["tempo_bpm"], result["beats"])
     except melody.AnalysisError as err:
@@ -175,9 +192,9 @@ def _melody_part(melody, y, sr: int, result: dict) -> tuple[list[dict], list[str
     if notes:
         mixed = looks_like_full_mix(notes)
         if mixed:
-            notes, mixed = _without_drums(melody, y, sr, result, notes)
+            notes, mixed = _without_drums(melody, y, sr, result, notes, drums_out)
     else:
-        notes = _melody_when_drums_hid_it(melody, y, sr, result)
+        notes = _melody_when_drums_hid_it(melody, y, sr, result, drums_out)
         if notes is None:
             return [], [WARNING_NO_MELODY]
         mixed = _unsure_after_drums_out(notes)
@@ -191,16 +208,17 @@ def _unsure_after_drums_out(notes: list[dict]) -> bool:
     return stats is None or stats[0] < DRUMS_OUT_CLEAR_CONFIDENCE or looks_like_full_mix(notes)
 
 
-def _drums_out_melody(melody, y, sr: int, result: dict) -> list[dict] | None:
+def _drums_out_melody(melody, y, sr: int, result: dict, drums_out=None) -> list[dict] | None:
     """The melody step run on the sound with the drums taken out, or None when that gave no melody. Never raises.
 
+    `drums_out` is that sound being made in the background (a future), or None to make it here.
     Says why in the log when there is no melody. Everything that can go wrong (the drum removal, the melody
     step, a missing library, running out of memory) ends in None, so the caller keeps what it had.
     """
     try:
         separation = importlib.import_module("analysis.separation")
         try:
-            quieter = separation.harmonic_part(y, sr)
+            quieter = drums_out.result() if drums_out is not None else separation.harmonic_part(y, sr)
         except separation.SeparationError as err:  # silence, or too short: nothing to separate
             log.info("Could not take the drums out (%s).", err)
             return None
@@ -212,14 +230,14 @@ def _drums_out_melody(melody, y, sr: int, result: dict) -> list[dict] | None:
     return None
 
 
-def _melody_when_drums_hid_it(melody, y, sr: int, result: dict) -> list[dict] | None:
+def _melody_when_drums_hid_it(melody, y, sr: int, result: dict, drums_out=None) -> list[dict] | None:
     """Notes found only after taking the drums out, for a song whose first try found no melody. None if still nothing.
 
     Noise must not turn into a melody (the caller turns down a recording with no music because no part
     was found), so the notes have to clear three bars; see the NO_MELODY_RETRY_* notes above.
     """
     started = time.monotonic()
-    notes = _drums_out_melody(melody, y, sr, result)
+    notes = _drums_out_melody(melody, y, sr, result, drums_out)
     if notes is None:
         return None
     stats = _melody_stats(notes)
@@ -252,14 +270,14 @@ def _clearly_better(first: list[dict], second: list[dict]) -> bool:
     return after[0] >= before[0] + DRUMS_OUT_MIN_GAIN and after[1] <= DRUMS_OUT_MAX_RATE_SHARE * before[1]
 
 
-def _without_drums(melody, y, sr: int, result: dict, notes: list[dict]) -> tuple[list[dict], bool]:
+def _without_drums(melody, y, sr: int, result: dict, notes: list[dict], drums_out=None) -> tuple[list[dict], bool]:
     """`(notes, still looks like a full mix)` after a second try on the sound with the drums taken out.
 
     The second result is used only when it is clearly better; any failure keeps the first result.
     The outcome goes to the log only, never to the person's warnings.
     """
     started = time.monotonic()
-    again = _drums_out_melody(melody, y, sr, result)
+    again = _drums_out_melody(melody, y, sr, result, drums_out)
     if again is None:
         log.info("Full-mix second try without drums gave nothing; the first result stays.")
         return notes, True
@@ -294,22 +312,34 @@ def analyze_audio(path: Path) -> dict:
     path = Path(path)
 
     y, sr = _load(path, tempo_key)
+    # The key and the drum removal spend most of their time outside Python's lock, so they run in
+    # threads while the tempo and melody steps run here. The drum removal is only needed when the first
+    # melody try looks like a full mix; started now, it is usually ready by then (a few spare seconds of
+    # work for a solo recording, which finish after the answer is sent).
+    helpers = ThreadPoolExecutor(max_workers=2, thread_name_prefix="analysis-helper")
     try:
-        result = tempo_key.analyze_tempo_key(y, sr)
-    except tempo_key.AnalysisError as err:
-        raise AnalysisFailed(str(err)) from err
+        key = helpers.submit(tempo_key.estimate_key, y, sr)
+        drums_out = _start_drums_out(helpers, y, sr)
+        try:
+            result = tempo_key.analyze_tempo_key(y, sr, with_key=False)
+        except tempo_key.AnalysisError as err:
+            raise AnalysisFailed(str(err)) from err
 
-    warnings: list[str] = []
-    if len(y) >= tempo_key.MAX_SECONDS * sr:  # the building blocks only look at the first six minutes
-        full = _full_duration(tempo_key, path, result["duration_sec"])
-        if full > tempo_key.MAX_SECONDS + 1:
-            result["duration_sec"] = round(full, 3)
-            warnings.append(WARNING_TOO_LONG)
+        warnings: list[str] = []
+        if len(y) >= tempo_key.MAX_SECONDS * sr:  # the building blocks only look at the first six minutes
+            full = _full_duration(tempo_key, path, result["duration_sec"])
+            if full > tempo_key.MAX_SECONDS + 1:
+                result["duration_sec"] = round(full, 3)
+                warnings.append(WARNING_TOO_LONG)
 
-    parts, melody_warnings = _melody_part(melody, y, sr, result)
-    if not parts and result["tempo_confidence"] < NO_MUSIC_MAX_TEMPO_CONFIDENCE:
-        raise AnalysisFailed(ERROR_NO_MUSIC)
-    warnings += melody_warnings
+        parts, melody_warnings = _melody_part(melody, y, sr, result, drums_out)
+        if not parts and result["tempo_confidence"] < NO_MUSIC_MAX_TEMPO_CONFIDENCE:
+            raise AnalysisFailed(ERROR_NO_MUSIC)
+        warnings += melody_warnings
+        signature = result.pop("time_signature")
+        result.update(key=key.result(), time_signature=signature)  # same order as before
+    finally:
+        helpers.shutdown(wait=False, cancel_futures=True)
 
     analysis = {"version": 1, **result, "parts": parts}
     if warnings:
@@ -369,10 +399,27 @@ def warm_up() -> bool:
         return False
 
 
+def _start_pitch_workers() -> None:
+    """Launch the pitch-tracking worker processes (`analysis/pitch_pool.py`) so long songs are quick. Never raises."""
+    with suppress(Exception):
+        importlib.import_module("analysis.pitch_pool").start()
+
+
+def stop_pitch_workers() -> None:
+    """Let the pitch-tracking workers go (server shutdown). Never raises."""
+    with suppress(Exception):
+        importlib.import_module("analysis.pitch_pool").stop()
+
+
+def _warm_up_everything() -> None:
+    _start_pitch_workers()  # they load their libraries in their own processes while this one warms up
+    warm_up()
+
+
 def start_warm_up() -> threading.Thread | None:
-    """Start `warm_up` in a background thread that does not keep the server alive. Never blocks or raises."""
+    """Start the warm-up in a background thread that does not keep the server alive. Never blocks or raises."""
     try:
-        thread = threading.Thread(target=warm_up, name="analysis-warm-up", daemon=True)
+        thread = threading.Thread(target=_warm_up_everything, name="analysis-warm-up", daemon=True)
         thread.start()
         return thread
     except Exception:

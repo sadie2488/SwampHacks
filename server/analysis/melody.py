@@ -15,6 +15,8 @@ import itertools
 import math
 from collections.abc import Sequence
 
+from . import pitch_pool
+
 librosa = np = ndimage = signal = None  # the heavy libraries are loaded on first use
 
 SR = 22050  # analysis sample rate
@@ -179,9 +181,8 @@ def _prepare(y, sr: int, max_seconds: float):
 
 def _track(audio):
     """Per frame: pitch in float MIDI (NaN where unvoiced), voicing probability, loudness in dB."""
-    f0, voiced, prob = librosa.pyin(
-        audio, fmin=FMIN_HZ, fmax=FMAX_HZ, sr=SR, frame_length=FRAME, hop_length=HOP
-    )
+    # Same as librosa.pyin, spread over worker processes for long recordings (see pitch_pool.py).
+    f0, voiced, prob = pitch_pool.pyin(audio, fmin=FMIN_HZ, fmax=FMAX_HZ, sr=SR, frame_length=FRAME, hop_length=HOP)
     rms = librosa.feature.rms(y=audio, frame_length=RMS_FRAME, hop_length=HOP)[0]
     n = min(len(f0), len(rms))
     midi = np.full(n, np.nan)
