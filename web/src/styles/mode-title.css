@@ -122,7 +122,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mode-word-line,
-  .mode-word-slip {
+  .mode-word-slip,
+  .mode-note-in {
     animation: none;
   }
 
