@@ -92,11 +92,11 @@ describe('snap to the key', () => {
     expect(takeSummaryText(settings.getState().take!)).toBe('3 notes, key of C major');
   });
 
-  it('keeps the usual "Recorded N notes" message', () => {
+  it('keeps the usual "Layer saved" message', () => {
     bus.emit('analysis', song('snap-3', cMajor));
     const { store, engine } = setup();
     recordTake(engine, steady([60, 61, 64]));
-    expect(store.getState().message).toBe('Recorded 3 notes');
+    expect(store.getState().message).toBe('Layer 1 saved: 3 notes');
   });
 
   it('leaves the notes as hummed when snapping is turned off, but still names the key of the take', () => {

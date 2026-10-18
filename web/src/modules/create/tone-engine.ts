@@ -11,6 +11,7 @@ import type { LoopEngine, LoopHooks } from './engine';
 import { createEffect, createInstrument, type InstrumentVoice } from './instruments';
 import type { Layer } from './layers';
 import { barToTicks, LOOP_TOP_BAR, partStart } from './loop-grid';
+import { takeMetronome } from './metronome';
 import { BEATS_PER_BAR, type EffectId, type InstrumentId } from './music';
 
 /** How far ahead of the clock a part built while the loop runs is started. */
@@ -99,23 +100,33 @@ class ToneLoopEngine implements LoopEngine {
     const positionBar = Number(String(transport.position).split(':')[0]) || 0;
     const countInBar = wasRunning ? Math.floor(positionBar) + 1 : 0;
 
+    // The hooks change layer state, which touches Tone; do that after the transport callback.
+    const later = (fn: () => void) => void setTimeout(fn, 0);
     if (opts.countIn) {
       for (let beat = 0; beat < BEATS_PER_BAR; beat++) {
-        this.markIds.push(transport.schedule((time) => this.clickAt(time, beat === 0), `${countInBar}:${beat}:0`));
+        this.markIds.push(
+          transport.schedule((time) => {
+            this.clickAt(time, beat === 0);
+            const at = this.heardAtMs(time);
+            if (hooks?.onCountBeat) later(() => hooks.onCountBeat?.(beat, at));
+          }, `${countInBar}:${beat}:0`),
+        );
       }
     }
     if (hooks) {
-      // The hook changes layer state, which touches Tone; do it after the transport callback.
-      const later = (fn: () => void) => void setTimeout(fn, 0);
       const goBar = countInBar + (opts.countIn ? 1 : 0);
+      // a metronome through the take, so the person keeps time; stopLoop clears it with the other marks
+      for (const tick of takeMetronome(goBar, this.want.bars)) {
+        this.markIds.push(transport.schedule((time) => this.clickAt(time, tick.accent), tick.position));
+      }
       this.markIds.push(
         transport.scheduleOnce((time) => {
           const at = this.heardAtMs(time);
           later(() => hooks.onGo(at, goBar));
         }, `${goBar}:0:0`),
       );
-      // Temporary team decision (Sat evening, Veda away): a take also ends by itself after one pass of the
-      // default loop length. The left-fist gesture or pressing Record again still ends it early.
+      // A take ends by itself after one pass of the default loop length (the controller then keeps it and stops
+      // everything). The left-fist gesture or pressing Record again ends it early, which throws the take away.
       const passEndTicks = Math.round((goBar + this.want.bars) * BEATS_PER_BAR * transport.PPQ);
       this.markIds.push(
         transport.scheduleOnce((time) => {
