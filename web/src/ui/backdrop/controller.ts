@@ -105,7 +105,8 @@ export function startBackdrop(canvas: HTMLCanvasElement, onFail: () => void): Ba
     const fps = isModuleOn('vision') ? CAMERA_FPS : MAX_FPS;
     if (!moving || frameDue(now, last, fps)) {
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / fps;
-      if (last && moving && quality === 1 && now - t0 < 6000) {
+      // judge the first 60 moving frames, whenever they come (the entrance can hold the scene back for minutes)
+      if (last && moving && quality === 1 && gaps.length < 60) {
         gaps.push(now - last);
         if (tooSlow(gaps, 1000 / fps)) {
           quality = 0.5;
