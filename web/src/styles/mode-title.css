@@ -2,6 +2,7 @@
    On every bar start a copy of the title in the second ink slips a few pixels and settles. */
 .mode-title {
   position: relative;
+  isolation: isolate;
   min-width: 0;
   pointer-events: none;
 }

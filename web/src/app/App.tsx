@@ -90,7 +90,7 @@ export function App() {
   const shownMode: ModeId = screen === 'menu' ? MODES[menuSel].id : tab;
   return (
     <div className="app" data-screen={screen} data-mode={shownMode} data-arrive={arrive.n ? `${arrive.kind}-${arrive.n % 2}` : undefined}>
-      <Backdrop screen={screen} mode={shownMode} />
+      <Backdrop screen={screen} mode={shownMode} menuIndex={menuSel} />
       <GuideLayer screen={screen} mode={tab} />
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}

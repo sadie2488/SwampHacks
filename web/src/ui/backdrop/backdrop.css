@@ -1,5 +1,5 @@
-/* The landscape behind the app. The CSS layers below are the plain-paper version: they show while the 3D scene
-   loads, and stay when it cannot run (no WebGL, ?scene=off). Same palette and layout as the 3D scene. */
+/* The background behind the app. The CSS layers are the plain version: they show while the WebGL scene loads, and
+   stay when it cannot run (no WebGL, ?scene=off). The section's dark tint, a faint print of dots, darker edges. */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -7,20 +7,9 @@
   pointer-events: none;
   overflow: hidden;
   background:
-    /* water */
-    linear-gradient(to bottom, transparent 0 76%, #2aa89a 76% 80%, #1f8f86 80% 87%, #167a74 87% 100%),
-    /* near hills */
-    radial-gradient(60% 22% at 18% 78%, #176a68 0 99%, transparent 100%),
-    radial-gradient(55% 20% at 82% 78%, #23857f 0 99%, transparent 100%),
-    radial-gradient(70% 24% at 50% 76%, #3fa597 0 99%, transparent 100%),
-    /* far hills */
-    radial-gradient(55% 22% at 12% 66%, #74c1ae 0 99%, transparent 100%),
-    radial-gradient(60% 22% at 88% 64%, #a9dcc4 0 99%, transparent 100%),
-    radial-gradient(70% 26% at 45% 62%, #d7ecd3 0 99%, transparent 100%),
-    /* sun */
-    radial-gradient(circle at 76% 24%, #ffa07a 0 min(7.5vw, 13vh), transparent calc(min(7.5vw, 13vh) + 1px)),
-    radial-gradient(circle at 76% 24%, #ff7a59 0 min(10vw, 17.5vh), transparent calc(min(10vw, 17.5vh) + 1px)),
-    #fff0d6;
+    radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.55) 100%),
+    radial-gradient(circle, color-mix(in srgb, var(--a) 22%, transparent) 0 1px, transparent 1.6px) 0 0 / 9px 9px,
+    var(--bg);
 }
 
 .backdrop-canvas {
