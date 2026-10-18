@@ -311,6 +311,7 @@ function RulesPanel() {
       <p>
         Loaded from mappings.yaml (changes apply as soon as you save). Current mode: <strong>{mode}</strong>. A rule's card lights up when it fires.
       </p>
+      <MapStrip />
       {rules.length === 0 ? <p>No rules loaded.</p> : null}
       <ul className="lab-rule-grid" aria-label="Loaded rules">
         {rules.map((r) => (
@@ -356,6 +357,49 @@ function RulesPanel() {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** A preview of mapping a signal to a command. Nothing here is wired yet: the dropdowns and the button are disabled,
+ *  so the strip only shows what will be possible. The real rules still live in mappings.yaml. */
+function MapStrip() {
+  return (
+    <div className="lab-map-strip" data-testid="lab-map-strip" aria-labelledby="lab-map-heading">
+      <h3 id="lab-map-heading" className="lab-map-heading">
+        Map a signal to a command
+      </h3>
+      <div className="lab-map-row">
+        <label className="lab-map-field">
+          <span>When</span>
+          <select disabled aria-label="When: the signal that starts the rule" defaultValue="">
+            <option value="">Pick a signal</option>
+            {signalCatalog.signals.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.id}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="lab-map-arrow" aria-hidden="true">
+          →
+        </span>
+        <label className="lab-map-field">
+          <span>Do</span>
+          <select disabled aria-label="Do: the control the rule changes" defaultValue="">
+            <option value="">Pick a control</option>
+            {controlCatalog.controls.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.id}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" disabled aria-disabled="true" title="Coming soon">
+          Add rule <span className="lab-map-soon">coming soon</span>
+        </button>
+      </div>
+      <p className="lab-map-note">Rules live in mappings.yaml; editing them here is coming soon.</p>
+    </div>
   );
 }
 

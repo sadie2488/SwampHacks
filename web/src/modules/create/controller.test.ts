@@ -169,12 +169,12 @@ describe('create controller: record', () => {
     engine.hooks!.onPassEnd();
 
     const s = store.getState();
-    expect(s.phase).toBe('playing');
+    expect(s.phase).toBe('idle'); // everything stops after a take; Play starts the loop
     const layer = s.layers[0];
     expect(layer.notes.map((n) => n.pitch)).toEqual([55, 60, 67]);
     for (const n of layer.notes) expect(n.onset_beat! % 0.25).toBeCloseTo(0, 6);
     expect(layer.notes.at(-1)!.onset_sec + layer.notes.at(-1)!.duration_sec).toBeLessThanOrEqual(4.8 + 1e-6);
-    expect(engine.calls).toEqual(['start:countIn']);
+    expect(engine.calls).toEqual(['start:countIn', 'stop']);
     expect(engine.layers[0].notes).toBe(layer.notes);
     expect(controls()['create.loop.record']).toBe(false);
   });
@@ -201,24 +201,25 @@ describe('create controller: record', () => {
     expect(store.getState().layers).toEqual([]);
   });
 
-  it('turning Record off in the middle ends the take and keeps what was hummed', () => {
+  it('turning Record off in the middle throws the take away and stops everything', () => {
     const { store, engine } = setup();
     send('create.loop.record', { how: 'toggle' });
     engine.hooks!.onGo(5000);
     hum(fakeHumFrames(0).slice(0, 63), 5000); // the first two notes (about 1.3 s)
     send('create.loop.record', { how: 'toggle' });
-    expect(store.getState().layers[0].notes.map((n) => n.pitch)).toEqual([55, 60]);
-    expect(store.getState().phase).toBe('playing');
+    expect(store.getState().layers[0].notes).toEqual([]);
+    expect(store.getState().phase).toBe('idle');
+    expect(engine.calls).toEqual(['start:countIn', 'stop']);
     expect(controls()['create.loop.record']).toBe(false);
   });
 
   it('can record again right away (the record control goes back to off after a take)', () => {
     const { store, engine } = setup();
     recordFakeTake(engine);
-    expect(store.getState().phase).toBe('playing');
+    expect(store.getState().phase).toBe('idle');
     send('create.loop.record', { how: 'toggle' });
     expect(store.getState().phase).toBe('countIn');
-    expect(engine.calls).toEqual(['start:countIn', 'start:countIn']);
+    expect(engine.calls).toEqual(['start:countIn', 'stop', 'start:countIn']);
   });
 
   it('a set command with an explicit true or false works too', () => {
@@ -282,14 +283,14 @@ describe('create controller: stop and play', () => {
     expect(store.getState().layers[0].notes).toHaveLength(3);
   });
 
-  it('create.loop.stop in the middle of a take stops it but keeps the notes', () => {
+  it('create.loop.stop in the middle of a take stops it and throws the take away', () => {
     const { store, engine } = setup();
     send('create.loop.record', { how: 'toggle' });
     engine.hooks!.onGo(5000);
     hum(fakeHumFrames(0).slice(0, 63), 5000);
     send('create.loop.stop', { how: 'trigger' });
     expect(store.getState().phase).toBe('idle');
-    expect(store.getState().layers[0].notes).toHaveLength(2);
+    expect(store.getState().layers[0].notes).toHaveLength(0);
     expect(controls()['create.loop.record']).toBe(false);
   });
 
@@ -321,23 +322,24 @@ describe('create controller: stop and play', () => {
 });
 
 describe('create controller: instrument change keeps the notes', () => {
-  it('re-plays the layer with the new instrument and keeps every note', () => {
+  it('changes the sound of the layer, keeps every note, and does not start the loop by itself', () => {
     const { store, engine } = setup();
     recordFakeTake(engine);
-    send('create.loop.stop', { how: 'trigger' });
     const before = store.getState().layers[0].notes;
+    const calls = engine.calls.length;
     send('create.instrument', { how: 'set', value: 'pluck' });
     const layer = store.getState().layers[0];
     expect(layer.instrument).toBe('pluck');
     expect(layer.notes).toBe(before);
     expect(engine.layers[0].instrument).toBe('pluck');
-    expect(store.getState().phase).toBe('playing');
-    expect(engine.calls.at(-1)).toBe('start');
+    expect(store.getState().phase).toBe('idle');
+    expect(engine.calls.length).toBe(calls);
   });
 
   it('does not restart a loop that is already playing', () => {
     const { engine } = setup();
     recordFakeTake(engine);
+    send('create.loop.play', { how: 'trigger' });
     const calls = engine.calls.length;
     send('create.instrument', { how: 'set', value: 'bass' });
     expect(engine.calls.length).toBe(calls);
@@ -370,7 +372,7 @@ describe('create controller: beat', () => {
     send('create.beat', { how: 'set', value: false });
     expect(store.getState().phase).toBe('playing');
     expect(store.getState().layers).toHaveLength(1);
-    expect(engine.calls).toEqual(['start:countIn']);
+    expect(engine.calls).toEqual(['start:countIn', 'stop', 'start']);
   });
 
   it('an explicit on while already on changes nothing', () => {
@@ -394,8 +396,8 @@ describe('create controller: status in plain words', () => {
     const texts = statuses.map((s) => s.message);
     expect(texts).toContain('Get ready: counting in one bar');
     expect(texts).toContain('Recording: hum now');
-    expect(texts.some((t) => /^Loop playing, 1 layer\b/.test(t ?? ''))).toBe(true);
-    expect(texts.at(-1)).toBe('Loop playing, 2 layers. Recorded 3 notes');
+    expect(texts).toContain('Stopped, 1 layer ready. Layer 1 saved: 3 notes');
+    expect(texts.at(-1)).toBe('Loop playing, 2 layers. Layer 1 saved: 3 notes');
     expect(statuses.every((s) => s.module === 'create')).toBe(true);
   });
 

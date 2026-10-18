@@ -219,12 +219,17 @@ function beginTake(by: 'button' | 'voice' = 'button') {
   }
   createClock += 200;
 }
-/** A finished layer with notes, the loop playing it (the normal state for the Create gestures). */
+/**
+ * A finished layer with notes, then the loop playing it (the normal state for the Create gestures). Since the Create
+ * reframe (Sun 6 AM) a take that ends on time is KEPT and all playback STOPS (phase idle); Play starts the loop again.
+ */
 function recordedLayer() {
   beginTake();
   loop.hooks!.onPassEnd();
-  expect(createState().phase, 'setup: a recorded take should leave the loop playing').toBe('playing');
+  expect(createState().phase, 'setup: a take that ends on time stops everything').toBe('idle');
   expect(layer()?.notes.length ?? 0, 'setup: the fake hum should give notes').toBeGreaterThan(0);
+  sendCommand('create.loop.play', 'button');
+  expect(createState().phase, 'setup: Play starts the loop').toBe('playing');
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -397,8 +402,9 @@ describe('Create mode rules: the effect on the layers', () => {
     fist('left'); // the held part (only_while)
     moment('vision.hand.left.raised', 'start', 1); // the moment
     expect(fromRule('raised left fist ends the current take')).toHaveLength(1);
-    expect(createState().phase).toBe('playing');
-    expect(layer()!.notes.length).toBeGreaterThan(0);
+    // Create reframe (Sun 6 AM): a take stopped before the loop length is DISCARDED and everything stops
+    expect(createState().phase).toBe('idle');
+    expect(layer()?.notes.length ?? 0).toBe(0);
     expect(controls()['create.loop.record']).toBe(false);
   });
 
@@ -407,8 +413,8 @@ describe('Create mode rules: the effect on the layers', () => {
     moment('vision.hand.left.raised', 'start', 1); // the held part (only_while)
     fist('left'); // the moment
     expect(fromRule('fist closes while raised ends the current take')).toHaveLength(1);
-    expect(createState().phase).toBe('playing');
-    expect(layer()!.notes.length).toBeGreaterThan(0);
+    expect(createState().phase).toBe('idle'); // early stop discards the take (Create reframe)
+    expect(layer()?.notes.length ?? 0).toBe(0);
   });
 
   it('a plain left fist (hand not raised) does not end the take', () => {

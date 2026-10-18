@@ -29,7 +29,6 @@ import { apiFetch } from './api-fetch';
 import { useDeviceAutostart } from './device-autostart';
 import { CameraPreview } from './CameraPreview';
 import { Devices, TouchDesignerToggle } from './Devices';
-import { HandsCard } from './HandsCard';
 import { LoginButton } from './LoginButton';
 import { leaveSectionCommands, logoTarget, publishedMode, shownSection } from './navigation';
 import { useModules } from './modules-start';
@@ -60,9 +59,8 @@ export function App() {
   const [loader, setLoader] = useState<LoaderState>(idleLoader);
   // restarts the "content rises in" animation on every arrival in a mode (two names so it can restart in place)
   const [arrive, setArrive] = useState<{ kind: string; n: number }>({ kind: 'none', n: 0 });
-  // the two header overlays: the guide (how to use this screen) and "what your hands say"
+  // the header overlay: the guide (how to use this screen)
   const [guide, setGuide] = useState(false);
-  const [hands, setHands] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
   const { isOpen, toggle: togglePanel, openPanel } = usePanels();
@@ -180,23 +178,11 @@ export function App() {
           <button type="button" className="pill overlay-pill" data-testid="btn-instructions" aria-pressed={guide} title="How to use this screen with your voice and hands (Esc closes)" onClick={() => setGuide((g) => !g)}>
             Guide
           </button>
-          {screen === 'mode' && (
-            <button type="button" className="pill overlay-pill" data-testid="btn-hands-overlay" aria-pressed={hands} title="What your hands say" onClick={() => setHands((h) => !h)}>
-              Hands
-            </button>
-          )}
           <SoundToggle />
           <LoginButton />
         </div>
       </header>
       {guide && screen !== 'entrance' && <InstructionsOverlay screen={screen === 'menu' ? 'menu' : tab} onClose={closeGuide} />}
-      {hands && screen === 'mode' && (
-        <aside className="hands-overlay" aria-label="What your hands say">
-          <PanelBoundary name="hands">
-            <HandsCard />
-          </PanelBoundary>
-        </aside>
-      )}
 
       <main className="app-main" {...inert(screen !== 'mode')}>
         <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>

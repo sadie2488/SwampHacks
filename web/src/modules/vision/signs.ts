@@ -7,13 +7,22 @@ import { HandShape } from './handshape';
 import { LETTERS, indexOnlyScore, pickBest, pinkyOnlyScore, scoreLetters } from './letters';
 import { Trail, detectJ, detectZ } from './motion';
 
+/**
+ * Switched off Sun 6:30 AM: not used (the mode shortcuts that read letters are off); saves CPU; flip to true to
+ * bring the letters back. While false, no letter is classified and no `vision.sign.*` signal is sent. Finger counts
+ * (`vision.hand.*.fingers`, `vision.hands.fingers`) keep working either way.
+ */
+export const SIGNS_ENABLED = false;
+
 export interface SignOptions {
   stableMs: number;
   releaseMs: number;
   /** While a letter is on, it stays on as long as its own score is at least this (hysteresis). */
   holdScore: number;
+  /** Classify fingerspelling letters and send `vision.sign.*` (defaults to SIGNS_ENABLED). */
+  letters: boolean;
 }
-export const DEFAULT_SIGNS: SignOptions = { stableMs: 300, releaseMs: 200, holdScore: 0.35 };
+export const DEFAULT_SIGNS: SignOptions = { stableMs: 300, releaseMs: 200, holdScore: 0.35, letters: SIGNS_ENABLED };
 
 const J = LETTERS.indexOf('j');
 const Z = LETTERS.indexOf('z');
@@ -36,19 +45,23 @@ class SideSlot {
   letter = -1;
   count = 0;
   private pending = -1;
-  measure(t: number, h: HandObs, aspect: number): void {
+  measure(t: number, h: HandObs, aspect: number, letters: boolean): void {
     const s = this.shape;
     this.present = s.measure(h.points, aspect, h.side === 'left');
     this.score = h.score;
     if (!this.present) return this.lose();
     this.palmY = palmCenter(h.points).y;
-    scoreLetters(s, this.scores);
-    this.letter = pickBest(this.scores, this.best).letter;
     // Finger count: changes only when the new count is seen two frames running.
     const c = s.fingerCount();
     if (c === this.count) this.pending = -1;
     else if (c === this.pending) this.count = c;
     else this.pending = c;
+    if (!letters) {
+      this.letter = -1;
+      return;
+    }
+    scoreLetters(s, this.scores);
+    this.letter = pickBest(this.scores, this.best).letter;
     // Motion letters: follow the fingertip while the hand keeps the right shape.
     // (x mirrored for a left hand, in picture heights like s.size)
     const sx = h.side === 'left' ? -aspect : aspect;
@@ -104,10 +117,12 @@ export class SignTracker {
   update(t: number, left: HandObs | undefined, right: HandObs | undefined, aspect: number, out: SignalOut[]): void {
     const L = this.sides.left;
     const R = this.sides.right;
-    if (left) L.measure(t, left, aspect);
+    if (left) L.measure(t, left, aspect, this.o.letters);
     else L.lose();
-    if (right) R.measure(t, right, aspect);
+    if (right) R.measure(t, right, aspect, this.o.letters);
     else R.lose();
+    // Letters switched off (SIGNS_ENABLED): finger counts are measured above, nothing else to do.
+    if (!this.o.letters) return;
     // Whichever hand shows a letter; if both, the higher one (smaller y).
     const signer = L.letter >= 0 && R.letter >= 0 ? (L.palmY <= R.palmY ? L : R) : L.letter >= 0 ? L : R;
     // After a J, the hand is still in the I shape: that is the J being held, not a new I.

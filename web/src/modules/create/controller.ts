@@ -6,7 +6,7 @@ import type { CommandEvent } from '@/contracts';
 import type { LoopEngine } from './engine';
 import { fitTakeToKey } from './key';
 import { currentLayer, describeState, hasAnyNotes, hasBeat, isRecording, type CreateState } from './layers';
-import { earlyTakeLoopBeats } from './loop-grid';
+import { countNumber } from './metronome';
 import { isEffect, isInstrument, loopBeats as defaultLoopBeats } from './music';
 import { segmentNotes } from './segment-notes';
 import { applyAnalysis, createSettings, type SettingsStore } from './settings';
@@ -41,6 +41,8 @@ export function startController(opts: ControllerOptions): Stop {
   let takeStartBar: number | undefined;
   let takeId = 0;
   let finishTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Waiting count-in numbers: each shows when its click is heard. */
+  let countTimers: Array<ReturnType<typeof setTimeout>> = [];
   let lastStatus = '';
   /** Set when the sound engine failed; shown as an error until the next command. */
   let problem = '';
@@ -87,13 +89,15 @@ export function startController(opts: ControllerOptions): Stop {
   }
 
   // ---- recording ----
-  // Temporary team decision (Sat evening, while Veda was away): a take ends at whichever comes first:
-  // the left-fist gesture (record off), pressing Record again, or one pass of the default loop length.
-  // The gesture and the button end it early, with a loop length taken from how long the take ran, in whole bars
-  // so the new layer stays on the same bar grid as the others (see earlyTakeLoopBeats).
+  // A take runs for exactly one pass of the loop length, with a 4-count first and a metronome through it, while
+  // the other layers play along. When it ends by itself the take becomes the layer and everything stops (Play starts
+  // the loop again). Ending it early (Stop, Record again, or the fist gestures: record off) throws the take away
+  // and stops everything too; the layer keeps what it had.
   const clearFinishTimer = () => {
     if (finishTimer !== undefined) clearTimeout(finishTimer);
     finishTimer = undefined;
+    for (const t of countTimers) clearTimeout(t);
+    countTimers = [];
   };
 
   /** Let the record control go back to "off" once a take is over, so pressing Record again starts a new one. */
@@ -114,6 +118,15 @@ export function startController(opts: ControllerOptions): Stop {
       engine.startLoop(
         { countIn: true },
         {
+          onCountBeat: (beat, atMs) => {
+            if (id !== takeId) return;
+            const show = () => {
+              if (id === takeId) store.dispatch({ type: 'countBeat', value: countNumber(beat) });
+            };
+            const wait = atMs === undefined ? 0 : Math.max(0, atMs - now());
+            if (wait <= 0) show();
+            else countTimers.push(setTimeout(show, wait));
+          },
           onGo: (atMs, startBar) => {
             if (id !== takeId) return;
             takeStartMs = atMs ?? now();
@@ -126,7 +139,9 @@ export function startController(opts: ControllerOptions): Stop {
             if (id !== takeId) return;
             // the engine hears the end a little before we do; wait for it, so the last notes are not cut
             const wait = atMs === undefined ? 0 : Math.max(0, atMs - now()) + tailMs;
-            const passEnd = () => finishTake(defaultLoopBeats(state().bars));
+            const passEnd = () => {
+              if (id === takeId) finishTake();
+            };
             clearFinishTimer();
             if (wait <= 0) passEnd();
             else finishTimer = setTimeout(passEnd, wait);
@@ -140,51 +155,50 @@ export function startController(opts: ControllerOptions): Stop {
     }
   }
 
-  /**
-   * The take is over: turn what we heard into notes and let the loop carry on with them.
-   * `passBeats` is set when the take ran a full pass; an early end measures the loop from the elapsed time (whole bars).
-   */
-  function finishTake(passBeats?: number) {
+  /** The take ran its full pass: turn what we heard into notes, keep them in the layer, and stop all sound. */
+  function finishTake() {
     clearFinishTimer();
     const s = state();
     if (s.phase !== 'recording') return;
-    const elapsedMs = Math.max(0, now() - takeStartMs);
-    const loopBeats = passBeats ?? earlyTakeLoopBeats(elapsedMs, s.bpm);
+    takeId++;
+    const loopBeats = defaultLoopBeats(s.bars);
     const loopSeconds = (loopBeats * 60) / s.bpm;
     const take = heard.map(({ at, frame }) => ({ ...frame, t_ms: at - takeStartMs - inputLatencyMs }));
     const heardNotes = segmentNotes(take, { bpm: s.bpm, quantize: true, lengthSec: loopSeconds });
     const { notes, key, moved } = fitTakeToKey(heardNotes, { snap: settings.getState().snap, songKey: settings.getState().songKey });
     settings.set({ take: { notes: notes.length, key, moved } });
+    const layerName = s.layers.find((l) => l.id === s.recordingId)?.name ?? 'Layer';
     const message =
       notes.length > 0
-        ? `Recorded ${notes.length} note${notes.length === 1 ? '' : 's'}`
+        ? `${layerName} saved: ${notes.length} note${notes.length === 1 ? '' : 's'}`
         : framesSeen === 0
           ? 'No microphone sound came in. Turn the microphone on, or try Simulate humming'
           : 'No hum heard, so the layer is unchanged';
     heard = [];
     store.dispatch({ type: 'recordEnd', notes, loopBeats, startBar: takeStartBar, message });
+    // the other layers and the metronome were playing along; everything goes quiet until Play
+    safe(() => engine.stopLoop());
     const completed = currentLayer(state());
-    if (state().phase === 'playing' && completed?.instrumentVoiceEnabled) {
+    if (completed?.notes.length && completed.instrumentVoiceEnabled) {
       sendCommand('create.instrument.voice', 'button', { how: 'set', value: true });
     }
-    if (state().phase === 'idle') safe(() => engine.stopLoop()); // nothing to play, so the loop clock stops too
     releaseRecordControl();
   }
 
-  /** Record control turned off. Mid-take that ends the take now (what was hummed is kept); during the count-in it cancels. */
-  function stopRecording() {
-    const s = state();
-    if (s.phase === 'recording') {
-      takeId++;
-      finishTake();
-    } else if (s.phase === 'countIn') {
-      takeId++;
-      clearFinishTimer();
-      safe(() => engine.stopLoop());
-      store.dispatch({ type: 'recordCancel' });
-      releaseRecordControl();
-    }
+  /** The take was ended early (record off, Stop): throw it away, the layer keeps what it had, and all sound stops. */
+  function discardTake() {
+    if (!isRecording(state())) return;
+    takeId++;
+    clearFinishTimer();
+    heard = [];
+    safe(() => engine.stopLoop());
+    const message = state().phase === 'recording' ? 'Discarded: recording stopped early, so the layer is unchanged' : '';
+    store.dispatch({ type: 'recordCancel', message });
+    releaseRecordControl();
   }
+
+  /** Record control turned off during a take or the count-in: the take is dropped. */
+  const stopRecording = () => discardTake();
 
   // ---- playing ----
   function playLoop() {
@@ -193,12 +207,9 @@ export function startController(opts: ControllerOptions): Stop {
     if (!safe(() => engine.startLoop({ countIn: false }))) store.dispatch({ type: 'stop' });
   }
 
-  /** Stop the loop and any recording. A take already under way is kept. */
+  /** Stop the loop and any recording. A take under way is thrown away. */
   function stopAll() {
-    if (state().phase === 'recording') {
-      takeId++;
-      finishTake();
-    }
+    discardTake();
     takeId++;
     clearFinishTimer();
     safe(() => engine.stopLoop());
@@ -238,11 +249,12 @@ export function startController(opts: ControllerOptions): Stop {
         break;
       case 'create.layer.confirm_pitch': {
         const cur = currentLayer(state());
-        if (state().phase === 'playing' && cur) store.dispatch({ type: 'confirmPitch', id: cur.id });
+        if (!isRecording(state()) && cur) store.dispatch({ type: 'confirmPitch', id: cur.id });
         break;
       }
       case 'create.layer.next':
-        if (state().phase === 'playing' && hasAnyNotes(state())) {
+        // "next": a new layer, recorded right away (the finished layers play along)
+        if (!isRecording(state()) && hasAnyNotes(state())) {
           store.dispatch({ type: 'advanceLayer' });
           sendCommand('create.instrument.voice', 'button', { how: 'set', value: currentLayer(state())?.instrumentVoiceEnabled ?? false });
           startRecording();
@@ -252,16 +264,15 @@ export function startController(opts: ControllerOptions): Stop {
         setBeat(typeof v === 'boolean' ? v : !hasBeat(state()));
         break;
       case 'create.instrument':
-        if (cmd.source === 'voice' && (state().phase !== 'playing' || !currentLayer(state())?.instrumentVoiceEnabled)) break;
+        // a spoken instrument word only counts for a layer whose "Voice controls" are on (a hum can sound like a word)
+        if (cmd.source === 'voice' && !currentLayer(state())?.instrumentVoiceEnabled) break;
         if (!isInstrument(v)) break;
         store.dispatch({ type: 'setInstrument', value: v });
-        // so the layer is heard with its new sound
-        if (currentLayer(state())?.notes.length) playLoop();
         break;
       case 'create.layer.volume': {
         const cur = currentLayer(state());
         if (!cur) break;
-        if (cmd.source === 'gesture' && state().phase !== 'playing') break;
+        if (cmd.source === 'gesture' && isRecording(state())) break;
         if (cmd.how === 'nudge') {
           const step = typeof v === 'number' ? v : (controlInfo('create.layer.volume')?.step ?? 0.1);
           store.dispatch({ type: 'setVolume', value: cur.volume + step });
@@ -273,7 +284,8 @@ export function startController(opts: ControllerOptions): Stop {
       case 'create.layer.pitch': {
         const s = state();
         const cur = currentLayer(s);
-        if (!cur || !cur.handPitchEnabled || cur.notes.length === 0 || s.phase !== 'playing') break;
+        // the right hand shapes the selected layer's pitch (on by default once it has notes), except mid-take
+        if (!cur || !cur.handPitchEnabled || cur.notes.length === 0 || isRecording(s)) break;
         if (typeof v === 'number' && Number.isFinite(v)) store.dispatch({ type: 'setPitch', id: cur.id, value: v });
         break;
       }

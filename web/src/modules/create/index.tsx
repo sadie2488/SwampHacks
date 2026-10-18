@@ -6,22 +6,31 @@ import { bus, resumeAudio, sendCommand, type Stop } from '@/bus';
 import type { Mode } from '@/contracts';
 import { startController } from './controller';
 import { playFakeHum } from './fake-hum';
-import { currentLayer, describeState, hasBeat, initialState, isRecording } from './layers';
+import { currentLayer, describeState, hasBeat, isRecording } from './layers';
 import { EFFECT_IDS, INSTRUMENT_IDS, midiToName } from './music';
 import type { FetchFn } from './api';
 import { SavedTracks } from './saved-tracks';
-import { applyAnalysis, createSettings, takeSummaryText } from './settings';
-import { createStore } from './store';
+import { applyAnalysis, takeSummaryText } from './settings';
+import { settings, store } from './app-store';
 import { createToneEngine } from './tone-engine';
 
-/** The one store of layers for the running app. The screen reads it; the controller changes it. */
-const store = createStore(initialState());
-/** Snap-to-key choice and the line about the last take, shared by the screen and the controller. */
-const settings = createSettings();
+export { useCreateCountIn } from './app-store';
 
 export function start(): Stop {
   return startController({ engine: createToneEngine(), store, settings });
 }
+
+/** The main action of the screen: one big inviting button in the mode colour. */
+const BIG_BUTTON: React.CSSProperties = {
+  fontSize: '1.4rem',
+  padding: '0.8em 1.6em',
+  borderRadius: '999px',
+  border: 'none',
+  background: 'var(--mode-a, #c9a8ff)',
+  color: '#1a1420',
+  fontWeight: 600,
+  cursor: 'pointer',
+};
 
 // ---- small helpers for the screen ----
 
@@ -100,8 +109,8 @@ export function CreatePanel({ fetchFn }: { fetchFn?: FetchFn } = {}) {
       </p>
 
       <div role="group" aria-label="Loop controls">
-        <button type="button" data-testid="btn-record" aria-pressed={recording} onClick={press(() => sendCommand('create.loop.record', 'button', { how: 'toggle' }))}>
-          {recording ? 'Stop recording' : 'Record'}
+        <button type="button" data-testid="btn-record" style={BIG_BUTTON} aria-pressed={recording} onClick={press(() => sendCommand('create.loop.record', 'button', { how: 'toggle' }))}>
+          {recording ? 'Stop' : 'Record a layer'}
         </button>{' '}
         <button type="button" data-testid="btn-stop-loop" onClick={press(() => sendCommand('create.loop.stop', 'button', { how: 'trigger' }))}>
           Stop loop
@@ -126,6 +135,21 @@ export function CreatePanel({ fetchFn }: { fetchFn?: FetchFn } = {}) {
       {options.take && (
         <p data-testid="take-summary">{takeSummaryText(options.take)}</p>
       )}
+
+      <div role="group" aria-label="Instrument for the current layer">
+        {INSTRUMENT_IDS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            data-testid={`btn-instrument-${id}`}
+            aria-pressed={instrument === id}
+            disabled={cur?.kind === 'beat'}
+            onClick={press(() => sendCommand('create.instrument', 'button', { how: 'set', value: id }))}
+          >
+            {label(id)}
+          </button>
+        ))}
+      </div>
 
       <p>
         <label>

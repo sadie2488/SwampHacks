@@ -2,6 +2,8 @@
 import type { Layer } from './layers';
 
 export interface LoopHooks {
+  /** A count-in click: `beat` is 0 to 3 within the count-in bar. `atMs` is when it is heard, on the page clock. */
+  onCountBeat?(beat: number, atMs?: number): void;
   /**
    * The take starts now: the count-in bar is over. `atMs` is when that is heard, on the page clock (performance.now()).
    * `startBar` is the loop-clock bar the take starts on; the layer keeps it so it plays back in the same place.
@@ -16,7 +18,7 @@ export interface LoopEngine {
   syncLayers(layers: readonly Layer[], bpm: number, bars: number): void;
   /** Overall volume, 0 to 1. */
   setMasterVolume(volume: number): void;
-  /** Start the loop from the top. With countIn the loop is preceded by one bar of clicks and the hooks are called. Restarts if already running. */
+  /** Start the loop from the top. With countIn the loop is preceded by one bar of clicks, a metronome clicks through the take, and the hooks are called. Restarts if already running. */
   startLoop(opts: { countIn: boolean }, hooks?: LoopHooks): void;
   /** Silence the loop and forget the hooks. */
   stopLoop(): void;

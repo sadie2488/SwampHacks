@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
+import { CountIn } from './CountIn';
 import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
 import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
@@ -15,6 +16,28 @@ import { modeLook, type ModeId } from './modes';
 const MAX_DPR = 1.5;
 const FRAME_MS = 1000 / 30 - 2;
 const HAND_WORDS: Record<string, string> = { fist: 'fist', open_palm: 'open hand', raised: 'raised', pinch: 'pinch', thumbs_up: 'thumbs up', drum_hit: 'drum hit' };
+
+/** What the hands do in Create, always shown under the hum rings; the part in use lights up in the mode colour. */
+const HAND_LEGEND: Array<[string, string]> = [
+  ['pitch', 'Right hand up / down: pitch'],
+  ['volume', 'side to side: volume'],
+  ['keep', 'left thumbs-up: keep'],
+  ['stop', 'fist: stop'],
+];
+const LEGEND_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  top: 'calc(80% + 48px)',
+  margin: 0,
+  textAlign: 'center',
+  font: "500 12px / 1.4 var(--sans, 'Instrument Sans', sans-serif)",
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: 'rgba(242, 238, 230, 0.7)',
+  pointerEvents: 'none',
+  zIndex: 3,
+};
 
 interface Readout {
   a: [string, string];
@@ -25,6 +48,8 @@ interface Readout {
 export function ModeVisual({ mode }: { mode: ModeId }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [readout, setReadout] = useState<Readout | null>(null);
+  /** Which part of the hand legend the hands are using right now (Create only). */
+  const [lit, setLit] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -133,9 +158,24 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
           else delete hands[m[1]];
           text();
         }),
-        bus.on('command', (c) => void (c.command.startsWith('create.') && setTimeout(text, 50))),
+        bus.on('command', (c) => {
+          if (!c.command.startsWith('create.')) return;
+          setTimeout(text, 50);
+          if (c.source !== 'gesture') return;
+          // light the legend part the hands are using right now
+          if (c.command === 'create.layer.pitch') light('pitch', 400);
+          else if (c.command === 'create.layer.volume') light('volume', 400);
+          else if (c.command === 'create.layer.confirm_pitch') light('keep', 1200);
+          else if (c.command === 'create.loop.stop' || (c.command === 'create.loop.record' && c.value === false)) light('stop', 1200);
+        }),
       );
     }
+    let litTimer: ReturnType<typeof setTimeout> | undefined;
+    const light = (what: string, ms: number) => {
+      setLit(what);
+      clearTimeout(litTimer);
+      litTimer = setTimeout(() => setLit(null), ms);
+    };
     const onResize = () => schedule();
     window.addEventListener('resize', onResize);
     text();
@@ -144,6 +184,8 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
       offs.forEach((off) => off());
       window.removeEventListener('resize', onResize);
       if (raf) cancelAnimationFrame(raf);
+      clearTimeout(litTimer);
+      setLit(null);
     };
   }, [mode]);
 
@@ -151,6 +193,17 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
       {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
+      {mode === 'create' && <CountIn />}
+      {mode === 'create' && (
+        <p className="hand-legend" data-testid="hand-legend" aria-live="off" style={LEGEND_STYLE}>
+          {HAND_LEGEND.map(([key, words], i) => (
+            <span key={key} style={lit === key ? { color: modeLook('create').a } : undefined}>
+              {i ? ' · ' : ''}
+              {words}
+            </span>
+          ))}
+        </p>
+      )}
       {readout && (
         <div className="mode-readout" data-testid="mode-readout" aria-live="off">
           {[readout.a, readout.b].map(([k, v]) => (
