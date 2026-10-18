@@ -71,3 +71,6 @@ export function keyWords(analysis: SongAnalysis | undefined): string {
 export function signedSemitones(st: number): string {
   return `${st > 0 ? '+' : ''}${st.toFixed(1)} st`;
 }
+
+/** Play's readout labels: tempo follows the right hand's height; pitch is by voice (left fist + "higher"/"lower"). */
+export const PLAY_READOUT_LABELS = { tempo: 'Tempo · hand height', pitch: 'Pitch · say higher / lower' } as const;

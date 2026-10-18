@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { noteName, placeNotes, signedSemitones, staffGeometry, staffStep } from './mode-visual';
+import { noteName, PLAY_READOUT_LABELS, placeNotes, signedSemitones, staffGeometry, staffStep } from './mode-visual';
+
+describe('Play readout labels', () => {
+  it('says pitch is changed by voice, not by a hand (no hand rule changes pitch in Play)', () => {
+    expect(PLAY_READOUT_LABELS.pitch).toBe('Pitch · say higher / lower');
+    expect(PLAY_READOUT_LABELS.pitch).not.toMatch(/hand/);
+  });
+});
 
 describe('mode base pictures', () => {
   it('puts notes on the treble staff (E4 on the bottom line, F5 on the top)', () => {
