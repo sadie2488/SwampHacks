@@ -51,16 +51,6 @@
   z-index: 3;
 }
 
-/* the menu's chrysanthemum, bottom-left between the rule and the instruction */
-.bloom.menu-flower {
-  position: absolute;
-  left: var(--m);
-  bottom: calc(var(--m) + 18px);
-  width: 84px;
-  height: 84px;
-  z-index: 3;
-}
-
 .menu-staff {
   position: absolute;
   right: var(--m);
