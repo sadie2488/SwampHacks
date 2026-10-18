@@ -247,99 +247,38 @@ describe('mappings.yaml loads cleanly in the real engine', () => {
 // ---------------------------------------------------------------------------------------------------------------
 // 1. Play mode
 // ---------------------------------------------------------------------------------------------------------------
-describe('Play mode rules: the effect on the song', () => {
-  it('hand height controls tempo', () => {
-    const [lo, hi] = ruleNamed('hand height controls tempo').range!;
-    holdSlider('vision.hand.right.height', 1);
-    const up = controls()['playback.tempo'] as number;
-    expect(up).toBeGreaterThan(1.2);
-    expect(up).toBeLessThanOrEqual(hi);
-    expect(transport().tempo).toBe(up);
-    expect(output.tempo).toBe(up);
-    holdSlider('vision.hand.right.height', 0, 80);
-    const down = controls()['playback.tempo'] as number;
-    expect(down).toBeLessThan(0.8);
-    expect(down).toBeGreaterThanOrEqual(lo);
-    expect(transport().tempo).toBe(down);
-    expect(fromRule('hand height controls tempo').length).toBeGreaterThan(0);
+describe('Play mode rules: the Play section was removed Sun 6 AM (History replaced it), so every rule is switched off', () => {
+  const playRules = RAW_RULES.filter((r) => r.mode === 'play');
+
+  it('every Play rule is still in the file, switched off', () => {
+    expect(playRules.length).toBeGreaterThan(0);
+    for (const r of playRules) expect(r.enabled, `"${r.name}" is still on`).toBe(false);
   });
 
-  it('hand height controls tempo: low-confidence readings are ignored', () => {
-    for (let i = 0; i < 40; i++) slider('vision.hand.right.height', 1, 0.3);
-    expect(controls()['playback.tempo']).toBe(1);
-  });
+  for (const r of playRules) {
+    it(`${r.name}: switched off, so it does nothing`, () => {
+      if (r.only_while) moment(r.only_while, 'start', 1);
+      const info = signalCatalog.signals.find((s) => s.id === r.when);
+      if (info?.kind === 'slider') {
+        holdSlider(r.when!, 1);
+        holdSlider(r.when!, 0, 80);
+      } else {
+        moment(r.when!);
+      }
+      expect(fromRule(r.name!)).toEqual([]);
+      expect(controls()['playback.tempo']).toBe(1);
+      expect(transport().tempo).toBe(1);
+      expect(transport().pitch).toBe(0);
+      expect(transport().playing).toBe(false);
+      expect(output.playing).toBe(false);
+    });
+  }
 
-  it('head tilt slows down (switched off in the file, so tilting does nothing)', () => {
-    expect(ruleNamed('head tilt slows down').enabled).toBe(false);
-    holdSlider('vision.head.tilt', 1);
-    expect(fromRule('head tilt slows down')).toEqual([]);
-    expect(controls()['playback.tempo']).toBe(1);
-  });
-
-  it('clap toggles play/pause', () => {
-    const cooldown = ruleNamed('clap toggles play/pause').cooldown_ms ?? 0;
-    expect(transport().loaded).toBe(true);
-    expect(transport().playing).toBe(false);
+  it('a double clap (or a single one) no longer plays or pauses the song', () => {
     moment('audio.clap.double');
-    expect(transport().playing).toBe(true);
-    expect(output.playing).toBe(true);
-    // a second double clap inside the cooldown is the same moment
-    vi.advanceTimersByTime(cooldown / 2);
-    moment('audio.clap.double');
-    expect(transport().playing).toBe(true);
-    vi.advanceTimersByTime(cooldown);
-    moment('audio.clap.double');
-    expect(transport().playing).toBe(false);
-  });
-
-  it('clap toggles play/pause: a single clap does nothing', () => {
     moment('audio.clap');
     moment('audio.clap');
     expect(transport().playing).toBe(false);
-  });
-
-  it('say "pause" only while left fist is held', () => {
-    sendCommand('playback.play', 'button');
-    expect(transport().playing).toBe(true);
-    fist('left');
-    say('pause');
-    expect(transport().playing).toBe(false);
-  });
-
-  it('say "play" only while left fist is held', () => {
-    fist('left');
-    say('play');
-    expect(transport().playing).toBe(true);
-  });
-
-  it('say "slower" only while left fist is held', () => {
-    fist('left');
-    say('slower');
-    expect(controls()['playback.tempo']).toBe(1 + ruleNamed('say "slower" only while left fist is held').step!);
-    expect(transport().tempo).toBeCloseTo(0.9, 6);
-    for (let i = 0; i < 20; i++) say('slower');
-    expect(controls()['playback.tempo']).toBe(0.5); // stays inside the control's range
-  });
-
-  it('say "faster" only while left fist is held', () => {
-    fist('left');
-    say('faster');
-    expect(transport().tempo).toBeCloseTo(1.1, 6);
-    for (let i = 0; i < 20; i++) say('faster');
-    expect(controls()['playback.tempo']).toBe(1.5);
-  });
-
-  it('say "higher" only while left fist is held', () => {
-    fist('left');
-    say('higher');
-    expect(transport().pitch).toBe(1);
-    expect(output.pitch).toBe(1);
-  });
-
-  it('say "lower" only while left fist is held', () => {
-    fist('left');
-    say('lower');
-    expect(transport().pitch).toBe(-1);
   });
 });
 

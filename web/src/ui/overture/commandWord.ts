@@ -9,7 +9,7 @@ export interface WordContext {
   after?: unknown;
 }
 
-const MODE_WORDS: Record<string, string> = { learn: 'Learn', play: 'Play', create: 'Create', lab: 'Lab' };
+const MODE_WORDS: Record<string, string> = { learn: 'Learn', play: 'History', create: 'Create', lab: 'Lab' };
 const TRIGGER_WORDS: Record<string, string> = {
   'playback.play': 'Play',
   'playback.pause': 'Pause',

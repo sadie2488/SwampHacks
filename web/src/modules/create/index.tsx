@@ -19,6 +19,11 @@ import { createToneEngine } from './tone-engine';
 
 export { useCreateCountIn } from './app-store';
 
+/** The saved-tracks list on its own (the History page's "Past creations"): same store, same buttons as in Create. */
+export function PastCreations({ fetchFn }: { fetchFn?: FetchFn } = {}) {
+  return <SavedTracks store={store} fetchFn={fetchFn} />;
+}
+
 export function start(): Stop {
   return startController({ engine: createToneEngine(), store, settings });
 }

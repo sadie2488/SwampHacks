@@ -32,7 +32,6 @@ import { RecordMark } from '@/ui/overture/RecordMark';
 import { leaveSectionCommands, logoTarget, publishedMode, shownSection } from './navigation';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
-import { autoLoops, usePlayLoop } from './play-loop';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
 import { SongView } from './SongView';
 
@@ -40,7 +39,7 @@ type Tab = ModeId;
 
 const TABS: Array<{ id: Tab; label: string; testid: string }> = [
   { id: 'learn', label: 'Learn', testid: 'tab-learn' },
-  { id: 'play', label: 'Play', testid: 'tab-play' },
+  { id: 'play', label: 'History', testid: 'tab-play' },
   { id: 'create', label: 'Create', testid: 'tab-create' },
   { id: 'lab', label: 'Command Lab', testid: 'tab-lab' },
 ];
@@ -61,7 +60,8 @@ export function App() {
   // the header overlay: the guide (how to use this screen)
   const [guide, setGuide] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
-  const songTab = tab === 'learn' || tab === 'play';
+  // only Learn has the song picker and the song panels; History (the 'play' id) is a quiet page and loads nothing
+  const songTab = tab === 'learn';
   const { isOpen, toggle: togglePanel, openPanel, reset: resetPanels } = usePanels();
   useModules();
   useDeviceAutostart(screen);
@@ -87,8 +87,6 @@ export function App() {
     if (screen === 'mode' && tab === 'learn') openPanel('player');
   }, [screen, tab, arrive.n, openPanel]);
   useEffect(() => unlockOnFirstGesture(), []);
-  // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
-  usePlayLoop(autoLoops(screen, tab));
 
   const openMode = (id: Tab) => {
     unlockSounds();
@@ -189,7 +187,7 @@ export function App() {
           <ModeTitle look={modeLook(tab)} guides={screen === 'mode'} />
           {/* the mode's own picture over the camera (staff and notes, hum rings, hand readout), driven by real data */}
           {screen === 'mode' && <ModeVisual mode={tab} />}
-          {/* the left panel: the song picker (Learn and Play), the devices, and the camera picture right under them */}
+          {/* the left panel: the song picker (Learn only), the devices, and the camera picture right under them */}
           <div className="card side-card float-panel" {...panelProps(tab === 'lab' || isOpen(songTab ? 'song' : 'devices'))}>
             {songTab && (
               <>
@@ -200,7 +198,7 @@ export function App() {
             <Devices fake={isFakeMode()} touchdesigner={tab === 'lab'} />
             <CameraPreview />
           </div>
-          {songTab && <SongView mode={tab === 'play' ? 'play' : 'learn'} open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
+          {songTab && <SongView mode="learn" open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
           {/* Create's controls are the CreateStage, mounted by ModeVisual's create branch (one open playground, no panels) */}
           {tab === 'lab' && (
             <div className="stage-main">

@@ -33,7 +33,7 @@ describe('HoldRing', () => {
 
   it('shows the mode name and ink while filling, and hides at 0', async () => {
     await hold(0.25);
-    expect(ring()?.textContent).toBe('Play');
+    expect(ring()?.textContent).toBe('History');
     const arc = ring()!.querySelectorAll('circle')[2];
     expect(arc.getAttribute('stroke')).toBe('#ff7a00');
     await hold(0.5);
