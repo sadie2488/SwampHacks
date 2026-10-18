@@ -1,0 +1,101 @@
+/* Overture colours and type (source: web/src/styles/color-scheme.md). Bright inks on near-black.
+   Each screen has an ink pair: --a is the main ink (guide line, chosen record, active note, primary button),
+   --b the second ink (print offset, highlights). The pair is set by data-mode on .app and blends in about half a
+   second when the mode changes (the two inks are registered as colours so they can animate). */
+@property --a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff2d8a;
+}
+
+@property --b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f4e4a1;
+}
+
+:root {
+  /* base colours */
+  --night: #0b0a0c;
+  --cream: #f4e4a1;
+  --paper-white: #f2eee6;
+  --field-teal: #5fe1d6;
+  /* panels: Night at 50-85% so text over the camera keeps its contrast */
+  --panel: rgba(11, 10, 12, 0.78);
+  --panel-strong: rgba(11, 10, 12, 0.9);
+  --panel-soft: rgba(11, 10, 12, 0.55);
+  --rule: rgba(244, 228, 161, 0.22);
+  --rule-strong: rgba(244, 228, 161, 0.5);
+  --muted: rgba(244, 228, 161, 0.72);
+  --error: #ff6b5e;
+  --warning: #ffb547;
+  /* the calm reading surface for sheet music: paper white with Night ink */
+  --sheet-paper: #f2eee6;
+  --sheet-ink: #0b0a0c;
+  /* the four mode inks (a / b) */
+  --learn-a: #1fb3bf;
+  --learn-b: #ff4a3d;
+  --play-a: #ff7a00;
+  --play-b: #ff2d8a;
+  --create-a: #c9a8ff;
+  --create-b: #ff4fa3;
+  --lab-a: #2f5bff;
+  --lab-b: #ff9a1f;
+  --intro-a: #ff2d8a;
+  --intro-b: #f4e4a1;
+  /* type */
+  --serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --sans: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --script: 'Mea Culpa', 'Segoe Script', cursive;
+  /* one margin for the frame (corners, header) */
+  --m: 28px;
+  --a: var(--intro-a);
+  --b: var(--intro-b);
+  /* ink a as readable text: Cobalt is too dark for small text on Night, so the Lab uses cream there */
+  --a-text: var(--a);
+  color-scheme: dark;
+}
+
+.app[data-mode='learn'] {
+  --a: var(--learn-a);
+  --b: var(--learn-b);
+}
+
+.app[data-mode='play'] {
+  --a: var(--play-a);
+  --b: var(--play-b);
+}
+
+.app[data-mode='create'] {
+  --a: var(--create-a);
+  --b: var(--create-b);
+}
+
+.app[data-mode='lab'] {
+  --a: var(--lab-a);
+  --b: var(--lab-b);
+  --a-text: var(--cream);
+}
+
+.app[data-screen='entrance'] {
+  --a: var(--intro-a);
+  --b: var(--intro-b);
+}
+
+.app {
+  transition:
+    --a 0.5s ease-out,
+    --b 0.5s ease-out;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --m: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app {
+    transition: none;
+  }
+}

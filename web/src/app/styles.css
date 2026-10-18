@@ -16,8 +16,8 @@
   --line: rgba(23, 49, 58, 0.28);
   --error: #b3261e;
   --border: 2.5px solid var(--ink);
-  --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
-  --mono: 'DM Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --display: var(--sans);
+  --mono: var(--sans);
   font-family: var(--display);
   font-size: 16px;
   line-height: 1.45;
