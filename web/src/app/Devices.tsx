@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bus, getStatus, isModuleOn, type EnableTarget, type ModuleStatus } from '@/bus';
 import { useBusValue } from './hooks';
+import { RecordMark } from '@/ui/overture/RecordMark';
 
 const DEVICES: Array<{ module: EnableTarget; testid: string; statusId: string; on: string; off: string; name: string }> = [
   { module: 'vision', testid: 'btn-enable-vision', statusId: 'status-vision', on: 'Turn off camera', off: 'Turn on camera', name: 'Camera' },
@@ -69,7 +70,7 @@ function Device({ d, fake, sparkle = false }: { d: (typeof DEVICES)[number]; fak
       <button type="button" className={sparkle ? 'td-sparkle' : 'device-toggle'} data-testid={d.testid} data-device={d.module} aria-pressed={on} title={`${on ? d.on : d.off}. ${d.name}: ${words}${fakeNote}`} onClick={toggle}>
         {sparkle ? (
           <>
-            <SparkleIcon />
+            <RecordMark />
             <span className="sr-only">{label}</span>
           </>
         ) : (
@@ -80,15 +81,6 @@ function Device({ d, fake, sparkle = false }: { d: (typeof DEVICES)[number]; fak
         {words}
       </span>
     </Wrap>
-  );
-}
-
-/** A four-point sparkle in a thin circle (the TouchDesigner switch next to the logo). */
-function SparkleIcon() {
-  return (
-    <svg className="td-sparkle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 4.5c.5 4.3 2.7 6.6 7.5 7.5-4.8.9-7 3.2-7.5 7.5-.5-4.3-2.7-6.6-7.5-7.5 4.8-.9 7-3.2 7.5-7.5z" />
-    </svg>
   );
 }
 
