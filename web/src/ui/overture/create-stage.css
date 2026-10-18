@@ -226,6 +226,9 @@ section.create-stage .record-row {
 /* ---------- layers strip ---------- */
 .create-stage .layers-row {
   grid-area: layers;
+  /* above the saved-tracks list (open in automated browsers), so every chip stays clickable */
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
