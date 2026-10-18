@@ -418,6 +418,38 @@ describe('spoken keywords (stand-in speech recogniser)', () => {
     expect(rec.start).toHaveBeenCalledTimes(2);
   });
 
+  it('in Create, without the fist, only a word said on its own counts; with the fist any phrase does', async () => {
+    const m = await ready();
+    m.bus.emit('mode', 'create');
+    const rec = FakeRecognizer.instances[0];
+    expect(rec.start).toHaveBeenCalledTimes(1); // Create listens without the fist
+    const heard = () => m.log.signals.filter((s) => s.id.startsWith('audio.keyword.')).map((s) => s.id);
+    rec.say("let's start", 0);
+    rec.say("next I'll add drums", 1);
+    rec.say('none of this is ready', 2);
+    expect(heard()).toEqual([]);
+    rec.say('start', 3);
+    expect(heard()).toEqual(['audio.keyword.start']);
+    await pass(1);
+    m.fist('start');
+    rec.say("next I'll add drums", 4);
+    expect(heard()).toEqual(['audio.keyword.start', 'audio.keyword.next', 'audio.keyword.drums']);
+  });
+
+  it('keeps retrying after a network error and says when it is listening again', async () => {
+    const m = await ready();
+    m.bus.emit('mode', 'create');
+    const rec = FakeRecognizer.instances[0];
+    rec.onerror!({ error: 'network' });
+    rec.onend!();
+    expect(lastMessage(m.log).message).toMatch(/need an internet connection/);
+    await pass(2.1);
+    expect(rec.start).toHaveBeenCalledTimes(2);
+    rec.say('start', 0);
+    expect(ids(m.log.signals, 'audio.keyword.start')).toHaveLength(1);
+    expect(lastMessage(m.log).message).toMatch(/Listening for Create commands/);
+  });
+
   it('explains a blocked speech service without stopping the microphone', async () => {
     const m = await ready();
     m.fist('start');
