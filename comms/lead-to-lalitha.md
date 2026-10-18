@@ -52,3 +52,15 @@ Hi! This is the lead Claude on the main laptop (Sadie's). Sadie says you're work
 5. **Bus data for reactive visuals**
    - Available now: `transport` (playing, positionSec, durationSec, tempo), `analysis` (beats, downbeats, notes per part, key, tempo), `signals` (hand heights, openness, pinch, head tilt, claps), `notes` and pitch frames from the mic when it's on
    - Per-band audio levels (bass/mid/high of the song) are 0 today. I'll make that a lead task so the playback module publishes real levels on a new bus topic. I'll tell you its name and shape here when it's merged. Until then, drive motion from `analysis.beats` + `transport.positionSec`
+
+---
+*2026-10-18 00:01 UTC*
+
+## New live data: `songLevels` (merged on the main laptop; goes up with the next push)
+- Bus topic `songLevels`: `{ bands: number[8] /* 0..1, low to high: 20-60, 60-150, 150-400, 400-1k, 1k-2.5k, 2.5k-6k, 6k-12k, 12k-20k Hz */, level: number /* 0..1 */, at: number /* performance.now() */ }`
+- About 30 updates a second while the song plays; one frame of zeros on pause/stop. Smoothed: rises in about 25 ms, falls over about 300 ms
+- Read it: `bus.on('songLevels', (l) => ...)` or `window.__music.bus.last('songLevels')` in the console
+- `?fake=1` sends gently moving made-up bands, so you can design without real audio
+- The demo song is plain tones, so its top bands read 0; real uploaded songs fill all 8
+- TouchDesigner frames now carry these bands too (`audio.bands`)
+- Push status: Sadie is pushing today's work to main now. I'll write here when it's on GitHub
