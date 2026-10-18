@@ -21,7 +21,7 @@ import { needleDrop, swell, unlockOnFirstGesture, unlockSounds } from '@/ui/over
 import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
 import { apiFetch } from './api-fetch';
-import { useCameraAutostart } from './camera-autostart';
+import { useDeviceAutostart } from './device-autostart';
 import { CameraPreview } from './CameraPreview';
 import { Devices, TouchDesignerToggle } from './Devices';
 import { HandsCard } from './HandsCard';
@@ -59,7 +59,7 @@ export function App() {
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
   useModules();
-  useCameraAutostart(screen);
+  useDeviceAutostart(screen);
 
   useEffect(() => {
     bus.emit('mode', modeOf(tab));

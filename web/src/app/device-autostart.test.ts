@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cameraAlreadyAllowed, mayAutostart } from './camera-autostart';
+import { alreadyAllowed, mayAutostart } from './device-autostart';
 
-describe('camera autostart', () => {
+describe('camera and microphone autostart', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('never starts in automated test browsers or on the entrance', () => {
@@ -15,12 +15,15 @@ describe('camera autostart', () => {
     const query = vi.fn();
     vi.stubGlobal('navigator', { permissions: { query } });
     query.mockResolvedValueOnce({ state: 'granted' });
-    expect(await cameraAlreadyAllowed()).toBe(true);
+    expect(await alreadyAllowed('camera')).toBe(true);
     query.mockResolvedValueOnce({ state: 'prompt' });
-    expect(await cameraAlreadyAllowed()).toBe(false);
+    expect(await alreadyAllowed('camera')).toBe(false);
     query.mockRejectedValueOnce(new TypeError('camera is not a permission name'));
-    expect(await cameraAlreadyAllowed()).toBe(false);
+    expect(await alreadyAllowed('camera')).toBe(false);
+    query.mockResolvedValueOnce({ state: 'granted' });
+    expect(await alreadyAllowed('microphone')).toBe(true);
+    expect(query).toHaveBeenLastCalledWith({ name: 'microphone' });
     vi.stubGlobal('navigator', {});
-    expect(await cameraAlreadyAllowed()).toBe(false);
+    expect(await alreadyAllowed('camera')).toBe(false);
   });
 });
