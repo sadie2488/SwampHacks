@@ -14,9 +14,10 @@ export interface SprayFlower {
 }
 
 export const SPRAY: readonly SprayFlower[] = [
-  { section: 'learn', x: -1.95, y: 1.55, r: 1.0 },
-  { section: 'play', x: 2.0, y: -1.45, r: 1.05 },
-  { section: 'menu', x: 0.3, y: 0, r: 1.75 },
+  // sizes keep the flowers clear of the wordmark (left), the Fig. plate (top right) and the window edge at 1280x800+
+  { section: 'learn', x: -1.7, y: 1.8, r: 1.4 },
+  { section: 'play', x: 1.9, y: -1.45, r: 1.575 },
+  { section: 'menu', x: 0.3, y: 0, r: 2.6 },
 ];
 
 /** The flower whose centre travels to the first record's hole (the shared hand-over into the menu). */
