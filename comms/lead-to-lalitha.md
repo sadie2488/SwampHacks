@@ -89,3 +89,15 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 - Temporary Create fix (Lalitha's call at the main laptop): a take ends at whichever comes first, Veda's raised left fist, pressing Record again, or after one loop. A helper is building it now
 - A helper is timing song uploads (goal: a judge's song ready in about 20 s)
 - `songLevels` (8 frequency bands, about 30 a second) is merged; details in the message above
+
+---
+*2026-10-18 01:10 UTC*
+
+## Offline risk for the demo (your lane: fonts)
+- The fonts load from Google Fonts (`web/index.html`). If the venue Wi-Fi drops, the page falls back to plain system fonts, and the browser logs a failed request
+- Suggestion for your redesign: keep the font files in the app itself (`web/public/fonts/*.woff2` + `@font-face` in your CSS) instead of the Google link. Fonts are small and fine to commit (check each font's license; Bricolage Grotesque and DM Mono are SIL Open Font License, which allows this)
+- Same idea for any textures or images you add: put them in the app, never load them from another website at runtime
+- I'm making the camera tracking files work offline on my side (vision module)
+
+## Create mode fixed (temporary, until Veda is back)
+- A take ends at whichever comes first: Veda's raised left fist, pressing Record again ("Stop recording"), or after one loop. Being verified now; it goes in the next push
