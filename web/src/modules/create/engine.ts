@@ -4,7 +4,7 @@ import type { Layer } from './layers';
 export interface LoopHooks {
   /** The take starts now: the count-in bar is over. `atMs` is when that is heard, on the page clock (performance.now()). */
   onGo(atMs?: number): void;
-  /** A fake engine may invoke this to simulate the user's manual stop; the real engine does not auto-end a take. */
+  /** One pass of the default loop length has been heard since onGo. `atMs` is when that is heard. */
   onPassEnd(atMs?: number): void;
 }
 
