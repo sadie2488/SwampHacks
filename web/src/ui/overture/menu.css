@@ -79,14 +79,10 @@
   opacity: 0;
 }
 
-/* the chosen record's vinyl turns at record speed (about 1.8 s a turn) */
+/* every whole disc (vinyl, frost, sheen) turns as one, very slowly: one turn in 50 s, a compositor-only transform */
 .record-spin {
-  animation: record-turn 1.8s linear infinite;
-  animation-play-state: paused;
-}
-
-.record[data-chosen='true'] .record-spin {
-  animation-play-state: running;
+  animation: record-turn 50s linear infinite;
+  will-change: transform;
 }
 
 @keyframes record-turn {

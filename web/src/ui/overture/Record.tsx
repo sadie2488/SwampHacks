@@ -1,5 +1,5 @@
-// One record in the menu: four pictures drawn once (vinyl and frosted face, in colour and in gray). The vinyl turns
-// while the record is chosen (one composited layer); colour and gray fade into each other with opacity only.
+// One record in the menu: four pictures drawn once (vinyl and frosted face, in colour and in gray). The whole disc
+// turns slowly as one composited layer (a CSS transform); colour and gray fade into each other with opacity only.
 // The small hole marker is where the entrance's flower centre lands (the shared-element hand-over).
 import { useEffect, useRef, useState } from 'react';
 import type { ModeLook } from './modes';
@@ -30,9 +30,9 @@ export function Record({ m, index, px }: { m: ModeLook; index: number; px: numbe
       <span className="record-spin">
         <canvas ref={vinyl} className="record-layer record-color" />
         <canvas ref={vinylGray} className="record-layer record-gray" />
+        <canvas ref={face} className="record-layer record-color" />
+        <canvas ref={faceGray} className="record-layer record-gray" />
       </span>
-      <canvas ref={face} className="record-layer record-color" />
-      <canvas ref={faceGray} className="record-layer record-gray" />
       <span className="record-hole" />
     </span>
   );

@@ -1,7 +1,10 @@
 // Draws each record ONCE, ahead of time, into four canvases: the vinyl and the frosted face, each in colour and in
 // a ready-made gray copy (for the records at rest). After that the menu only moves, turns and fades these pictures.
-// The face is drawn with the page's own Archivo font (canvas text), so the cut-out letters match the design.
-import { stackedName, type ModeLook } from './modes';
+// No words on the records. The only flower on a record is Lalitha's own drawing (drawn/<mode>-...-open.png), tinted
+// with the mode colour; until it exists the record has no flower.
+import { DRAWN_FLOWERS } from '@/ui/flowers/sections';
+import { tinted } from '@/ui/flowers/tint';
+import type { ModeLook } from './modes';
 import { HOLE, vinylSVG } from './recordVinyl';
 
 export interface RecordCanvases {
@@ -66,22 +69,9 @@ function drawFace(c: HTMLCanvasElement, m: ModeLook): void {
   g.fillStyle = g.createPattern(grain(), 'repeat') ?? 'transparent';
   g.fillRect(0, 0, c.width, c.height);
   g.restore();
-  // cut the name and the hole out of the frost
+  // cut the hole out of the frost
   g.globalAlpha = 1;
   g.globalCompositeOperation = 'destination-out';
-  const lines = stackedName(m.name);
-  const size = 78 * (Math.max(...lines.map((l) => l.length)) > 4 ? 0.8 : 1);
-  g.font = `900 ${size}px Archivo, sans-serif`;
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  lines.forEach((ln, i) => {
-    const w = g.measureText(ln).width || 1;
-    g.save();
-    g.translate(0, (i - (lines.length - 1) / 2) * size * 0.9);
-    g.scale(178 / w, 1);
-    g.fillText(ln, 0, size * 0.04);
-    g.restore();
-  });
   g.beginPath();
   g.arc(0, 0, HOLE, 0, Math.PI * 2);
   g.fill();
@@ -104,6 +94,33 @@ function drawFace(c: HTMLCanvasElement, m: ModeLook): void {
   g.stroke();
 }
 
+/** Lays Lalitha's drawn flower (if she drew one for this mode) on the face, inside the rim (the hole stays open). */
+async function drawFlower(c: HTMLCanvasElement, m: ModeLook): Promise<void> {
+  const art = DRAWN_FLOWERS[m.id].open;
+  const g = c.getContext('2d');
+  if (!art.line || !g) return;
+  const load = async (url: string) => {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  };
+  // the fill (second ink) goes under the line (main ink), as in the section flowers
+  const urls = [...(art.fill ? [await tinted(art.fill, m.b)] : []), await tinted(art.line, m.a)];
+  const pics = await Promise.all(urls.map(load));
+  const k = c.width / 220;
+  g.save();
+  g.setTransform(k, 0, 0, k, c.width / 2, c.height / 2);
+  g.beginPath();
+  g.arc(0, 0, 98, 0, Math.PI * 2);
+  g.arc(0, 0, HOLE, 0, Math.PI * 2, true);
+  g.clip();
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = 0.85;
+  for (const p of pics) g.drawImage(p, -98, -98, 196, 196);
+  g.restore();
+}
+
 function grayCopy(from: HTMLCanvasElement, to: HTMLCanvasElement): void {
   const g = to.getContext('2d');
   if (!g) return;
@@ -114,12 +131,8 @@ function grayCopy(from: HTMLCanvasElement, to: HTMLCanvasElement): void {
 /** Draw one record into the given canvases (each `px` pixels square). */
 export async function drawRecord(c: RecordCanvases, m: ModeLook, index: number, px: number): Promise<void> {
   for (const cv of Object.values(c)) cv.width = cv.height = px;
-  try {
-    await document.fonts?.load(`900 64px Archivo`);
-  } catch {
-    // font not ready: the fallback font still cuts readable letters
-  }
   drawFace(c.face, m);
+  await drawFlower(c.face, m).catch(() => {});
   grayCopy(c.face, c.faceGray);
   const img = await loadSVG(vinylSVG(m, index));
   c.vinyl.getContext('2d')?.drawImage(img, 0, 0, px, px);

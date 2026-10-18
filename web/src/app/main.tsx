@@ -17,6 +17,7 @@ import '@/styles/lab.css';
 import '@/styles/compact.css';
 import '@/styles/shell.css';
 import '@/styles/mode-title.css';
+import '@/styles/overlays.css';
 import '@/ui/overture/entrance.css';
 import '@/ui/overture/bloom.css';
 import '@/ui/overture/menu.css';

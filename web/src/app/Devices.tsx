@@ -27,7 +27,7 @@ function buttonAfter(module: EnableTarget, s: ModuleStatus, now: boolean): boole
   return KEEPS_TRYING.has(module) ? now : false;
 }
 
-function Device({ d, fake }: { d: (typeof DEVICES)[number]; fake: boolean }) {
+function Device({ d, fake, sparkle = false }: { d: (typeof DEVICES)[number]; fake: boolean; sparkle?: boolean }) {
   // Start from what the module already says, so the button is right even if it was switched on somewhere else.
   const [on, setOn] = useState(() => isModuleOn(d.module) || (KEEPS_TRYING.has(d.module) && getStatus(d.module)?.state === 'error'));
   const [status, setStatus] = useState<ModuleStatus | undefined>(() => getStatus(d.module));
@@ -58,16 +58,43 @@ function Device({ d, fake }: { d: (typeof DEVICES)[number]; fake: boolean }) {
   // "Off" / "On" is already said by the row itself; anything more (a problem, what it is doing) shows as a note.
   const plain = !status || status.state === 'idle' || words === 'On';
 
+  const label = (
+    <>
+      <span className="device-name">{d.name}</span> <span className="device-state">{on ? 'on' : 'off'}</span>
+    </>
+  );
+  const Wrap = sparkle ? 'span' : 'li';
   return (
-    <li className="device" data-on={on}>
-      <button type="button" className="device-toggle" data-testid={d.testid} data-device={d.module} aria-pressed={on} title={`${on ? d.on : d.off}. ${d.name}: ${words}${fakeNote}`} onClick={toggle}>
-        <span className="device-name">{d.name}</span> <span className="device-state">{on ? 'on' : 'off'}</span>
+    <Wrap className={sparkle ? 'td-sparkle-wrap' : 'device'} data-on={on}>
+      <button type="button" className={sparkle ? 'td-sparkle' : 'device-toggle'} data-testid={d.testid} data-device={d.module} aria-pressed={on} title={`${on ? d.on : d.off}. ${d.name}: ${words}${fakeNote}`} onClick={toggle}>
+        {sparkle ? (
+          <>
+            <SparkleIcon />
+            <span className="sr-only">{label}</span>
+          </>
+        ) : (
+          label
+        )}
       </button>
-      <span className={plain ? 'sr-only' : 'device-note'} data-testid={d.statusId} data-state={status?.state ?? 'idle'} title={words}>
+      <span className={plain || sparkle ? 'sr-only' : 'device-note'} data-testid={d.statusId} data-state={status?.state ?? 'idle'} title={words}>
         {words}
       </span>
-    </li>
+    </Wrap>
   );
+}
+
+/** A four-point sparkle in a thin circle (the TouchDesigner switch next to the logo). */
+function SparkleIcon() {
+  return (
+    <svg className="td-sparkle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 4.5c.5 4.3 2.7 6.6 7.5 7.5-4.8.9-7 3.2-7.5 7.5-.5-4.3-2.7-6.6-7.5-7.5 4.8-.9 7-3.2 7.5-7.5z" />
+    </svg>
+  );
+}
+
+/** The TouchDesigner on/off switch as a small sparkle button (it sits next to the Overture logo). */
+export function TouchDesignerToggle() {
+  return <Device d={DEVICES.find((x) => x.module === 'touchdesigner')!} fake={false} sparkle />;
 }
 
 export function Devices({ fake }: { fake: boolean }) {
@@ -78,7 +105,8 @@ export function Devices({ fake }: { fake: boolean }) {
         Devices
       </h2>
       <ul className="devices">
-        {DEVICES.map((d) => (
+        {/* TouchDesigner has its own sparkle switch next to the logo */}
+        {DEVICES.filter((d) => d.module !== 'touchdesigner').map((d) => (
           <Device key={d.module} d={d} fake={fake} />
         ))}
       </ul>

@@ -1,7 +1,7 @@
 // The app shell (the Overture look): the entrance, the record menu, and inside a mode the header with the mode pills,
 // the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
 // screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { bus, isFakeMode, resumeAudio } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
@@ -11,6 +11,7 @@ import { bigWordPlaces } from '@/ui/overture/carousel';
 import { Entrance } from '@/ui/overture/Entrance';
 import { GuideLayer } from '@/ui/overture/GuideLayer';
 import { HoldRing } from '@/ui/overture/HoldRing';
+import { InstructionsOverlay } from '@/ui/overture/InstructionsOverlay';
 import { MODES, modeLook, type ModeId, type Screen } from '@/ui/overture/modes';
 import { RecordMenu } from '@/ui/overture/RecordMenu';
 import { ModeTitle } from '@/ui/overture/ModeTitle';
@@ -21,7 +22,8 @@ import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
 import { apiFetch } from './api-fetch';
 import { CameraPreview } from './CameraPreview';
-import { Devices } from './Devices';
+import { Devices, TouchDesignerToggle } from './Devices';
+import { HandsCard } from './HandsCard';
 import { LoginButton } from './LoginButton';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
@@ -50,6 +52,10 @@ export function App() {
   const [loader, setLoader] = useState<LoaderState>(idleLoader);
   // restarts the "content rises in" animation on every arrival in a mode (two names so it can restart in place)
   const [arrive, setArrive] = useState<{ kind: string; n: number }>({ kind: 'none', n: 0 });
+  // the two header overlays: the guide (how to use this screen) and "what your hands say"
+  const [guide, setGuide] = useState(false);
+  const [hands, setHands] = useState(false);
+  const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
   useModules();
 
@@ -111,7 +117,12 @@ export function App() {
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
       <header className="app-header" {...inert(screen === 'entrance')}>
         <div className="brand-block">
-          <h1 className="brand">Overture</h1>
+          <h1 className="brand">
+            <button type="button" className="brand-home" aria-label="Overture, home" title="Back to the four records" onClick={() => screen === 'mode' && openMenu()}>
+              Overture
+            </button>
+          </h1>
+          <TouchDesignerToggle />
           <button type="button" className="pill records-pill" title="Back to the four records" onClick={openMenu}>
             Records
           </button>
@@ -124,10 +135,26 @@ export function App() {
           ))}
         </div>
         <div className="header-end">
+          <button type="button" className="pill overlay-pill" data-testid="btn-instructions" aria-pressed={guide} title="How to use this screen with your voice and hands (Esc closes)" onClick={() => setGuide((g) => !g)}>
+            Guide
+          </button>
+          {screen === 'mode' && (
+            <button type="button" className="pill overlay-pill" data-testid="btn-hands-overlay" aria-pressed={hands} title="What your hands say" onClick={() => setHands((h) => !h)}>
+              Hands
+            </button>
+          )}
           <SoundToggle />
           <LoginButton />
         </div>
       </header>
+      {guide && screen !== 'entrance' && <InstructionsOverlay screen={screen === 'menu' ? 'menu' : tab} onClose={closeGuide} />}
+      {hands && screen === 'mode' && (
+        <aside className="hands-overlay" aria-label="What your hands say">
+          <PanelBoundary name="hands">
+            <HandsCard />
+          </PanelBoundary>
+        </aside>
+      )}
 
       <main className="app-main" {...inert(screen !== 'mode')}>
         <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>
@@ -143,7 +170,7 @@ export function App() {
             <Devices fake={isFakeMode()} />
             <CameraPreview />
           </div>
-          {songTab && <SongView tab={tab} />}
+          {songTab && <SongView />}
           {tab === 'create' && (
             <div className="stage-main">
               <PanelBoundary name="Create">

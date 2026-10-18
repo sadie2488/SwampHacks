@@ -71,3 +71,6 @@ const PLACEHOLDERS = import.meta.glob('./sections/*/*.svg', { eager: true, query
 const DRAWN = import.meta.glob('./drawn/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 export const SECTION_FLOWERS = collectFlowers(PLACEHOLDERS, DRAWN);
+
+/** Only Lalitha's own drawings (no placeholders): a state's line is '' until her PNG exists. The records use this. */
+export const DRAWN_FLOWERS = collectFlowers({}, DRAWN);
