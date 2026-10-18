@@ -1,5 +1,7 @@
 // A thin wrapper over the browser's speech recognition (Chrome only: webkitSpeechRecognition).
 // It only starts when asked and keeps itself running (Chrome ends a session after a pause) until told to stop.
+import { CONFIG } from './config';
+import type { Heard } from './keywords';
 interface ResultLike {
   readonly length: number;
   readonly isFinal?: boolean;
@@ -12,6 +14,7 @@ interface ResultEventLike {
 interface RecognizerLike {
   continuous: boolean;
   interimResults: boolean;
+  maxAlternatives?: number;
   lang: string;
   onstart: (() => void) | null;
   onresult: ((e: ResultEventLike) => void) | null;
@@ -38,7 +41,7 @@ export interface SpeechListener {
 
 export interface SpeechHandlers {
   /** The text of speech results `firstIndex`, `firstIndex + 1`, ... (interim results repeat and grow); `finals[k]` is true once result k is finished. */
-  onText(texts: string[], firstIndex: number, finals: boolean[]): void;
+  onText(texts: Heard[], firstIndex: number, finals: boolean[]): void;
   /** A new recognition run began (its results are numbered from 0 again). */
   onNewSession(): void;
   /** Something stopped voice commands from working, in plain words. */
@@ -78,6 +81,7 @@ export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
     const r = new Ctor();
     r.continuous = true;
     r.interimResults = true;
+    r.maxAlternatives = CONFIG.keywords.maxAlternatives; // Chrome often hears "paws" first and "pause" second
     r.lang = 'en-US';
     r.onstart = () => h.onNewSession();
     r.onresult = (e) => {
@@ -85,10 +89,13 @@ export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
         networkFails = 0;
         h.onRecovered?.();
       }
-      const texts: string[] = [];
+      const texts: Heard[] = [];
       const finals: boolean[] = [];
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        texts.push(e.results[i][0].transcript);
+        const res = e.results[i];
+        const guesses: string[] = [];
+        for (let a = 0; a < res.length; a++) if (res[a]?.transcript) guesses.push(res[a].transcript);
+        texts.push(guesses.length === 1 ? guesses[0] : guesses); // one guess stays a plain string
         finals.push(e.results[i].isFinal !== false);
       }
       h.onText(texts, e.resultIndex, finals);

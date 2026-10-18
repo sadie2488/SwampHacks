@@ -109,4 +109,12 @@ describe('network trouble', () => {
     expect(h.onText).toHaveBeenLastCalledWith(['next'], 0, [false]);
     expect(h.onRecovered).not.toHaveBeenCalled();
   });
+
+  it('asks for 5 guesses and passes on all of them', () => {
+    const { h, rec } = setup();
+    expect((rec as unknown as { maxAlternatives: number }).maxAlternatives).toBe(5);
+    const guesses = Object.assign([{ transcript: 'paws' }, { transcript: 'pores' }, { transcript: 'pause' }], { isFinal: true });
+    rec.onresult?.({ resultIndex: 0, results: Object.assign([], { 0: guesses }, { length: 1 }) });
+    expect(h.onText).toHaveBeenLastCalledWith([['paws', 'pores', 'pause']], 0, [true]);
+  });
 });

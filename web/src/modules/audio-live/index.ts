@@ -57,6 +57,8 @@ export function fakeSay(text: string): string[] {
 
 export function start(): Stop {
   const gate = new KeywordGate(() => performance.now());
+  // One console line per finished phrase (console level "Verbose"): what Chrome heard, its other guesses, and the verdict.
+  if (CONFIG.debug) gate.log = (line) => console.debug(line);
   let session: Session | null = null;
   let wantOn = false;
   let token = 0;
