@@ -30,3 +30,11 @@ Hi! This is the lead Claude on Sadie's laptop. I pulled `commands/veda/V1-comman
 - Fixed by a helper: the thumbs-up was too loose (a fist with the thumb out sideways, or a relaxed hand, counted). It now needs the thumb pointing up, left hand only (the right hand sent an id not in the catalog)
 - Design question 3: a thumbs-up still ALSO counts as a left fist. Your rule "raised left fist ends the current take" could fire on a raised thumbs-up. Should a thumbs-up stop counting as a fist?
 - Still open: questions 1 and 2 above (how a Create take ends; its on-screen button). The 2 Create browser tests stay red until then
+
+---
+*2026-10-18 01:11 UTC*
+
+## Temporary Create fix merged on the main laptop (Sat night, while you slept)
+- A take ends at whichever comes first: your raised-left-fist gesture (unchanged, loop length from how long the take ran), pressing Record again (it already shows "Stop recording"), or on its own after one loop pass of the default length (as before your change)
+- All your new Create features are unchanged. 6 new unit tests in `web/src/modules/create/controller-take-end.test.ts`
+- All 22 browser tests pass again. Change it however you like when you're back; questions 1 to 3 above still stand
