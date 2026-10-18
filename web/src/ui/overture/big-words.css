@@ -1,0 +1,57 @@
+/* The giant words around the chosen record. Each line rises out of a hidden edge and leaves upward. */
+.big {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  text-align: center;
+  font: 400 120px / 0.84 var(--serif);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--paper-white);
+}
+
+.big-back {
+  z-index: 0;
+}
+
+.big-front {
+  z-index: 2;
+}
+
+.big-clip {
+  display: inline-block;
+  overflow: hidden;
+  padding: 0.06em 0.04em 0.02em;
+  vertical-align: top;
+}
+
+.big-line {
+  display: inline-block;
+  animation: line-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0ms) both;
+}
+
+.big-line.leaving {
+  animation: line-leave 0.4s cubic-bezier(0.5, 0, 0.75, 0) var(--delay, 0ms) both;
+}
+
+@keyframes line-rise {
+  from {
+    transform: translate3d(0, 105%, 0);
+  }
+}
+
+@keyframes line-leave {
+  to {
+    transform: translate3d(0, -105%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .big-line,
+  .big-line.leaving {
+    animation: none;
+  }
+}

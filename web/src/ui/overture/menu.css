@@ -1,0 +1,134 @@
+/* Screen 2, the record menu. Only transform and opacity animate. Every record is a set of pictures drawn once. */
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  color: var(--paper-white);
+  touch-action: pan-y;
+}
+
+.records {
+  position: absolute;
+  inset: 0;
+  perspective: 1400px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* a turn of the carousel: 600 ms, smooth in and out; the chosen record lifts to face you */
+.record {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.6s ease-in-out;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.record:hover:not(:disabled),
+.record:active:not(:disabled) {
+  background: none;
+  box-shadow: none;
+}
+
+.record:focus-visible {
+  outline: 2px solid var(--paper-white);
+  outline-offset: 10px;
+}
+
+.record-art,
+.record-spin,
+.record-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.record-art {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+.record-art[data-ready='true'] {
+  opacity: 1;
+}
+
+/* colour on the chosen record, the ready-made gray copy on the others: a cross-fade, never a live filter */
+.record-layer {
+  display: block;
+  transition: opacity 0.6s ease-in-out;
+}
+
+.record-gray,
+.record[data-chosen='true'] .record-color {
+  opacity: 1;
+}
+
+.record-color,
+.record[data-chosen='true'] .record-gray {
+  opacity: 0;
+}
+
+/* the chosen record's vinyl turns at record speed (about 1.8 s a turn) */
+.record-spin {
+  animation: record-turn 1.8s linear infinite;
+  animation-play-state: paused;
+}
+
+.record[data-chosen='true'] .record-spin {
+  animation-play-state: running;
+}
+
+@keyframes record-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* where the entrance's flower centre lands (the shared hand-over between the two screens) */
+.record-hole {
+  position: absolute;
+  left: 43.6%;
+  top: 43.6%;
+  width: 12.8%;
+  height: 12.8%;
+  border-radius: 50%;
+}
+
+.record[data-chosen='true'] .record-hole {
+  view-transition-name: journey;
+}
+
+/* the record that rushes at you when a mode is chosen */
+:root[data-vt='portal'] .record[data-chosen='true'] .record-art {
+  view-transition-name: portal-record;
+}
+
+:root[data-vt='portal'] .record[data-chosen='true'] .record-hole {
+  view-transition-name: none;
+}
+
+/* a soft shadow under the chosen record, drawn as a gradient (no live blur) */
+.record-shadow {
+  position: absolute;
+  inset: 6% 4% -10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.25) 60%, transparent);
+  transform: translate3d(0, 9%, -1px);
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+.record[data-chosen='true'] .record-shadow {
+  opacity: 1;
+}

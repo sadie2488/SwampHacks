@@ -318,6 +318,7 @@ def analyze_audio(path: Path) -> dict:
         return analysis
     tempo_key, melody = engine
     path = Path(path)
+    _compiled_code_checked.wait(COMPILED_CODE_CHECK_WAIT_SEC)  # see the warm-up notes
 
     y, sr = _load(path, tempo_key)
     # The key and the drum removal spend most of their time outside Python's lock, so they run in
@@ -359,8 +360,16 @@ def analyze_audio(path: Path) -> dict:
 # The first analysis in a fresh process spends several seconds (up to about twenty on a cold disk)
 # compiling numerical code. A background thread does that once at server start, on a few seconds of
 # generated sound, so the first real upload is not the slow one.
+# Order matters (`analysis/numba_cache.py`): 1. a separate process loads the saved compiled code, and if that
+# crashes, the saved code is deleted; 2. this process compiles everything and saves it (the only process that
+# saves); 3. the pitch workers start and only load it. Uploads wait for step 1 (they would load the same code).
+# Threads inside this process are safe: numba compiles and loads under one lock per process.
 
 WARM_UP_SECONDS = 5.0  # the tempo step needs 2 seconds and 4 beats
+COMPILED_CODE_CHECK_WAIT_SEC = 120.0  # an upload waits at most this long for step 1 (a few seconds normally)
+
+_compiled_code_checked = threading.Event()
+_compiled_code_checked.set()  # cleared while a warm-up checks it
 
 
 def _warm_up_audio(np, sr: int):
@@ -419,17 +428,30 @@ def stop_pitch_workers() -> None:
         importlib.import_module("analysis.pitch_pool").stop()
 
 
+def _check_compiled_code() -> None:
+    """Step 1 of the warm-up: delete saved compiled code that crashes a test process. Never raises."""
+    try:
+        importlib.import_module("analysis.numba_cache").check(warm_up)
+    except Exception:
+        log.info("Could not check the saved compiled code.", exc_info=True)
+    finally:
+        _compiled_code_checked.set()
+
+
 def _warm_up_everything() -> None:
-    _start_pitch_workers()  # they load their libraries in their own processes while this one warms up
+    _check_compiled_code()
     warm_up()
+    _start_pitch_workers()  # after warm_up saved the compiled code, so the workers only load it
 
 
 def start_warm_up() -> threading.Thread | None:
     """Start the warm-up in a background thread that does not keep the server alive. Never blocks or raises."""
     try:
         thread = threading.Thread(target=_warm_up_everything, name="analysis-warm-up", daemon=True)
+        _compiled_code_checked.clear()
         thread.start()
         return thread
     except Exception:
+        _compiled_code_checked.set()
         log.info("Could not start the analysis warm-up.", exc_info=True)
         return None

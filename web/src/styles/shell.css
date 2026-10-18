@@ -1,0 +1,149 @@
+/* The Overture shell: pills, the header on each screen, the fixed layers behind everything. */
+.pill,
+.tabs [role='tab'],
+.records-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font: 800 11px / 1.2 var(--sans);
+  font-stretch: 100%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  background: transparent;
+  border: 1.5px solid var(--paper-white);
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.pill:hover:not(:disabled),
+.tabs [role='tab']:hover:not(:disabled) {
+  background: var(--paper-white);
+  color: var(--night);
+}
+
+.guide-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------- header on each screen ---------- */
+.app[data-screen='entrance'] .app-header,
+.app[data-screen='entrance'] .app-main,
+.app[data-screen='menu'] .app-main {
+  visibility: hidden;
+}
+
+/* on the menu only two header pieces stay: the mode pills (bottom-right corner) and the status (top-right) */
+.app[data-screen='menu'] .brand-block {
+  visibility: hidden;
+}
+
+.app[data-screen='menu'] .tabs {
+  position: fixed;
+  z-index: 25;
+  right: var(--m);
+  bottom: var(--m);
+  justify-content: flex-end;
+  max-width: min(460px, calc(100vw - 2 * var(--m)));
+}
+
+.app[data-screen='menu'] .tabs [role='tab'] {
+  border-color: transparent;
+  background: rgba(242, 238, 230, 0.12);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 7px 13px;
+}
+
+.app[data-screen='menu'] .tabs [role='tab'][aria-selected='true'] {
+  background: var(--a);
+  color: var(--night);
+}
+
+.app[data-screen='menu'] .header-end {
+  position: fixed;
+  z-index: 25;
+  right: var(--m);
+  top: var(--m);
+}
+
+/* sound toggle: a speaker made of two small arcs, struck through when off */
+.sound-toggle,
+.sound-toggle[aria-pressed] {
+  border-color: var(--rule-strong);
+  background: transparent;
+  color: var(--paper-white);
+  padding: 6px 12px;
+  font-size: 10px;
+}
+
+.sound-toggle:hover:not(:disabled) {
+  background: var(--paper-white);
+  color: var(--night);
+}
+
+.sound-icon {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0 100% 0 0;
+  transform: rotate(45deg) scale(0.8);
+}
+
+.sound-icon[data-on='false'] {
+  opacity: 0.5;
+}
+
+.guide-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 6px 14px;
+  border: 1.5px solid var(--a);
+  border-radius: 999px;
+  font: 800 10px / 1.2 var(--sans);
+  font-stretch: 100%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--panel-soft);
+  white-space: nowrap;
+}
+
+.guide-pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--a);
+  animation: guide-blink 1.2s infinite;
+}
+
+.guide-pill[data-lost='true'] {
+  border-color: var(--cream);
+  opacity: 0.75;
+}
+
+.guide-pill[data-lost='true'] i {
+  background: var(--cream);
+  animation: none;
+}
+
+@keyframes guide-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
