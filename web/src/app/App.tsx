@@ -2,7 +2,7 @@
 // the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
 // screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { bus, isFakeMode, resumeAudio } from '@/bus';
+import { bus, isFakeMode, isModuleOn, resumeAudio } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
 import { CreatePanel } from '@/modules/create';
@@ -28,6 +28,7 @@ import { CameraPreview } from './CameraPreview';
 import { Devices, TouchDesignerToggle } from './Devices';
 import { HandsCard } from './HandsCard';
 import { LoginButton } from './LoginButton';
+import { logoTarget, publishedMode } from './navigation';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
@@ -64,9 +65,12 @@ export function App() {
   useModules();
   useDeviceAutostart(screen);
 
+  // On the entrance and the record menu a neutral mode is published, so the last mode's voice and hand rules stop
+  // (and the Create loop stops); only the sign shortcuts and the grab stay live.
+  const busMode = publishedMode(screen, modeOf(tab));
   useEffect(() => {
-    bus.emit('mode', modeOf(tab));
-  }, [tab]);
+    bus.emit('mode', busMode);
+  }, [busMode]);
   useEffect(() => unlockOnFirstGesture(), []);
 
   const openMode = (id: Tab) => {
@@ -80,7 +84,9 @@ export function App() {
       setArrive((a) => ({ kind, n: a.n + 1 }));
     };
     if (screen === 'menu') {
-      const p = bigWordPlaces(menuSel, window.innerWidth, window.innerHeight);
+      // rush in from the TARGET record (a sign shortcut may name a different record than the one in front)
+      setMenuSel(indexOf(id));
+      const p = bigWordPlaces(indexOf(id), window.innerWidth, window.innerHeight);
       needleDrop();
       swell(PORTAL_MS);
       changeScreen('portal', update, { ...p.centre, hole: p.hole });
@@ -102,13 +108,22 @@ export function App() {
       setMenuSel(indexOf(tab));
       setScreen('menu');
     });
+  // the logo goes back to the title screen; the camera and the microphone keep running
+  const openEntrance = () => {
+    const target = logoTarget(screen);
+    if (!target) return;
+    changeScreen('back', () => {
+      setMenuSel(indexOf(tab));
+      setScreen(target);
+    });
+  };
   const enter = (camera: boolean) => {
     rememberEntered();
     unlockSounds();
     resumeAudio().catch(() => {});
     // the click is the person's go-ahead; if they refuse a permission the app simply carries on without it
-    if (camera) bus.emit('enable', { module: 'vision', on: true });
-    bus.emit('enable', { module: 'audio-live', on: true });
+    if (camera && !isModuleOn('vision')) bus.emit('enable', { module: 'vision', on: true });
+    if (!isModuleOn('audio-live')) bus.emit('enable', { module: 'audio-live', on: true });
     changeScreen('enter', () => setScreen('menu'));
   };
 
@@ -123,7 +138,7 @@ export function App() {
       <header className="app-header" {...inert(screen === 'entrance')}>
         <div className="brand-block">
           <h1 className="brand">
-            <button type="button" className="brand-home" aria-label="Overture, home" title="Back to the four records" onClick={() => screen === 'mode' && openMenu()}>
+            <button type="button" className="brand-home" aria-label="Overture, home" title="Back to the title screen" onClick={openEntrance}>
               Overture
             </button>
           </h1>
