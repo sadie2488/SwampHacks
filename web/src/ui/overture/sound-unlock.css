@@ -1,0 +1,50 @@
+/* The "Click anywhere to turn sound on" pill: low on the screen, centred, and never in the way of a click. */
+.sound-unlock {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 60;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 9px 18px;
+  border: 1.5px solid var(--a, #ff7a00);
+  border-radius: 999px;
+  font: var(--label-weight, 600) 13px / 1.2 var(--sans, sans-serif);
+  letter-spacing: var(--label-track, 0.04em);
+  color: var(--cream, #fff6e8);
+  background: var(--panel-soft, rgba(20, 12, 24, 0.72));
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sound-unlock-in 0.5s ease-out both;
+}
+
+.sound-unlock i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--a, #ff7a00);
+  animation: sound-unlock-breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes sound-unlock-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+@keyframes sound-unlock-breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound-unlock,
+  .sound-unlock i {
+    animation: none;
+  }
+}

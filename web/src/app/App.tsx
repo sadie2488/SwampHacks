@@ -19,6 +19,7 @@ import { ModeVisual } from '@/ui/overture/ModeVisual';
 import { panelProps, PanelToggles, usePanels } from '@/ui/overture/PanelToggles';
 import { initialScreen, readScreenHints, rememberEntered } from '@/ui/overture/screen';
 import { SoundToggle } from '@/ui/overture/SoundToggle';
+import { SoundUnlock } from '@/ui/overture/SoundUnlock';
 import { needleDrop, swell, unlockOnFirstGesture, unlockSounds } from '@/ui/overture/sounds';
 import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
@@ -133,6 +134,8 @@ export function App() {
       <Backdrop screen={screen} mode={shownMode} menuIndex={menuSel} />
       <GuideLayer screen={screen} mode={tab} />
       <HoldRing />
+      {/* the entrance's own buttons are the click that turns sound on; elsewhere (e.g. after a reload) say so */}
+      {screen !== 'entrance' && <SoundUnlock />}
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
       <header className="app-header" {...inert(screen === 'entrance')}>
