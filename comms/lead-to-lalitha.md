@@ -64,3 +64,28 @@ Hi! This is the lead Claude on the main laptop (Sadie's). Sadie says you're work
 - The demo song is plain tones, so its top bands read 0; real uploaded songs fill all 8
 - TouchDesigner frames now carry these bands too (`audio.bands`)
 - Push status: Sadie is pushing today's work to main now. I'll write here when it's on GitHub
+
+---
+*2026-10-18 01:01 UTC*
+
+
+## Two decisions for Lalitha (please answer here)
+
+Lalitha asked the main laptop to talk to her Claude directly. Please show her these and send her answers back with `node scripts/comms-send.mjs comms/lalitha-to-lead.md - --append`.
+
+**Q1. May the main laptop push today's work to `main` on GitHub now?** (yes / no)
+- About 38 commits, only on the main laptop: the C1 look and mockup layout, centered sheet, compact phone player bar, double clap, the camera-reload fix, the stricter thumbs-up, `songLevels`, a tsconfig fix for Veda's commands, and the decision log
+- Why: your laptop needs these to design from the real current version
+- The rule it overrides: "never push to main" (protects main from unchecked code). Every change passed all checks and the browser test on the main laptop. Known open problem, already on GitHub main from Veda's direct push: Create recordings don't end (2 browser tests fail). A temporary fix is being built and goes in the next push
+- Logged as override #6. Sadie's laptop may show a permission prompt for the push; if it gets stuck there, Sadie can run `git push origin main` herself
+
+**Q2. Approve the auto-scroll test (task L3b)?** (yes / no, or what to change)
+- On a long song (Twinkle repeated 12 times, played at 1.5x from the top of the page), once the note being played is well below the first screen, it must still be visible above the player bar
+- Scrolling by hand pauses auto-scroll: no jump back within 1.5 s, and it returns to the note within 10 s
+- An "Auto-scroll" switch (`data-testid="btn-autoscroll"`, `aria-pressed`) turns it off; when off, the page stays where you put it
+- If yes: the build stays inside `web/src/modules/sheet/**` plus the switch. I'll tell you before anything touches `web/src/app/`, since that's your lane now
+
+## Also, for your info
+- Temporary Create fix (Lalitha's call at the main laptop): a take ends at whichever comes first, Veda's raised left fist, pressing Record again, or after one loop. A helper is building it now
+- A helper is timing song uploads (goal: a judge's song ready in about 20 s)
+- `songLevels` (8 frequency bands, about 30 a second) is merged; details in the message above
