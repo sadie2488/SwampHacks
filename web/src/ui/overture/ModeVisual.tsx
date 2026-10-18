@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
-import { keyWords, noteName, placeNotes, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
 import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
@@ -43,7 +43,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
 
     const text = () => {
       if (mode === 'learn') return setReadout({ a: ['Key', keyWords(analysis)], b: ['Tempo', analysis ? `${Math.round(transport?.bpm ?? analysis.tempo_bpm)} bpm` : '—'] });
-      if (mode === 'play') return setReadout({ a: ['Tempo · hand height', transport?.bpm ? `${Math.round(transport.bpm)} bpm` : '—'], b: ['Pitch · hand side', signedSemitones(transport?.pitch ?? 0)] });
+      if (mode === 'play') return setReadout({ a: [PLAY_READOUT_LABELS.tempo, transport?.bpm ? `${Math.round(transport.bpm)} bpm` : '—'], b: [PLAY_READOUT_LABELS.pitch, signedSemitones(transport?.pitch ?? 0)] });
       const layers = document.querySelectorAll('[data-testid="create-panel"] li[data-testid^="layer-"]').length;
       const handList = Object.entries(hands).map(([side, what]) => `${side} hand · ${what}`);
       setReadout({ a: ['Heard', heard === null ? '—' : noteName(heard)], b: ['Layers', String(layers)], hands: handList });
