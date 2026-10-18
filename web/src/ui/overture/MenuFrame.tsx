@@ -1,6 +1,8 @@
 // The record menu's quiet frame, one job per corner: top-left information (what the chosen mode is), bottom-left
 // the one instruction, bottom-right control (the mode pills, from the header) with a small staff above them as
 // decoration only. Top-right holds the sound toggle and the login status (from the header).
+import { SectionBloom } from '@/ui/flowers/SectionBloom';
+
 export function MenuFrame({ sub, modeId }: { sub: string; modeId: string }) {
   return (
     <>
@@ -9,6 +11,8 @@ export function MenuFrame({ sub, modeId }: { sub: string; modeId: string }) {
         <p key={modeId}>{sub}</p>
       </div>
       <div className="menu-rule" aria-hidden="true" />
+      {/* the menu's own flower (chrysanthemum): it flicks open on every turn of the records */}
+      <SectionBloom key={modeId} section="menu" className="menu-flower beat" />
       <p className="menu-tag">Four ways in. Pick one.</p>
       <svg className="menu-staff" viewBox="0 0 160 30" aria-hidden="true">
         {[0, 1, 2, 3, 4].map((k) => (
