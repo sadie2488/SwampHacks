@@ -8,6 +8,7 @@ import { CommandLab } from '@/modules/command-lab';
 import { CreatePanel } from '@/modules/create';
 import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { bigWordPlaces } from '@/ui/overture/carousel';
+import { CommandToast } from '@/ui/overture/CommandToast';
 import { Entrance } from '@/ui/overture/Entrance';
 import { GuideLayer } from '@/ui/overture/GuideLayer';
 import { HandPointer } from '@/ui/overture/HandPointer';
@@ -138,6 +139,7 @@ export function App() {
       <HandPointer screen={screen} mode={shownMode} />
       {/* the entrance's own buttons are the click that turns sound on; elsewhere (e.g. after a reload) say so */}
       {screen !== 'entrance' && <SoundUnlock />}
+      <CommandToast />
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
       <header className="app-header" {...inert(screen === 'entrance')}>
