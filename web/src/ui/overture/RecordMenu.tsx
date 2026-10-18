@@ -1,7 +1,9 @@
 // Screen 2, the record menu: the four modes are four records on a rising diagonal. Scroll, drag, the arrow keys or
 // the mode pills move between them (a soft tick per step); clicking the chosen record (or Enter) opens that mode.
 // Moving only changes CSS transforms; while the menu sits still only the chosen record's vinyl turns.
-import { useEffect, useRef, type CSSProperties } from 'react';
+// The app.enter command (Lalitha's grab: open hand, then close it) pulses the chosen record once and opens it like a click.
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { bus } from '@/bus';
 import { BigWords } from './BigWords';
 import { recordPlace } from './carousel';
 import { MenuFrame } from './MenuFrame';
@@ -9,6 +11,9 @@ import { MODES } from './modes';
 import { Record } from './Record';
 import { tick } from './sounds';
 import { useViewport } from './useViewport';
+
+/** How long the chosen record pulses after a grab before it opens. */
+const GRAB_PULSE_MS = 260;
 
 export interface RecordMenuProps {
   sel: number;
@@ -21,6 +26,21 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
   const latest = useRef({ sel, onSelect, onChoose });
   latest.current = { sel, onSelect, onChoose };
   const dragged = useRef(false);
+  const [grabbed, setGrabbed] = useState(false);
+
+  // app.enter only exists while the menu is on screen (this component is the menu), so other screens ignore it
+  useEffect(() => {
+    let timer: number | undefined;
+    const stop = bus.on('command', (c) => {
+      if (c.command !== 'app.enter' || timer !== undefined) return;
+      setGrabbed(true);
+      timer = window.setTimeout(() => latest.current.onChoose(latest.current.sel), GRAB_PULSE_MS);
+    });
+    return () => {
+      stop();
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let acc = 0;
@@ -102,7 +122,7 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
             }
           };
           return (
-            <button key={mode.id} type="button" className="record" style={style} data-testid={`record-${mode.id}`} data-chosen={i === sel} aria-label={`${mode.name} mode`} aria-current={i === sel ? 'true' : undefined} onClick={click}>
+            <button key={mode.id} type="button" className="record" style={style} data-testid={`record-${mode.id}`} data-chosen={i === sel} data-grabbed={grabbed && i === sel ? 'true' : undefined} aria-label={`${mode.name} mode`} aria-current={i === sel ? 'true' : undefined} onClick={click}>
               <span className="record-shadow" />
               <Record m={mode} index={i} px={px} />
             </button>

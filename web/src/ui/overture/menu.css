@@ -128,3 +128,14 @@
 .record[data-chosen='true'] .record-shadow {
   opacity: 1;
 }
+
+/* a grab (open hand, then close it) was recognised: the chosen record pulses once, then opens */
+.record[data-grabbed='true'] .record-art {
+  animation: record-grab 0.26s ease-out;
+}
+
+@keyframes record-grab {
+  50% {
+    transform: scale(1.08);
+  }
+}
