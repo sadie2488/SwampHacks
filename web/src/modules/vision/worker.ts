@@ -1,7 +1,8 @@
 // Background worker: runs MediaPipe hand and face tracking on frames sent by the page, so the page itself stays smooth.
 // It only finds points. What they mean (fist, tilt, ...) is worked out in gestures.ts on the page side.
-import { FaceLandmarker, FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
 import { MODEL_DOWNLOAD_MESSAGE, type FromWorker, type ToWorker } from './protocol';
+import { LOCAL_FACE_MODEL_URL, LOCAL_HAND_MODEL_URL, pick, pickWasm, type Fileset } from './sources';
 import type { RawHand } from './gestures';
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
@@ -34,9 +35,22 @@ async function download(url: string): Promise<Uint8Array> {
   }
 }
 
+/** The copy on this computer when there is one (see sources.ts), else the internet copy. */
+async function localFirst(local: string, remote: string): Promise<{ bytes: Uint8Array; local: boolean }> {
+  const url = await pick(local, remote);
+  if (url === local) {
+    try {
+      return { bytes: await download(local), local: true };
+    } catch {
+      // the local copy vanished or broke: use the internet one
+    }
+  }
+  return { bytes: await download(remote), local: false };
+}
+
 let hands: HandLandmarker | null = null;
 let face: FaceLandmarker | null = null;
-let files: { handModel: Uint8Array; faceModel: Uint8Array; fileset: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> } | null = null;
+let files: { handModel: Uint8Array; faceModel: Uint8Array; fileset: Fileset } | null = null;
 let delegate: 'GPU' | 'CPU' = 'CPU';
 let switching = false;
 let lastStamp = 0;
@@ -65,8 +79,13 @@ async function build(d: 'GPU' | 'CPU'): Promise<void> {
 
 async function init(m: Extract<ToWorker, { type: 'init' }>): Promise<void> {
   try {
-    const [handModel, faceModel] = await Promise.all([download(m.handModelUrl), download(m.faceModelUrl)]);
-    files = { handModel, faceModel, fileset: await FilesetResolver.forVisionTasks(m.wasmUrl) };
+    const [handModel, faceModel, wasm] = await Promise.all([
+      localFirst(LOCAL_HAND_MODEL_URL, m.handModelUrl),
+      localFirst(LOCAL_FACE_MODEL_URL, m.faceModelUrl),
+      pickWasm(m.wasmUrl),
+    ]);
+    console.info(`[vision worker] files: models ${handModel.local && faceModel.local ? 'from this computer' : 'from the internet'}, engine ${wasm.local ? 'from this computer' : 'from the internet'}`);
+    files = { handModel: handModel.bytes, faceModel: faceModel.bytes, fileset: wasm.fileset };
     // The graphics card is much faster when it works; if it doesn't on this computer, fall back to the processor.
     const order: Array<'GPU' | 'CPU'> = m.delegate === 'CPU' ? ['CPU'] : m.delegate === 'GPU' ? ['GPU'] : ['GPU', 'CPU'];
     let problem: unknown;
