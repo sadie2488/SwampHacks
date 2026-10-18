@@ -6,8 +6,11 @@ import type { Landmarks } from '@/bus';
 export const HOLD_MS = 1000;
 /** With nothing right under the cursor, a button whose hit area is this close (px) still counts (the magnet). */
 export const MAGNET_PX = 48;
-/** A held fist that moves further than this (px) from where it closed becomes a grab-and-scroll and never clicks. */
-export const DRAG_PX = 30;
+/**
+ * The grab's dead zone (px): it only soaks up jitter. A grabbing fist that moves further than this from where it closed
+ * drags at once (and that grab never clicks); one that stays inside it clicks after HOLD_MS.
+ */
+export const DRAG_PX = 12;
 /** Each frame the cursor moves this share of the way to the hand: lower is steadier, higher is snappier. */
 export const SMOOTH = 0.35;
 /** Wheel distance sent per pixel the grabbing hand moves. */
@@ -108,9 +111,10 @@ export interface HoldOutput<T> {
 }
 
 /**
- * Hold-to-click and grab-to-scroll. An open hand arms it; closing into a fist starts a hold. A still fist over a target
- * fills the ring for `holdMs` and then clicks once. A fist that moves more than DRAG_PX scrolls instead (and never
- * clicks). Opening the hand cancels; the hand must open again before the next hold.
+ * Grab, drag, and hold-to-click. An open hand arms it; closing into a fist grabs the target under it at once (`held`).
+ * A still fist (inside the DRAG_PX dead zone) fills the ring for `holdMs` and then clicks once. A fist that moves past
+ * the dead zone drags from that frame on (wheel deltas follow the hand) and never clicks. Opening the hand releases;
+ * the hand must open again before the next grab.
  */
 export function createHoldMachine<T>(holdMs = HOLD_MS) {
   let ready = false;
@@ -122,6 +126,14 @@ export function createHoldMachine<T>(holdMs = HOLD_MS) {
   return {
     get phase() {
       return phase;
+    },
+    /** True while the fist holds something: a hold over a target, a grab-scroll, or a fist still closed after a click. */
+    get grabbed(): boolean {
+      return phase === 'dragging' || phase === 'done' || (phase === 'holding' && target !== null);
+    },
+    /** The item the fist grabbed when it closed (null when nothing is held). */
+    get held(): T | null {
+      return phase === 'idle' ? null : target;
     },
     reset(): void {
       phase = 'idle';
@@ -165,5 +177,68 @@ export function createHoldMachine<T>(holdMs = HOLD_MS) {
       }
       return { progress: 0 };
     },
+  };
+}
+
+/** The cursor's ink on the menu when nothing is under it (the paper white). */
+export const PAPER = '#f2eee6';
+
+/** What the cursor reads off a hovered element to pick its colour (computed styles, already resolved). */
+export interface ColorSource {
+  /** An explicit `data-hand-color` attribute, if any. */
+  data?: string | null;
+  /** The border colour, only when the border is actually drawn. */
+  border?: string | null;
+  background?: string | null;
+}
+
+/** A CSS colour as rgba (0-255, alpha 0-1). Understands transparent, #rgb, #rrggbb, #rrggbbaa, rgb() and rgba(); else null. */
+export function parseColor(css: string | null | undefined): { r: number; g: number; b: number; a: number } | null {
+  const c = (css ?? '').trim().toLowerCase();
+  if (c === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+  let m = /^#([0-9a-f]{3})$/.exec(c);
+  if (m) {
+    const [r, g, b] = m[1].split('').map((h) => parseInt(h + h, 16));
+    return { r, g, b, a: 1 };
+  }
+  m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/.exec(c);
+  if (m) {
+    const n = parseInt(m[1], 16);
+    return { r: n >> 16, g: (n >> 8) & 255, b: n & 255, a: m[2] ? parseInt(m[2], 16) / 255 : 1 };
+  }
+  m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/.exec(c);
+  if (m) {
+    const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return { r: +m[1], g: +m[2], b: +m[3], a };
+  }
+  return null;
+}
+
+/** A colour worth showing on the cursor: mostly opaque and not near-black (it would vanish on the dark page). */
+export function isVisibleInk(css: string | null | undefined): boolean {
+  const c = parseColor(css);
+  return !!c && c.a >= 0.5 && Math.max(c.r, c.g, c.b) > 48;
+}
+
+/** The cursor's colour over an element: its data-hand-color, else its border, else its background, else the fallback. */
+export function pickHandColor(src: ColorSource | null, fallback: string): string {
+  if (!src) return fallback;
+  const data = src.data?.trim();
+  if (data) return data;
+  if (isVisibleInk(src.border)) return src.border as string;
+  if (isVisibleInk(src.background)) return src.background as string;
+  return fallback;
+}
+
+/**
+ * Keeps the cursor's colour still while the fist holds something: the colour when the grab started stays until the
+ * hand opens, even when a grab-scroll drags the cursor over other things.
+ */
+export function createInkLatch() {
+  let locked: string | null = null;
+  return (grabbed: boolean, live: string): string => {
+    if (!grabbed) locked = null;
+    else if (locked === null) locked = live;
+    return locked ?? live;
   };
 }

@@ -3,11 +3,14 @@
 // open hand, then close it into a fist over a button and hold still for HOLD_MS to click (a ring fills); hold a fist and
 // move to scroll. Inside a mode with nothing open the cursor only shows, because fists are music commands there.
 // One animation loop while the hand is seen; target boxes are cached and refreshed on resize and every half second.
+// The cursor takes the colour of what it is over (data-hand-color, else a drawn border or background, else the screen's
+// ink; paper white on the menu), read once per new target. Closing the fist grabs at once: the ring closes, the item
+// lifts (hand-grabbed), and the colour stays put until the hand opens.
 import { useEffect, useRef } from 'react';
 import { bus, type Landmarks } from '@/bus';
 import '@/modules/commands'; // the handPointer topic type
 import { toScreen } from './guide';
-import { CLICKABLE, createHoldMachine, hitBox, nearest, pickHand, smoothPoint, type Box, type Point, type Side } from './hand-pointer';
+import { CLICKABLE, createHoldMachine, createInkLatch, hitBox, nearest, PAPER, pickHand, pickHandColor, smoothPoint, type Box, type Point, type Side } from './hand-pointer';
 import { modeLook, type ModeId, type Screen } from './modes';
 import './hand-pointer.css';
 
@@ -25,6 +28,15 @@ function click(el: Element) {
     return;
   }
   (el as HTMLElement).click();
+}
+
+/** The cursor's colour over a target, read once when the target changes (records carry data-hand-color). */
+function colorOf(el: Element, fallback: string): string {
+  const data = el.getAttribute('data-hand-color');
+  if (data) return pickHandColor({ data }, fallback);
+  const s = getComputedStyle(el);
+  const drawn = parseFloat(s.borderTopWidth) > 0 && s.borderTopStyle !== 'none' && s.borderTopStyle !== 'hidden';
+  return pickHandColor({ border: drawn ? s.borderTopColor : null, background: s.backgroundColor }, fallback);
 }
 
 function scrollable(el: Element | null): Element {
@@ -54,6 +66,23 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     let targets: Array<{ item: Element; box: Box }> = [];
     const sides: Record<Side, { fist: boolean; open: boolean }> = { left: { fist: false, open: false }, right: { fist: false, open: false } };
     const machine = createHoldMachine<Element>();
+    const latch = createInkLatch();
+    let hoverInk: string | null = null;
+    let shownInk = '';
+    const baseInk = () => (screenRef.current === 'menu' ? PAPER : ink);
+    let heldEl: Element | null = null;
+    const paint = (grabbed: boolean, held: Element | null) => {
+      const want = latch(grabbed, hoverInk ?? baseInk());
+      if (want !== shownInk) el.style.setProperty('--hand-color', (shownInk = want));
+      el.dataset.grabbed = grabbed ? 'true' : 'false';
+      if (held === heldEl) return;
+      heldEl?.classList.remove('hand-grabbed');
+      heldEl = held;
+      if (held) {
+        (held as HTMLElement).style.setProperty('--hand-ink', want);
+        held.classList.add('hand-grabbed');
+      }
+    };
 
     const setActive = (on: boolean) => {
       if (on === active) return;
@@ -73,8 +102,9 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       if (t === hover) return;
       hover?.classList.remove('hand-hover');
       hover = t;
-      if (t) {
-        (t as HTMLElement).style.setProperty('--hand-ink', ink);
+      hoverInk = t ? colorOf(t, ink) : null;
+      if (t && hoverInk) {
+        (t as HTMLElement).style.setProperty('--hand-ink', hoverInk);
         t.classList.add('hand-hover');
       }
     };
@@ -82,6 +112,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       el.style.opacity = '0';
       setHover(null);
       machine.reset();
+      paint(false, null);
       pos = null;
       if (arc.current) arc.current.style.strokeDashoffset = String(RING_LEN);
     };
@@ -115,7 +146,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       if (arc.current) arc.current.style.strokeDashoffset = String(RING_LEN * (1 - out.progress));
       el.style.opacity = '1';
       el.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
-      el.dataset.fist = s.fist && active ? 'true' : 'false';
+      paint(machine.grabbed, active ? machine.held : null);
       if (!document.hidden) raf = requestAnimationFrame(frame);
     };
     const kick = () => {
@@ -144,15 +175,18 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       window.removeEventListener('resize', refresh);
       if (raf) cancelAnimationFrame(raf);
       setHover(null);
+      paint(false, null);
       if (active) bus.emit('handPointer', { active: false });
     };
   }, [ink]);
 
   return (
-    <div ref={root} className="hand-pointer" aria-hidden="true" style={{ color: ink }} data-testid="hand-pointer">
+    <div ref={root} className="hand-pointer" aria-hidden="true" data-testid="hand-pointer">
       <svg width="56" height="56" viewBox="-28 -28 56 56">
-        <circle className="hand-pointer-dot" r="9" />
-        <circle ref={arc} className="hand-pointer-fill" r={RING_R} strokeDasharray={RING_LEN} strokeDashoffset={RING_LEN} transform="rotate(-90)" />
+        <g className="hand-pointer-ring">
+          <circle className="hand-pointer-dot" r="9" />
+          <circle ref={arc} className="hand-pointer-fill" r={RING_R} strokeDasharray={RING_LEN} strokeDashoffset={RING_LEN} transform="rotate(-90)" />
+        </g>
       </svg>
     </div>
   );
