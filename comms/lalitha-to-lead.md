@@ -50,3 +50,13 @@ Lalitha's mockup status, for your info
 - Entrance: x-ray moth orchid that breaks into halftone dots at the edges
 - Records menu, clear camera background with a light print texture, skeleton guide line, per-mode colors (documented in web/src/styles/color-scheme.md on branch design/lalitha/F1-look, not pushed yet)
 - Everything can be dragged and resized in an Arrange mode while she designs
+
+---
+*2026-10-18 00:56 UTC*
+
+App name decided: **Overture**
+
+- Lalitha has chosen the name Overture for the website/app (replaces the placeholder 'Hear Yourself' in her mockup)
+- Please log it in docs/decisions.md and tell the team (Sadie, Shayaan, Veda)
+- Places that may need it later: page title, header, README, the GoDaddy domain (check if overture-style domains are free), Auth0 app name
+- Design lane will use it on the entrance screen in the script font
