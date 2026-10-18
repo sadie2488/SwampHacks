@@ -213,10 +213,8 @@ test('real camera: you can see yourself on the Learn tab, without opening the Co
     }, 20_000);
     assert.ok(s.width >= 320);
     await p.getByTestId('camera-preview-overlay').waitFor({ state: 'attached' });
-    // the picture stays when you switch tabs
-    await p.getByTestId('tab-create').click();
-    assert.ok((await previewState(p))?.playing, 'the preview should stay on every tab');
-    await p.getByTestId('tab-learn').click();
+    // The small preview lives in Learn's Devices panel (Sun 6:40 AM); the mirrored camera background stays on every
+    // screen, so the preview is only checked here, on Learn.
     await p.getByTestId('btn-enable-vision').click(); // turn it off again
     await until('the preview disappears when the camera is off', async () => (await previewState(p)) === null, 8_000);
   });
