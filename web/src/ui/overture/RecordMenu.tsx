@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { bus } from '@/bus';
 import { BigWords } from './BigWords';
-import { createDragStepper, HAND_DRAG_EVENT, type HandDragDetail } from './hand-drag';
+import { createDragStepper, HAND_DRAG_EVENT, HAND_FIRST_STEP_PX, HAND_NUDGE_PX, HAND_STEP_PX, type HandDragDetail } from './hand-drag';
 import { recordPlace } from './carousel';
 import { MenuFrame } from './MenuFrame';
 import { MODES } from './modes';
@@ -87,9 +87,13 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
         drag.at = e.clientX;
       }
     };
-    const onUp = () => (drag = null);
-    // the hand's grab-and-drag (from the hand cursor): one record per HAND_STEP_PX of sideways travel, leaning toward it
-    const hand = createDragStepper();
+    const onUp = () => {
+      drag = null;
+      window.setTimeout(() => (dragged.current = false), 0); // after this click, so a later hand click is never blocked
+    };
+    // the hand's grab-and-drag (from the hand cursor): the first record after HAND_FIRST_STEP_PX of sideways travel, then
+    // one per HAND_STEP_PX, leaning toward it
+    const hand = createDragStepper(HAND_STEP_PX, HAND_NUDGE_PX, HAND_FIRST_STEP_PX);
     const onHandDrag = (e: Event) => {
       const d = (e as CustomEvent<HandDragDetail>).detail;
       if (!d) return;

@@ -6,12 +6,14 @@
 // The cursor takes the colour of what it is over (data-hand-color, else a drawn border or background, else the screen's
 // ink; paper white on the menu), read once per new target. Closing the fist grabs at once: the ring closes, the item
 // lifts (hand-grabbed), and the colour stays put until the hand opens.
+// On the record menu it is forgiving: a fist anywhere grabs the chosen record (unless right over another record or a
+// button), records reach RECORD_MAGNET_PX further, the hold is MENU_HOLD_MS and only a clear sideways move drags.
 import { useEffect, useRef } from 'react';
 import { bus, type Landmarks } from '@/bus';
 import '@/modules/commands'; // the handPointer topic type
 import { toScreen } from './guide';
 import { emitHandDrag } from './hand-drag';
-import { CLICKABLE, createHandPicker, createHoldMachine, createInkLatch, createShapeTracker, handsOf, hitBox, nearest, PAPER, pickHandColor, smoothPoint, type Box, type Point, type Side } from './hand-pointer';
+import { CLICKABLE, createHandPicker, createHoldMachine, createInkLatch, createShapeTracker, handsOf, hitBox, MENU_FEEL, menuTarget, nearest, PAPER, pickHandColor, smoothPoint, type Box, type MenuItem, type Point, type Side } from './hand-pointer';
 import { modeLook, type ModeId, type Screen } from './modes';
 import './hand-pointer.css';
 
@@ -65,6 +67,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     let hover: Element | null = null;
     let active = false;
     let targets: Array<{ item: Element; box: Box }> = [];
+    let menuItems: Array<MenuItem<Element>> = [];
     const sides: Record<Side, { fist: boolean; open: boolean }> = { left: { fist: false, open: false }, right: { fist: false, open: false } };
     const machine = createHoldMachine<Element>();
     const picker = createHandPicker();
@@ -100,10 +103,14 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     const refresh = () => {
       setActive(screenRef.current !== 'mode' || !!document.querySelector(OPEN_PANELS));
       targets = [];
+      menuItems = [];
       for (const t of document.querySelectorAll(CLICKABLE)) {
         if (!usable(t)) continue;
         const r = t.getBoundingClientRect();
-        if (r.width && r.height) targets.push({ item: t, box: hitBox(r) });
+        if (!r.width || !r.height) continue;
+        targets.push({ item: t, box: hitBox(r) });
+        const record = t.classList.contains('record');
+        menuItems.push({ item: t, box: record ? r : hitBox(r), record, chosen: record && t.getAttribute('data-chosen') === 'true' });
       }
     };
     const setHover = (t: Element | null) => {
@@ -128,8 +135,9 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     };
     const findTarget = (p: Point): Element | null => {
       const under = document.elementFromPoint(p.x, p.y)?.closest(CLICKABLE);
-      if (under && usable(under)) return under;
-      return nearest(p, targets);
+      const ok = under && usable(under) ? under : null;
+      if (screenRef.current === 'menu') return menuTarget(p, ok, menuItems);
+      return ok ?? nearest(p, targets);
     };
 
     const frame = () => {
@@ -152,7 +160,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       const sig = sides[hand.side];
       const shape = shapes.update(hand.side, hand.points, aspect);
       const fist = shape.fist || sig.fist;
-      const out = machine.update({ t: performance.now(), x: pos.x, y: pos.y, fist, open: !fist && (shape.open || sig.open), target, enabled: active });
+      const out = machine.update({ t: performance.now(), x: pos.x, y: pos.y, fist, open: !fist && (shape.open || sig.open), target, enabled: active, feel: screenRef.current === 'menu' ? MENU_FEEL : undefined });
       if (out.click) {
         click(out.click);
         window.setTimeout(refresh, 50);

@@ -17,6 +17,11 @@ export const SMOOTH = 0.35;
 export const WHEEL_SCALE = 2.5;
 /** The smallest hit area a target gets (px), matching the CSS hit-area rule. */
 export const MIN_HIT = 48;
+/** The record menu's gentler feel: a shorter hold, and only a clear sideways move (past this many px) starts a drag. */
+export const MENU_HOLD_MS = 700;
+export const MENU_DRAG_PX = 45;
+/** A record's target area is its box plus this much padding (px) all round (the record magnet). */
+export const RECORD_MAGNET_PX = 80;
 /** What the hand can click. */
 export const CLICKABLE = 'button, a[href], [role="button"], input, select, label, [data-hand-target]';
 
@@ -206,6 +211,36 @@ export function nearest<T>(p: Point, items: ReadonlyArray<{ item: T; box: Box }>
   return best;
 }
 
+/** A clickable on the record menu: its box (unpadded), and whether it is a record / the chosen (front) record. */
+export interface MenuItem<T> {
+  item: T;
+  box: Box;
+  record?: boolean;
+  chosen?: boolean;
+}
+
+/**
+ * What a fist grabs on the record menu, so no precise aiming is needed: the thing right under the cursor (another record
+ * or a header button) wins; else the chosen record when within its padded area; else the nearest other target (records
+ * within RECORD_MAGNET_PX, buttons within MAGNET_PX); else the chosen record anyway, wherever the hand is.
+ */
+export function menuTarget<T>(p: Point, under: T | null, items: ReadonlyArray<MenuItem<T>>): T | null {
+  if (under !== null) return under;
+  const chosen = items.find((i) => i.chosen);
+  if (chosen && distToBox(p, chosen.box) <= RECORD_MAGNET_PX) return chosen.item;
+  let best: T | null = null;
+  let bestD = Infinity;
+  for (const i of items) {
+    if (i.chosen) continue;
+    const d = distToBox(p, i.box);
+    if (d <= (i.record ? RECORD_MAGNET_PX : MAGNET_PX) && d < bestD) {
+      best = i.item;
+      bestD = d;
+    }
+  }
+  return best ?? chosen?.item ?? null;
+}
+
 export interface HoldInput<T> {
   t: number;
   x: number;
@@ -215,7 +250,19 @@ export interface HoldInput<T> {
   target: T | null;
   /** false where fists mean music (inside a mode with no panel open): nothing clicks or scrolls. */
   enabled: boolean;
+  /** Overrides for this frame (the record menu passes MENU_FEEL); left out, the defaults below apply. */
+  feel?: HoldFeel;
 }
+
+/** How a grab behaves: hold time, how far the fist may drift before it drags, and whether only sideways moves drag. */
+export interface HoldFeel {
+  holdMs?: number;
+  dragPx?: number;
+  /** true: a drag starts only when the hand moves mostly sideways past dragPx; up-and-down wobble never cancels the hold. */
+  sideways?: boolean;
+}
+/** The record menu: 700 ms hold, drift (any way) of up to ~35 px is fine, a drag needs > 45 px mostly sideways. */
+export const MENU_FEEL: HoldFeel = { holdMs: MENU_HOLD_MS, dragPx: MENU_DRAG_PX, sideways: true };
 export interface HoldOutput<T> {
   /** How full the ring is, 0 to 1. */
   progress: number;
@@ -231,7 +278,7 @@ export interface HoldOutput<T> {
  * Grab, drag, and hold-to-click. An open hand arms it; closing into a fist grabs the target under it at once (`held`).
  * A still fist (inside the DRAG_PX dead zone) fills the ring for `holdMs` and then clicks once. A fist that moves past
  * the dead zone drags from that frame on (wheel deltas follow the hand) and never clicks. Opening the hand releases;
- * the hand must open again before the next grab.
+ * the hand must open again before the next grab. `feel` (per frame) changes the hold time and dead zone (the record menu).
  */
 export function createHoldMachine<T>(holdMs = HOLD_MS) {
   let ready = false;
@@ -273,13 +320,17 @@ export function createHoldMachine<T>(holdMs = HOLD_MS) {
         return { progress: 0 };
       }
       if (phase === 'holding') {
-        if (Math.hypot(i.x - start.x, i.y - start.y) > DRAG_PX) {
+        const dragPx = i.feel?.dragPx ?? DRAG_PX;
+        const dx = i.x - start.x;
+        const dy = i.y - start.y;
+        const drags = i.feel?.sideways ? Math.abs(dx) > dragPx && Math.abs(dx) > Math.abs(dy) : Math.hypot(dx, dy) > dragPx;
+        if (drags) {
           phase = 'dragging';
           last = { x: start.x, y: start.y }; // the first scroll includes the movement that started it
         } else {
           last = { x: i.x, y: i.y };
           if (!target) return { progress: 0 };
-          const progress = Math.min(1, (i.t - start.t) / holdMs);
+          const progress = Math.min(1, (i.t - start.t) / (i.feel?.holdMs ?? holdMs));
           if (progress < 1) return { progress };
           phase = 'done';
           return { progress: 1, click: target };
