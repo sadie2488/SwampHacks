@@ -6,7 +6,7 @@ import type { CommandEvent } from '@/contracts';
 import type { LoopEngine } from './engine';
 import { fitTakeToKey } from './key';
 import { currentLayer, describeState, hasAnyNotes, hasBeat, isRecording, type CreateState } from './layers';
-import { isEffect, isInstrument, loopSeconds } from './music';
+import { isEffect, isInstrument, loopBeats as defaultLoopBeats } from './music';
 import { segmentNotes } from './segment-notes';
 import { applyAnalysis, createSettings, type SettingsStore } from './settings';
 import type { CreateStore } from './store';
@@ -20,7 +20,7 @@ export interface ControllerOptions {
   now?: () => number;
   /** How late (ms) a hummed note reaches us after it is sung; the take is shifted earlier by this much. */
   inputLatencyMs?: number;
-  /** Kept for callers that used the former pass-end timer; manual gesture now controls take length. */
+  /** How long to keep listening after the loop's last beat is heard before cutting the take. */
   tailMs?: number;
 }
 
@@ -31,11 +31,13 @@ export function startController(opts: ControllerOptions): Stop {
   const settings = opts.settings ?? createSettings();
   const now = opts.now ?? (() => performance.now());
   const inputLatencyMs = opts.inputLatencyMs ?? 30;
+  const tailMs = opts.tailMs ?? 60;
 
   let heard: Array<{ at: number; frame: PitchFrame }> = [];
   let framesSeen = 0;
   let takeStartMs = 0;
   let takeId = 0;
+  let finishTimer: ReturnType<typeof setTimeout> | undefined;
   let lastStatus = '';
   /** Set when the sound engine failed; shown as an error until the next command. */
   let problem = '';
@@ -82,6 +84,14 @@ export function startController(opts: ControllerOptions): Stop {
   }
 
   // ---- recording ----
+  // Temporary team decision (Sat evening, while Veda was away): a take ends at whichever comes first:
+  // the left-fist gesture (record off), pressing Record again, or one pass of the default loop length.
+  // The gesture and the button end it early, with a loop length taken from how long the take ran.
+  const clearFinishTimer = () => {
+    if (finishTimer !== undefined) clearTimeout(finishTimer);
+    finishTimer = undefined;
+  };
+
   /** Let the record control go back to "off" once a take is over, so pressing Record again starts a new one. */
   function releaseRecordControl() {
     if (bus.last('controls')?.['create.loop.record'] === true) sendCommand('create.loop.record', 'button', { how: 'set', value: false });
@@ -89,6 +99,7 @@ export function startController(opts: ControllerOptions): Stop {
 
   function startRecording() {
     if (isRecording(state())) return;
+    clearFinishTimer();
     heard = [];
     framesSeen = 0;
     settings.set({ take: undefined });
@@ -105,8 +116,14 @@ export function startController(opts: ControllerOptions): Stop {
             framesSeen = 0;
             store.dispatch({ type: 'recordGo' });
           },
-          onPassEnd: () => {
-            if (id === takeId) finishTake();
+          onPassEnd: (atMs) => {
+            if (id !== takeId) return;
+            // the engine hears the end a little before we do; wait for it, so the last notes are not cut
+            const wait = atMs === undefined ? 0 : Math.max(0, atMs - now()) + tailMs;
+            const passEnd = () => finishTake(defaultLoopBeats(state().bars));
+            clearFinishTimer();
+            if (wait <= 0) passEnd();
+            else finishTimer = setTimeout(passEnd, wait);
           },
         },
       ),
@@ -117,12 +134,16 @@ export function startController(opts: ControllerOptions): Stop {
     }
   }
 
-  /** The take is over: turn what we heard into notes and let the loop carry on with them. */
-  function finishTake() {
+  /**
+   * The take is over: turn what we heard into notes and let the loop carry on with them.
+   * `passBeats` is set when the take ran a full pass; an early end measures the loop from the elapsed time.
+   */
+  function finishTake(passBeats?: number) {
+    clearFinishTimer();
     const s = state();
     if (s.phase !== 'recording') return;
     const elapsedMs = Math.max(0, now() - takeStartMs);
-    const loopBeats = Math.max(0.25, Math.round(((elapsedMs * s.bpm) / 60000) * 4) / 4);
+    const loopBeats = passBeats ?? Math.max(0.25, Math.round(((elapsedMs * s.bpm) / 60000) * 4) / 4);
     const loopSeconds = (loopBeats * 60) / s.bpm;
     const take = heard.map(({ at, frame }) => ({ ...frame, t_ms: at - takeStartMs - inputLatencyMs }));
     const heardNotes = segmentNotes(take, { bpm: s.bpm, quantize: true, lengthSec: loopSeconds });
@@ -152,6 +173,7 @@ export function startController(opts: ControllerOptions): Stop {
       finishTake();
     } else if (s.phase === 'countIn') {
       takeId++;
+      clearFinishTimer();
       safe(() => engine.stopLoop());
       store.dispatch({ type: 'recordCancel' });
       releaseRecordControl();
@@ -172,6 +194,7 @@ export function startController(opts: ControllerOptions): Stop {
       finishTake();
     }
     takeId++;
+    clearFinishTimer();
     safe(() => engine.stopLoop());
     store.dispatch({ type: 'stop' });
     releaseRecordControl();
@@ -293,6 +316,7 @@ export function startController(opts: ControllerOptions): Stop {
   return () => {
     stops.forEach((s) => s());
     stopStore();
+    clearFinishTimer();
     takeId++;
     safe(() => engine.stopLoop());
     store.dispatch({ type: 'stop' });

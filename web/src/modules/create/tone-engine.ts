@@ -100,11 +100,21 @@ class ToneLoopEngine implements LoopEngine {
     if (hooks) {
       // The hook changes layer state, which touches Tone; do it after the transport callback.
       const later = (fn: () => void) => void setTimeout(fn, 0);
+      const goBar = countInBar + (opts.countIn ? 1 : 0);
       this.markIds.push(
         transport.scheduleOnce((time) => {
           const at = this.heardAtMs(time);
           later(() => hooks.onGo(at));
-        }, `${countInBar + (opts.countIn ? 1 : 0)}:0:0`),
+        }, `${goBar}:0:0`),
+      );
+      // Temporary team decision (Sat evening, Veda away): a take also ends by itself after one pass of the
+      // default loop length. The left-fist gesture or pressing Record again still ends it early.
+      const passEndTicks = Math.round((goBar + this.want.bars) * BEATS_PER_BAR * transport.PPQ);
+      this.markIds.push(
+        transport.scheduleOnce((time) => {
+          const at = this.heardAtMs(time);
+          later(() => hooks.onPassEnd(at));
+        }, `${passEndTicks - 1}i`),
       );
     }
     if (!wasRunning) transport.start('+0.05', opts.countIn ? '0:0:0' : '1m');
