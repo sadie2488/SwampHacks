@@ -29,6 +29,15 @@ The first `uv sync` downloads the audio analysis libraries (a few hundred MB) an
 | TouchDesigner relay | `cd bridge && node --test && node relay.mjs --selftest` |
 | Contracts, CI checks, email relay, safety hooks | `node --test "tests/**/*.test.mjs"` · `node scripts/validate-contracts.mjs` · `node scripts/hook-selftest.mjs` |
 
+## How it's built
+- **Website**: React + Vite, Web Audio and Tone.js (tempo without pitch change, pitch shift), MediaPipe hand and face tracking in a background worker, OpenSheetMusicDisplay for the sheet, three.js for the paper landscape, Chrome speech recognition for spoken commands
+- **Server**: Python (FastAPI) with librosa: tempo, beats, key, time signature, the melody as notes (pYIN), and drums taken out of full-band songs before reading the melody
+- **TouchDesigner**: the website streams hand positions, the song's position and its frequency bands to a small relay (`bridge/`), which forwards them as OSC
+- **Gemini** turns measured practice facts (timing, rushed or dragged bars) into short, kind coaching. Rule-based feedback shows first, so the app never waits on it
+- **Tiger Data** (Postgres with TimescaleDB) stores songs, practice runs and saved tracks. Without it the server keeps them in memory
+- **Auth0** login appears only when it is set up; without it the app works the same
+- Planned: hosting on **Vultr** and a **GoDaddy** domain (`deploy/` has the setup)
+
 ## Where things are
 - `web/` the website · `server/` the Python server · `bridge/` + `touchdesigner/` the TouchDesigner relay and its guide
 - `contracts/` the agreed data shapes and the lists of signals and controls · `fixtures/` fake data
