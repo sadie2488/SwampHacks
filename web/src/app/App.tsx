@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { bus, isFakeMode, isModuleOn, resumeAudio, sendCommand } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
-import { CreatePanel } from '@/modules/create';
 import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { bigWordPlaces } from '@/ui/overture/carousel';
 import { CommandToast } from '@/ui/overture/CommandToast';
@@ -200,13 +199,7 @@ export function App() {
             <CameraPreview />
           </div>
           {songTab && <SongView mode="learn" open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
-          {tab === 'create' && (
-            <div className="stage-main float-panel create-slot" data-layers={isOpen('layers')} data-tracks={isOpen('tracks')} {...panelProps(isOpen('layers') || isOpen('tracks'))}>
-              <PanelBoundary name="Create">
-                <CreatePanel fetchFn={apiFetch} />
-              </PanelBoundary>
-            </div>
-          )}
+          {/* Create's controls are the CreateStage, mounted by ModeVisual's create branch (one open playground, no panels) */}
           {tab === 'lab' && (
             <div className="stage-main">
               <PanelBoundary name="Command Lab">

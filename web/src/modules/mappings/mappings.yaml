@@ -148,7 +148,8 @@
   how: trigger
   value: false
 
-- name: right hand position controls layer volume
+- name: right hand position controls layer volume        # switched off (Lalitha): volume by hand is out of scope; the layer chip's slider sets it
+  enabled: false
   mode: create
   when: vision.hand.right.x
   do: create.layer.volume
