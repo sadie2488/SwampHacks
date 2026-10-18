@@ -19,6 +19,8 @@
     { "id": "vision.head.nod", "kind": "moment", "source": "vision", "description": "Head nods once." },
     { "id": "vision.hand.right.drum_hit", "kind": "moment", "source": "vision", "description": "Right hand makes a quick downward hit, like hitting a drum (wrist speed)." },
     { "id": "vision.hand.left.drum_hit", "kind": "moment", "source": "vision", "description": "Left hand makes a quick downward hit, like hitting a drum (wrist speed)." },
+    { "id": "vision.hand.right.grab", "kind": "moment", "source": "vision", "description": "Right hand grabs: an open palm held for a moment (about 0.15 s), then closed into a fist within about 0.6 s. Fires once; at most once a second. A thumbs-up never counts." },
+    { "id": "vision.hand.left.grab", "kind": "moment", "source": "vision", "description": "Left hand grabs: an open palm held for a moment (about 0.15 s), then closed into a fist within about 0.6 s. Fires once; at most once a second. A thumbs-up never counts." },
     { "id": "vision.hand.left.fingers", "kind": "slider", "source": "vision", "description": "How many fingers the left hand holds up (0 = fist, 1 = all five). raw is the count. The thumb counts only when it sticks out clearly from the hand.", "range": [0, 5], "unit": "fingers" },
     { "id": "vision.hand.right.fingers", "kind": "slider", "source": "vision", "description": "How many fingers the right hand holds up (0 = fist, 1 = all five). raw is the count. The thumb counts only when it sticks out clearly from the hand.", "range": [0, 5], "unit": "fingers" },
     { "id": "vision.hands.fingers", "kind": "slider", "source": "vision", "description": "How many fingers both hands hold up together (0 = none, 1 = all ten). raw is the count.", "range": [0, 10], "unit": "fingers" },
