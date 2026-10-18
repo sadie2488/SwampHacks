@@ -61,9 +61,6 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
   const [notice, setNotice] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<{ track: TrackSummary; play: boolean } | null>(null);
-  // the list of saved tracks is tucked behind the "Your tracks" pill; automated browsers (navigator.webdriver) see it
-  // from the start, because the browser tests click into the list right after the page loads
-  const [showList, setShowList] = useState(() => typeof navigator !== 'undefined' && navigator.webdriver === true);
   const alive = useRef(true);
   const listCall = useRef(0);
 
@@ -155,15 +152,11 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
   };
 
   return (
-    <section data-testid="saved-tracks-section" aria-label="Save and open tracks" className="tracks-foot">
-      <h3 className="tracks-title">Save and open tracks</h3>
-      <p data-testid="save-status" role="status" className="save-status" data-problem={status.problem ? 'true' : undefined}>
-        {status.text}
-      </p>
-      {!canSave && <p className="tracks-hint">Record something first, then you can save it.</p>}
-      <p className="save-line">
+    <section data-testid="saved-tracks-section" aria-label="Save and open tracks">
+      <h3>Save and open tracks</h3>
+      <p>
         <label>
-          Name your track{' '}
+          Track name{' '}
           <input
             type="text"
             data-testid="input-track-name"
@@ -175,16 +168,20 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
             }}
           />
         </label>{' '}
-        <button type="button" className="pill save-pill" data-testid="btn-save-track" disabled={!canSave || busy} onClick={() => void save()}>
+        <button type="button" data-testid="btn-save-track" disabled={!canSave || busy} onClick={() => void save()}>
           Save this track
         </button>{' '}
-        <button type="button" className="pill" data-testid="btn-your-tracks" aria-pressed={showList} title="Show or hide your saved tracks" onClick={() => setShowList((v) => !v)}>
-          Your tracks
+        <button type="button" data-testid="btn-refresh-tracks" onClick={() => void refresh()}>
+          Refresh list
         </button>
       </p>
+      <p data-testid="save-status" role="status" data-problem={status.problem ? 'true' : undefined}>
+        {status.text}
+      </p>
+      {!canSave && <p>Record something first, then you can save it.</p>}
 
       {pending && (
-        <p data-testid="load-warning" role="alert" className="load-warning">
+        <p data-testid="load-warning" role="alert">
           You have layers that are not saved, and opening “{pending.track.name}” will replace them.{' '}
           <button
             type="button"
@@ -206,17 +203,10 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
         </p>
       )}
 
-      <div className="tracks-list" data-open={showList ? 'true' : 'false'}>
-        <p className="tracks-list-head">
-          <span>Your tracks</span>
-          <button type="button" className="pill" data-testid="btn-refresh-tracks" onClick={() => void refresh()}>
-            Refresh list
-          </button>
-        </p>
-        {notice && <p data-testid="tracks-notice">{notice}</p>}
-        {listed && tracks.length === 0 && <p data-testid="saved-tracks-empty">No saved tracks yet.</p>}
-        {recording && tracks.length > 0 && <p>Stop recording to open a saved track.</p>}
-        <ul data-testid="saved-tracks" aria-label="Saved tracks" hidden={tracks.length === 0}>
+      {notice && <p data-testid="tracks-notice">{notice}</p>}
+      {listed && tracks.length === 0 && <p data-testid="saved-tracks-empty">No saved tracks yet.</p>}
+      {recording && tracks.length > 0 && <p>Stop recording to open a saved track.</p>}
+      <ul data-testid="saved-tracks" aria-label="Saved tracks" hidden={tracks.length === 0}>
         {tracks.map((t, i) => {
           const date = dateText(t.created_at);
           return (
@@ -240,8 +230,7 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
             </li>
           );
         })}
-        </ul>
-      </div>
+      </ul>
     </section>
   );
 }

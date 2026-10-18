@@ -10,8 +10,7 @@ export const PANELS_FOR: Record<ModeId, PanelName[]> = {
   learn: ['song', 'practice', 'sheet', 'player'],
   // Play has no panels at all: it is used purely by hands and voice (the demo song loads itself when none is loaded)
   play: [],
-  // Create is one open playground (CreateStage): everything is on the screen, nothing to open or close
-  create: [],
+  create: ['devices', 'layers', 'tracks'],
   lab: [],
 };
 
