@@ -8,7 +8,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--label-weight);
 }
 
 .hand-meter-value {
@@ -49,15 +49,14 @@
   padding: 0.4rem 0;
   border-top: 1px solid var(--rule);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--label-weight);
 }
 
 .fired-list em {
   flex: none;
-  font: 800 10px var(--sans);
+  font: var(--label-weight) 12px var(--sans);
   font-style: normal;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--label-track);
   background: transparent;
   border: 1px solid var(--rule-strong);
   border-radius: 99px;

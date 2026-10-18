@@ -72,7 +72,7 @@
 .overlay-pill {
   border-color: var(--rule-strong);
   padding: 6px 12px;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .overlay-pill[aria-pressed='true'] {
@@ -110,10 +110,17 @@
 .guide-overlay-kicker,
 .guide-overlay-close {
   margin: 0;
-  font: 700 11px/1.4 var(--sans);
-  letter-spacing: 0.22em;
+  font: var(--label-weight) 11px/1.4 var(--sans);
+  letter-spacing: var(--kicker-track);
   text-transform: uppercase;
   color: var(--a);
+}
+
+/* the close hint is a sentence, so it reads as written */
+.guide-overlay-close {
+  font-size: 13px;
+  letter-spacing: var(--label-track);
+  text-transform: none;
 }
 
 .guide-overlay-title {

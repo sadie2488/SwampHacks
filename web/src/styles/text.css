@@ -14,9 +14,8 @@ h2 {
 
 h3 {
   margin: 1rem 0 0.4rem;
-  font: 800 11px/1.3 var(--sans);
-  font-stretch: 100%;
-  letter-spacing: 0.12em;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -25,13 +24,26 @@ p {
   margin: 0.5rem 0;
 }
 
+/* buttons and pickers: the sans at 500, as written, slightly tight (this file loads after app/styles.css, so it
+   sets their type over the base button rule there) */
+button,
+select,
+input::file-selector-button {
+  font: var(--label-weight) 14px/1.2 var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
+}
+
+select {
+  font-size: 13px;
+}
+
 .kicker,
 h2.kicker,
 h3.kicker {
   margin: 0;
-  font: 800 10px/1.3 var(--sans);
-  font-stretch: 100%;
-  letter-spacing: 0.14em;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -59,9 +71,8 @@ h3.kicker {
 }
 
 .row > span:first-child {
-  font: 800 10px var(--sans);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: var(--label-weight) 13px var(--sans);
+  letter-spacing: var(--label-track);
   min-width: 3.4rem;
 }
 
@@ -88,9 +99,8 @@ output {
 }
 
 .facts dt {
-  font: 800 10px var(--sans);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: var(--label-weight) 13px var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--muted);
 }
 
@@ -100,7 +110,7 @@ output {
 }
 
 .facts dd.unsure {
-  font: 400 0.8rem var(--sans);
+  font: 400 13px var(--sans);
 }
 
 .analysis-warnings {
@@ -109,7 +119,7 @@ output {
 
 .analysis-warnings-title {
   margin: 0 0 0.25rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .analysis-warnings ul {
@@ -125,7 +135,7 @@ output {
 
 .error {
   color: var(--error);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .badge {
@@ -133,7 +143,6 @@ output {
   padding: 0.2rem 0.6rem;
   border: 1px solid var(--rule-strong);
   border-radius: 999px;
-  font: 800 10px var(--sans);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: var(--label-weight) 12px var(--sans);
+  letter-spacing: var(--label-track);
 }
