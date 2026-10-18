@@ -20,7 +20,7 @@ import type { PcmSource } from './stretch-engine';
 
 let active: PlaybackController | null = null;
 
-/** Jump to a place in the song (song seconds). For the shell to use later; there is no control for it in the catalog. */
+/** Jump to a place in the song (song seconds), straight away: the Learn screen's drag-to-scrub calls this on every frame. */
 export function seek(sec: number): void {
   active?.seek(sec);
 }
@@ -68,7 +68,7 @@ export function start(): Stop {
     bus.on('songAudio', (a) => controller.setSongAudio(a.songId, toPcm(a.buffer)), { replay: true }),
     bus.on('analysis', (a) => controller.setAnalysis(a), { replay: true }),
     bus.on('controls', (c) => controller.applyControls(c), { replay: true }),
-    bus.on('command', (cmd) => controller.command(cmd.command)),
+    bus.on('command', (cmd) => controller.command(cmd.command, cmd.value)),
     bus.on('transport', (t) => levels.setPlaying(t.playing), { replay: true }),
     // TouchDesigner streaming on (any state but idle, even while it retries the relay): keep levels going in a hidden tab
     bus.on('status', (s) => {

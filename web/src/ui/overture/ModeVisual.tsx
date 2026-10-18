@@ -10,6 +10,7 @@ import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { CountIn } from './CountIn';
 import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
@@ -191,6 +192,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
   return (
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
+      {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
       {mode === 'create' && <CountIn />}
       {mode === 'create' && (
         <p className="hand-legend" data-testid="hand-legend" aria-live="off" style={LEGEND_STYLE}>

@@ -13,10 +13,14 @@ export interface HandDragDetail {
   phase: 'start' | 'move' | 'end';
   /** Sideways hand travel since the last event (screen px); 0 for start and end. */
   dx: number;
+  /** Where the cursor is on screen (px), when known. */
+  x?: number;
+  y?: number;
 }
 
-export function emitHandDrag(detail: HandDragDetail): void {
-  window.dispatchEvent(new CustomEvent<HandDragDetail>(HAND_DRAG_EVENT, { detail }));
+/** Sends the event; true when a listener claimed it (preventDefault), e.g. Learn's drag-to-scrub, so nothing else scrolls. */
+export function emitHandDrag(detail: HandDragDetail): boolean {
+  return !window.dispatchEvent(new CustomEvent<HandDragDetail>(HAND_DRAG_EVENT, { detail, cancelable: true }));
 }
 
 /**

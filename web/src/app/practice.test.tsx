@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
-import { bus, resetControls, type TransportState, type Topics } from '@/bus';
+import { bus, reportStatus, resetControls, type TransportState, type Topics } from '@/bus';
 import type { CommandEvent, Feedback, SongAnalysis } from '@/contracts';
 import { Practice } from './Practice';
 import { builtInCoaching } from './practice-logic';
@@ -48,7 +48,11 @@ const coachRequest = (fetchMock: ReturnType<typeof vi.fn>) => {
   return { url, init, body: JSON.parse(init.body as string) as { feedback: Feedback; level: string } };
 };
 
+const micOn = () => reportStatus('audio-live', 'running', 'Listening');
+const micOff = () => reportStatus('audio-live', 'idle', 'Microphone is off');
+
 beforeEach(async () => {
+  micOff();
   commands.length = 0;
   practiceControls.length = 0;
   resetControls();
@@ -98,6 +102,7 @@ describe('steps and buttons', () => {
 
   it('start practice starts the song when it is paused', async () => {
     await emit('transport', transport({ playing: false }));
+    micOn();
     await click('btn-practice-start');
     expect(practiceControls).toEqual(['start']);
     expect(commands).toEqual([{ command: 'playback.play', source: 'button', how: 'trigger', value: undefined }]);
@@ -106,6 +111,7 @@ describe('steps and buttons', () => {
 
   it('start practice leaves a song that is already playing alone', async () => {
     await emit('transport', transport({ playing: true }));
+    micOn();
     await click('btn-practice-start');
     expect(practiceControls).toEqual(['start']);
     expect(commands).toEqual([]);
@@ -123,9 +129,26 @@ describe('steps and buttons', () => {
 
   it('start practice works once the song is analysed even before playback reports in', async () => {
     await emit('analysis', song);
+    micOn();
     await click('btn-practice-start');
     expect(practiceControls).toEqual(['start']);
     expect(commands.map((c) => c.command)).toEqual(['playback.play']);
+  });
+
+  it('start practice with the microphone off turns it on first, then starts (instead of an error)', async () => {
+    await emit('transport', transport({ playing: false }));
+    micOff();
+    const enables: unknown[] = [];
+    const off = bus.on('enable', (e) => enables.push(e));
+    await click('btn-practice-start');
+    expect(enables).toEqual([{ module: 'audio-live', on: true }]);
+    expect(practiceControls).toEqual([]);
+    expect(text('practice-notice')).toMatch(/Turning on the microphone/);
+    await act(async () => reportStatus('audio-live', 'running', 'Listening'));
+    await settle();
+    expect(practiceControls).toEqual(['start']);
+    expect(commands.map((c) => c.command)).toEqual(['playback.play']);
+    off();
   });
 });
 

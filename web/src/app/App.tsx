@@ -63,7 +63,7 @@ export function App() {
   const [guide, setGuide] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
-  const { isOpen, toggle: togglePanel, reset: resetPanels } = usePanels();
+  const { isOpen, toggle: togglePanel, openPanel, reset: resetPanels } = usePanels();
   useModules();
   useDeviceAutostart(screen);
 
@@ -82,6 +82,11 @@ export function App() {
     if (from !== section) resetPanels();
     for (const command of leaveSectionCommands(from, section)) sendCommand(command, 'button', { how: 'trigger' });
   }, [section, resetPanels]);
+  // arriving in Learn shows the player bar (play, pause, Restart) without a click; it can still be closed.
+  // Declared after the section-change reset above so the reset does not close it again on the same arrival.
+  useEffect(() => {
+    if (screen === 'mode' && tab === 'learn') openPanel('player');
+  }, [screen, tab, arrive.n, openPanel]);
   useEffect(() => unlockOnFirstGesture(), []);
   // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
   usePlayLoop(autoLoops(screen, tab));
