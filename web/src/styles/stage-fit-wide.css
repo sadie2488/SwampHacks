@@ -12,8 +12,8 @@
     --player-h: 102px;
     --sheet-h: clamp(150px, 26vh, 260px);
     /* room the panels leave at the bottom for the sheet band and the player */
-    /* the bottom row of toggles and Learn pills (20px up, 28px tall): the player bar and the sheet band sit above it */
-    --row-h: 44px;
+    /* the bottom row of toggles and Learn pills (10px up, 28px tall): the player bar and the sheet band sit above it */
+    --row-h: 50px;
     --low: calc(var(--player-h) + var(--sheet-h) + 14px + var(--row-h));
     height: 100dvh;
     min-height: 0;

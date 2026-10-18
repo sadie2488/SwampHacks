@@ -10,7 +10,7 @@
   position: fixed;
   z-index: 20;
   right: var(--gut, 28px);
-  bottom: 20px;
+  bottom: 10px;
   display: flex;
   flex-direction: row;
   align-items: center;

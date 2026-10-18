@@ -70,6 +70,7 @@
 .stage-learn .panel-toggles {
   --learn-tools-w: 215px;
   right: calc(var(--gut, 28px) + var(--learn-tools-w));
+  bottom: 10px;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
