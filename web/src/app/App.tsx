@@ -34,6 +34,7 @@ import { LoginButton } from './LoginButton';
 import { logoTarget, publishedMode } from './navigation';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
+import { autoLoops, usePlayLoop } from './play-loop';
 import { idleLoader, SongLoader, type LoaderState } from './SongLoader';
 import { SongView } from './SongView';
 
@@ -75,6 +76,8 @@ export function App() {
     bus.emit('mode', busMode);
   }, [busMode]);
   useEffect(() => unlockOnFirstGesture(), []);
+  // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
+  usePlayLoop(autoLoops(screen, tab));
 
   const openMode = (id: Tab) => {
     unlockSounds();
