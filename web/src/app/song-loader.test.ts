@@ -62,8 +62,12 @@ describe('loadUpload', () => {
 
   it.each([
     ['cannot be reached', async () => Promise.reject(new TypeError('Failed to fetch'))],
-    ['is down (500)', async () => json({ detail: 'x' }, 500)],
+    ['is behind a dev proxy that answers an empty 500', async () => new Response('', { status: 500 })],
+    ['is down (502)', async () => new Response('Bad Gateway', { status: 502 })],
+    ['is down (503)', async () => json({ detail: 'x' }, 503)],
+    ['is down (504)', async () => new Response('', { status: 504 })],
     ['has no such address (404)', async () => json({ detail: 'x' }, 404)],
+    ['does not take uploads here (405)', async () => json({ detail: 'x' }, 405)],
     ['answers with a web page', async () => new Response('<html></html>', { status: 200 })],
   ])('falls back to the built-in demo when the server %s, even if the file cannot be decoded', async (_name, answer) => {
     const song = await loadUpload(wav(), { fetchFn: answer, decode: async () => Promise.reject(new Error('bad data')) });
@@ -74,11 +78,32 @@ describe('loadUpload', () => {
 
   it('gives friendly messages for files the server refuses', async () => {
     const decode = async () => fakeBuffer;
-    await expect(loadUpload(wav(), { fetchFn: async () => json({ detail: 'raw detail' }, 400), decode })).rejects.toThrow(/could not read that file/);
+    await expect(loadUpload(wav(), { fetchFn: async () => new Response('<html>Bad</html>', { status: 400 }), decode })).rejects.toThrow(/could not read that file/);
     await expect(loadUpload(wav(), { fetchFn: async () => json({ detail: 'raw detail' }, 413), decode })).rejects.toThrow(/too big/);
-    const err = await loadUpload(wav(), { fetchFn: async () => json({ detail: 'Traceback' }, 422), decode }).catch((e) => e);
+    const err = await loadUpload(wav(), { fetchFn: async () => json({ detail: 'Traceback (most recent call last):\n  File "x.py"' }, 422), decode }).catch((e) => e);
     expect(err).toBeInstanceOf(LoadError);
     expect(err.message).not.toMatch(/Traceback|422/);
+    expect(err.message).toMatch(/could not read that file/);
+  });
+
+  it.each([
+    [422, "I couldn't find a steady beat or a melody in that file. Try a song with a clear tune."],
+    [500, 'We could not analyze that song. Please try another file.'],
+    [415, 'That does not look like an audio file. Try an MP3, WAV, FLAC, OGG, M4A or AAC file.'],
+    [400, 'That file is empty. Choose a different audio file.'],
+  ])("shows the server's own reason for a %i and does not load the demo", async (status, detail) => {
+    const err = await loadUpload(wav(), { fetchFn: async () => json({ detail }, status), decode: async () => fakeBuffer }).catch((e) => e);
+    expect(err).toBeInstanceOf(LoadError);
+    expect(err.message).toBe(detail);
+  });
+
+  it('ignores reasons that are not one short line of words', async () => {
+    const decode = async () => fakeBuffer;
+    for (const detail of [[{ loc: ['body', 'file'], msg: 'Field required' }], '', 'x'.repeat(301), 'line one\nline two']) {
+      const err = await loadUpload(wav(), { fetchFn: async () => json({ detail }, 422), decode }).catch((e) => e);
+      expect(err).toBeInstanceOf(LoadError);
+      expect(err.message).toMatch(/could not read that file/);
+    }
   });
 
   it('says so when the browser cannot decode the audio', async () => {

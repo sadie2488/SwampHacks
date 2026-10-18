@@ -39,7 +39,28 @@ export async function loadDemo(fetchFn: FetchFn = (u, i) => fetch(u, i)): Promis
   }
 }
 
-const decodeWithBrowser = async (file: File): Promise<AudioBuffer> => getAudioContext().decodeAudioData(await file.arrayBuffer());
+const OFFLINE_STATUSES = new Set([404, 405, 502, 503, 504]);
+const MAX_REASON_LENGTH = 300;
+
+/**
+ * The server's `detail` sentence from an error answer, when it is fit to show: one short line of plain words.
+ * Undefined for anything else (no JSON, a list of validation errors, a long or multi-line text, a traceback).
+ */
+export async function serverReason(res: Response): Promise<string | undefined> {
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    return undefined;
+  }
+  const detail = body && typeof body === 'object' ? (body as { detail?: unknown }).detail : undefined;
+  if (typeof detail !== 'string') return undefined;
+  const text = detail.trim();
+  if (!text || text.length > MAX_REASON_LENGTH || /[\r\n]/.test(text) || /traceback/i.test(text)) return undefined;
+  return text;
+}
+
+const decodeWithBrowser =async (file: File): Promise<AudioBuffer> => getAudioContext().decodeAudioData(await file.arrayBuffer());
 
 /**
  * Send a file to the server for analysis and decode it for playback.
@@ -61,10 +82,14 @@ export async function loadUpload(file: File, deps: { fetchFn?: FetchFn; decode?:
   } catch {
     return { analysis: builtInDemo, offline: true };
   }
-  // 5xx = the server (or the dev proxy in front of it) is down; 404/405 = there is no API here at all.
-  if (res.status >= 500 || res.status === 404 || res.status === 405) return { analysis: builtInDemo, offline: true };
+  // 502/503/504 = a proxy says the server is down; 404/405 = there is no API here at all.
+  if (OFFLINE_STATUSES.has(res.status)) return { analysis: builtInDemo, offline: true };
   if (!res.ok) {
     if (res.status === 413) throw new LoadError('That file is too big. Try a shorter song.');
+    const reason = await serverReason(res);
+    if (reason) throw new LoadError(reason); // the server's own plain-words reason (for example "no steady beat")
+    // A 5xx with no reason is not our server talking (the dev proxy answers an empty 500 when the server is off).
+    if (res.status >= 500) return { analysis: builtInDemo, offline: true };
     throw new LoadError('We could not read that file as a song. Try an MP3 or WAV file.');
   }
   let data: unknown;
