@@ -1,15 +1,14 @@
 /* Overture's three fonts, served from our own site (web/public/fonts) so the page keeps its look when the venue
    Wi-Fi drops. All three are under the SIL Open Font License; the licence texts sit next to the font files.
    - Instrument Serif: big words, mode titles, numbers
-   - Archivo (variable width 62-125%, weight 300-900): labels, buttons, body text
+   - Instrument Sans (variable weight 400-600): labels, buttons, body text
    - Mea Culpa: the Overture logo only */
 @font-face {
-  font-family: 'Archivo';
+  font-family: 'Instrument Sans';
   font-style: normal;
-  font-weight: 300 900;
-  font-stretch: 62% 125%;
+  font-weight: 400 600;
   font-display: swap;
-  src: url('/fonts/archivo-latin.woff2') format('woff2');
+  src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
 }
 
 @font-face {

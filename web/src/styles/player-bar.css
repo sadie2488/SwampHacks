@@ -49,9 +49,8 @@
 
 .song-meta {
   margin: 0.3rem 0 0;
-  font: 800 10px/1.4 var(--sans);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: var(--label-weight) 13px/1.4 var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--muted);
 }
 
@@ -104,9 +103,8 @@
 
 .player-label,
 .player-label > span {
-  font: 800 10px var(--sans);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: var(--label-weight) 13px var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--muted);
 }
 

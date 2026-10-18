@@ -68,5 +68,5 @@ Contrast against Night (`#0b0a0c`), by WCAG ratio:
 
 - Script: Mea Culpa (Google Fonts, free for commercial use; Ballet as backup), only for the Overture logo
 - Big words and mode titles: Instrument Serif, uppercase
-- Labels and buttons: Archivo, condensed (62–100% width), heavy, uppercase, letter-spaced
+- Labels and buttons: Instrument Sans 500, as written (not forced capitals), slightly tight (-0.01em), 12–14 px. Only section kickers stay in small capitals, spaced 0.06em
 - Numbers and big readouts: Instrument Serif

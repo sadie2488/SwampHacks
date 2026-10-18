@@ -7,9 +7,9 @@
 /* the file picker is hidden inside its label; the label looks like a pill button and shows the focus ring */
 .upload-button {
   display: inline-block;
-  font: 800 11px/1.2 var(--sans);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: var(--label-weight) 14px/1.2 var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
   color: var(--paper-white);
   background: transparent;
   border: 1.5px solid var(--a);
@@ -79,8 +79,8 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.3rem 0.4rem 0.3rem 0.1rem;
-  font: 600 0.95rem/1.2 var(--sans);
-  letter-spacing: 0;
+  font: var(--label-weight) 0.95rem/1.2 var(--sans);
+  letter-spacing: var(--label-track);
   text-transform: none;
   color: var(--paper-white);
   text-align: left;
@@ -136,10 +136,8 @@
 
 .device-state {
   margin-left: auto;
-  font: 800 10px var(--sans);
-  letter-spacing: 0.12em;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: var(--label-weight) 12px var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--muted);
 }
 
@@ -161,7 +159,7 @@
 
 .device-note[data-state='error'] {
   color: var(--error);
-  font-weight: 700;
+  font-weight: 600;
   white-space: normal;
 }
 
@@ -183,5 +181,12 @@
   border: 0;
   box-shadow: none;
   font-size: 0.85rem;
+}
+
+/* the camera caption reads as written, like the other small labels (its base rule is in app/styles.css) */
+.camera-preview figcaption {
+  font: var(--label-weight) 12px var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
 }
 

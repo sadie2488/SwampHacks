@@ -90,10 +90,8 @@
 .mode-sub {
   margin: 10px 0 0;
   max-width: 26ch;
-  font: 900 clamp(15px, 1.5vw, 20px) / 1 var(--sans);
-  font-stretch: 62%;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font: var(--label-weight) clamp(15px, 1.4vw, 18px) / 1.3 var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--paper-white);
 }
 

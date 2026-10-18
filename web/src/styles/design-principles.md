@@ -47,7 +47,7 @@ We compared the menu to the totem section of [grail-app.com](https://grail-app.c
 1. **Background steps back on the menu:** the camera goes dark, soft-focus and almost colourless there. It comes back clear inside a mode, where seeing yourself matters
 2. **Fewer competing things:** no micro-text grid, particles, cursor smoke or scanlines on the menu. Tools are small and faint
 3. **One colour at a time:** only the chosen record shows its colour. Menu type is a crisp off-white `#f2eee6`
-4. **Three fonts total:** a big serif (Instrument Serif) for big words, one sans (Archivo) for labels, the script (Mea Culpa) only for the Overture logo
+4. **Three fonts total:** a big serif (Instrument Serif) for big words, one sans (Instrument Sans) for labels, the script (Mea Culpa) only for the Overture logo
 5. **The hero object reads as physical:** the chosen record is flatter, bigger and casts a soft shadow
 6. **One margin (28 px)** for every menu element
 7. **Motion only where it means something:** only the chosen record turns; words slide in on change; everything else is still
@@ -77,7 +77,7 @@ We compared the menu to the totem section of [grail-app.com](https://grail-app.c
 
 - **Script:** Mea Culpa (closest free match to the "Observe / Judge" reference after comparing 28 scripts side by side; Ballet as backup). Many dafont fonts are personal-use only: check the licence before using any font on the public site
 - **Big words:** Instrument Serif (tall, high contrast, close to Grail's display serif)
-- **Labels and record letters:** Archivo
+- **Labels and record letters:** Instrument Sans (same studio as Instrument Serif; replaced Archivo)
 - Tried and parked: Cinzel Decorative (tall swashy "FALLEN" look), Grenze Gotisch (spiky calligraphy ring), Bodoni Moda
 
 ## Records: the final style

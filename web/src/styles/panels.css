@@ -58,8 +58,8 @@
 
 .feedback-card h4 {
   margin: 0.6rem 0 0.2rem;
-  font: 800 10px var(--sans);
-  letter-spacing: 0.12em;
+  font: var(--label-weight) 11px var(--sans);
+  letter-spacing: var(--kicker-track);
   text-transform: uppercase;
   color: var(--muted);
 }

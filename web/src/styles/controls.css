@@ -89,8 +89,8 @@
     grid-column: 1;
     grid-row: 2;
     margin: 0;
-    font-size: 0.62rem;
-    letter-spacing: 0.04em;
+    font-size: 12px;
+    letter-spacing: var(--label-track);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -177,8 +177,8 @@
 
   .player-label,
   .player-label > span {
-    font-size: 0.62rem;
-    letter-spacing: 0.06em;
+    font-size: 12px;
+    letter-spacing: var(--label-track);
   }
 
   .player-label.volume {

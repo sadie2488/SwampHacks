@@ -26,8 +26,8 @@
 /* the lab's own title and introduction: the big mode title already names the page, so these stay small */
 .command-lab > h1 {
   margin: 0;
-  font: 800 10px/1.3 var(--sans);
-  letter-spacing: 0.14em;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
   text-transform: uppercase;
   color: var(--muted);
 }
