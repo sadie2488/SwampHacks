@@ -9,21 +9,31 @@
   pointer-events: none;
   z-index: 9999;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  /* the colour of what it is over (--hand-color, set by HandPointer), faded in about 150 ms; colour only, no layout */
+  color: var(--hand-color, #f2eee6);
+  transition:
+    opacity 0.2s ease,
+    color 0.15s ease;
   will-change: transform;
 }
 .hand-pointer svg {
   display: block;
   overflow: visible;
 }
+/* Grabbed (fist closed on something): the whole ring closes to 0.7 and its lines thicken; it eases back on release.
+   The hold-to-click arc is part of the ring, so it fills round the smaller ring. */
+.hand-pointer-ring {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transition: transform 0.12s ease-out;
+}
+.hand-pointer[data-grabbed='true'] .hand-pointer-ring {
+  transform: scale(0.7);
+}
 .hand-pointer-dot {
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
-  transition: transform 0.15s ease;
-}
-.hand-pointer[data-fist='true'] .hand-pointer-dot {
-  transform: scale(0.7);
 }
 .hand-pointer-fill {
   fill: none;
@@ -31,13 +41,31 @@
   stroke-width: 3;
   stroke-linecap: round;
 }
+.hand-pointer[data-grabbed='true'] .hand-pointer-dot {
+  stroke-width: 3;
+}
+.hand-pointer[data-grabbed='true'] .hand-pointer-fill {
+  stroke-width: 4.5;
+}
 
-/* What the hand is over: a ring in the mode's ink and a gentle lift. */
+/* What the hand is over: a ring in that item's colour and a gentle lift. */
 .hand-hover {
   outline: 2px solid var(--hand-ink, currentColor);
   outline-offset: 4px;
   scale: 1.05;
-  transition: scale 0.15s ease;
+  transition:
+    scale 0.15s ease,
+    translate 0.15s ease;
+}
+/* What the fist holds: lifted a little more, ring thicker, in its colour; eases back when the hand opens. */
+.hand-grabbed {
+  outline: 3px solid var(--hand-ink, currentColor);
+  outline-offset: 4px;
+  scale: 1.09;
+  translate: 0 -4px;
+  transition:
+    scale 0.12s ease-out,
+    translate 0.12s ease-out;
 }
 
 /* Bigger hit areas (at least 48 x 48) without changing the look: an invisible layer round small buttons. */
@@ -60,4 +88,14 @@
   width: max(100%, 48px);
   height: max(100%, 48px);
   transform: translate(-50%, -50%);
+}
+
+/* Records keep their own glide (transform, opacity) while the hand hovers or holds them. */
+.record.hand-hover,
+.record.hand-grabbed {
+  transition:
+    transform 0.6s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.6s ease-in-out,
+    scale 0.12s ease-out,
+    translate 0.12s ease-out;
 }

@@ -122,7 +122,7 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
             }
           };
           return (
-            <button key={mode.id} type="button" className="record" style={style} data-testid={`record-${mode.id}`} data-chosen={i === sel} data-grabbed={grabbed && i === sel ? 'true' : undefined} aria-label={`${mode.name} mode`} aria-current={i === sel ? 'true' : undefined} onClick={click}>
+            <button key={mode.id} type="button" className="record" style={style} data-testid={`record-${mode.id}`} data-hand-color={mode.a} data-chosen={i === sel} data-grabbed={grabbed && i === sel ? 'true' : undefined} aria-label={`${mode.name} mode`} aria-current={i === sel ? 'true' : undefined} onClick={click}>
               <span className="record-shadow" />
               <Record m={mode} index={i} px={px} />
             </button>
