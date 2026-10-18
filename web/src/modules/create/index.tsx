@@ -126,9 +126,12 @@ export function CreatePanel({ fetchFn }: { fetchFn?: FetchFn } = {}) {
         <button type="button" data-testid="btn-beat" aria-pressed={beatOn} onClick={press(() => sendCommand('create.beat', 'button', { how: 'toggle' }))}>
           Beat: {beatOn ? 'on' : 'off'}
         </button>{' '}
-        <button type="button" data-testid="btn-fake-hum" disabled={faking} onClick={press(startFake)}>
-          {faking ? 'Humming…' : 'Simulate humming'}
-        </button>
+        {/* only for the browser tests (navigator.webdriver), which click it instead of humming into a microphone */}
+        {typeof navigator !== 'undefined' && navigator.webdriver === true && (
+          <button type="button" data-testid="btn-fake-hum" disabled={faking} onClick={press(startFake)}>
+            {faking ? 'Humming…' : 'Simulate humming'}
+          </button>
+        )}
       </div>
 
       <p>
