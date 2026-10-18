@@ -138,3 +138,20 @@ describe('Create take end', () => {
     expect(store.getState().phase).toBe('playing');
   });
 });
+
+describe('Create take start bar', () => {
+  it('the layer keeps the loop-clock bar its take started on, so it plays back in the same place', () => {
+    const { store, engine } = setup();
+    sendCommand('create.loop.record', 'button', { how: 'toggle' });
+    clock = TAKE_START;
+    engine.hooks!.onGo(TAKE_START, 6);
+    for (const f of fakeHumFrames(0)) {
+      clock = TAKE_START + f.t_ms;
+      bus.emit('pitch', f);
+    }
+    clock = TAKE_START + 3000;
+    leftFist();
+    expect(store.getState().layers[0].startBar).toBe(6);
+    expect(store.getState().layers[0].loopBeats).toBe(8);
+  });
+});
