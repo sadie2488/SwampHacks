@@ -7,25 +7,26 @@
 /* the file picker is hidden inside its label; the label looks like a pill button and shows the focus ring */
 .upload-button {
   display: inline-block;
-  font: 600 0.95rem/1.2 var(--display);
-  color: var(--ink);
-  background: var(--paper);
-  border: var(--border);
-  border-radius: 99px;
-  padding: 0.45rem 1.05rem;
-  box-shadow: 3px 3px 0 var(--ink);
+  font: 800 11px/1.2 var(--sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  background: transparent;
+  border: 1.5px solid var(--a);
+  border-radius: 999px;
+  padding: 10px 16px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .upload-button:hover {
-  background-color: #fffaf0;
-  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--a);
+  color: var(--on-a);
 }
 
 .upload-button:has(input:focus-visible) {
-  outline: 3px solid var(--teal-deep);
-  outline-offset: 4px;
+  outline: 2px solid var(--paper-white);
+  outline-offset: 3px;
 }
 
 .upload-button:has(input:disabled) {
@@ -78,7 +79,10 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.3rem 0.4rem 0.3rem 0.1rem;
-  font: 600 0.95rem/1.2 var(--display);
+  font: 600 0.95rem/1.2 var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--paper-white);
   text-align: left;
   background: transparent;
   border: 0;
@@ -93,9 +97,9 @@
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: var(--border);
+  border: 1.5px solid var(--a);
   border-radius: 50%;
-  background: var(--paper);
+  background: transparent;
   font-size: 1rem;
   transition: background-color 0.12s;
 }
@@ -111,16 +115,17 @@
 .device-toggle[aria-pressed='true'],
 .device-toggle[aria-pressed='true']:hover:not(:disabled) {
   background: transparent;
-  color: var(--ink);
+  color: var(--paper-white);
 }
 
 .device-toggle[aria-pressed='true']::before {
-  background: var(--teal-deep);
-  color: #fff;
+  background: var(--a);
+  color: var(--on-a);
 }
 
 .device-toggle:hover:not(:disabled) {
-  background: rgba(255, 194, 61, 0.22);
+  background: rgba(242, 238, 230, 0.07);
+  color: var(--paper-white);
   box-shadow: none;
 }
 
@@ -131,14 +136,15 @@
 
 .device-state {
   margin-left: auto;
-  font: 500 0.72rem var(--mono);
+  font: 800 10px var(--sans);
+  letter-spacing: 0.12em;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
 .device-toggle[aria-pressed='true'] .device-state {
-  color: var(--teal-deep);
+  color: var(--paper-white);
 }
 
 /* what the device is doing, or its problem, in one short line under its row (the full text is in the tooltip) */

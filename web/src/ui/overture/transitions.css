@@ -1,0 +1,133 @@
+/* Screen changes (see transition.ts). Only transform, opacity and one clip circle animate.
+   entrance -> menu: a flower's centre travels to become the first record's hole (shared element "journey").
+   menu -> mode: the chosen record faces you and rushes at the screen (750 ms, slow start, very fast finish); the
+   mode shows only through its hole until the hole fills the screen; then the mode's content rises in (0.7 s). */
+:root[data-vt='mode']::view-transition-old(root) {
+  animation: 0.22s ease-in both vt-fade-out;
+}
+
+:root[data-vt='mode']::view-transition-new(root) {
+  animation: 0.32s ease-out 0.06s both vt-fade-in;
+}
+
+:root[data-vt='enter']::view-transition-old(root) {
+  animation: 0.5s cubic-bezier(0.6, 0, 0.8, 0.4) both vt-lift-out;
+}
+
+:root[data-vt='enter']::view-transition-new(root) {
+  animation: 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both vt-fade-in;
+}
+
+::view-transition-group(journey) {
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* the record rushes at you */
+::view-transition-group(portal-record) {
+  animation: none;
+  z-index: 3;
+}
+
+::view-transition-old(portal-record) {
+  animation: 0.75s cubic-bezier(0.7, 0, 0.84, 0) both vt-rush;
+}
+
+:root[data-vt='portal']::view-transition-old(root) {
+  animation: 0.75s ease-in both vt-dim;
+}
+
+:root[data-vt='portal']::view-transition-new(root) {
+  animation: 0.75s cubic-bezier(0.7, 0, 0.84, 0) both vt-hole;
+}
+
+:root[data-vt='back']::view-transition-old(root) {
+  animation: 0.3s ease-in both vt-fade-out;
+}
+
+:root[data-vt='back']::view-transition-new(root) {
+  animation: 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both vt-settle;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-dim {
+  to {
+    opacity: 0.25;
+  }
+}
+
+@keyframes vt-lift-out {
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes vt-rush {
+  to {
+    transform: scale(var(--vt-scale, 20));
+  }
+}
+
+@keyframes vt-hole {
+  from {
+    clip-path: circle(var(--vt-hole, 20px) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--vt-far, 150vmax) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+@keyframes vt-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+/* arriving in a mode: the content rises in over 0.7 s (after the record's rush, when it came from the menu) */
+.app[data-arrive$='-0'] .mode-panel > * {
+  animation: arrive-a 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.app[data-arrive$='-1'] .mode-panel > * {
+  animation: arrive-b 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.app[data-arrive^='portal'] .mode-panel > * {
+  animation-delay: 0.7s;
+}
+
+@keyframes arrive-a {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+}
+
+@keyframes arrive-b {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  .app .mode-panel > * {
+    animation: none !important;
+  }
+}
