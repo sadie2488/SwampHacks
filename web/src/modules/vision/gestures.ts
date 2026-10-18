@@ -4,6 +4,7 @@
 // so x = 0 is the user's own left edge as they see it on screen. Distances are measured in "picture-height" units
 // (x is multiplied by the image's width/height ratio) so a circle stays a circle.
 import type { Signal } from '@/contracts';
+import { SignTracker } from './signs';
 
 export interface Pt {
   x: number;
@@ -309,6 +310,8 @@ export class GestureTracker {
   private lastFace = -Infinity;
   private lastNod = -Infinity;
   private lastT = 0;
+  /** Finger counts and fingerspelling letters (signs.ts). */
+  private readonly signs = new SignTracker();
 
   constructor(opts: Partial<TrackerOptions> = {}) {
     this.o = { ...DEFAULT_TRACKER, ...opts };
@@ -342,6 +345,9 @@ export class GestureTracker {
       this.slider(out, 'vision.hands.distance', t, handsDistanceValue(widths), round(widths), Math.min(left.score, right.score));
     }
 
+    this.signs.update(t, left, right, aspect, out);
+    this.fingerCounts(out, t, left, right);
+
     this.updateHead(out, t, frame.face, aspect);
     return out;
   }
@@ -352,6 +358,7 @@ export class GestureTracker {
     for (const side of ['left', 'right'] as const) {
       for (const h of HOLDS) if (this.sides[side].holds[h].active) out.push(moment(`vision.hand.${side}.${h}`, 'end', 1, t));
     }
+    this.signs.reset(t, out);
     this.sides.left = this.newSide();
     this.sides.right = this.newSide();
     this.nose = [];
@@ -365,6 +372,16 @@ export class GestureTracker {
     if (prev !== undefined && t - prev < this.o.sliderMs) return;
     this.lastSlider.set(id, t);
     out.push({ id, kind: 'slider', value: round(clamp01(value)), ...(raw === undefined ? {} : { raw }), confidence: round(confidence, 2), t_ms: t });
+  }
+
+  /** Raised fingers per hand (0-5) and for both hands together (0-10); a hand that isn't seen counts 0. */
+  private fingerCounts(out: SignalOut[], t: number, left: HandObs | undefined, right: HandObs | undefined): void {
+    if (!left && !right) return;
+    const counts = this.signs.sides;
+    if (left) this.slider(out, 'vision.hand.left.fingers', t, counts.left.count / 5, counts.left.count, left.score);
+    if (right) this.slider(out, 'vision.hand.right.fingers', t, counts.right.count / 5, counts.right.count, right.score);
+    const total = counts.left.count + counts.right.count;
+    this.slider(out, 'vision.hands.fingers', t, total / 10, total, Math.min(left?.score ?? 1, right?.score ?? 1));
   }
 
   private updateHand(out: SignalOut[], side: Side, hand: HandObs, frame: FrameObs, aspect: number): void {
