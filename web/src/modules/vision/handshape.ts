@@ -111,7 +111,8 @@ export class HandShape {
       const total = mcp + b1 + b2;
       this.straight[f] = fall(b1 + b2, 45, 80) * fall(mcp, 40, 65);
       this.curled[f] = rise(mcp, 45, 70) * rise(b1, 55, 80);
-      this.hooked[f] = fall(mcp, 35, 55) * rise(b1 + b2, 110, 140);
+      // (a hooked fingertip folds forward, out in front of the palm; a flat outline with no depth isn't hooked)
+      this.hooked[f] = fall(mcp, 35, 55) * rise(b1 + b2, 110, 140) * rise(p[3 * tip + 2], 0.1, 0.2);
       this.bent[f] = rise(total, 55, 80) * fall(total, 165, 195);
     }
     const angXY = (from: number, to: number) => Math.atan2(p[3 * to] - p[3 * from], p[3 * to + 1] - p[3 * from + 1]) * DEG;
