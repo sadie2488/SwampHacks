@@ -1,0 +1,29 @@
+/* Command toast: one thin serif word above the middle; transform and opacity only; never blocks clicks. */
+.command-toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 36%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+}
+.command-toast__word {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(48px, 9vw, 120px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+  animation: command-toast 1200ms ease-out both;
+}
+@keyframes command-toast {
+  0% { opacity: 0; transform: translateY(12px); }
+  12.5% { opacity: 1; transform: translateY(0); }
+  87.5% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .command-toast__word { animation: none; }
+}
