@@ -59,12 +59,12 @@ describe('the entrance and the record menu are neutral', () => {
     expect(fired).toEqual([]);
   });
 
-  it('on the menu, a grab still enters the record and a held sign still switches mode', () => {
+  it('on the menu, a held sign still switches mode (a grab no longer enters: the hand cursor\'s hold-to-click replaced it)', () => {
     const { feed, tick, fired } = setup(publishedMode('menu', 'play'));
     feed(moment('vision.hand.right.grab', 100));
     feed(moment('vision.sign.y', 200));
     tick(2300);
-    expect(fired).toEqual(['app.enter', 'app.mode=play']);
+    expect(fired).toEqual(['app.mode=play']);
   });
 
   it('for comparison, inside Create the same moves do fire Create commands', () => {
