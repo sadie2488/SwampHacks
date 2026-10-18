@@ -506,7 +506,7 @@ describe('the vision module on the bus', () => {
       stop = startVision({ clock, fake: () => true, makeCanvas: () => c.canvas });
       enable(true);
       expect(streams).toEqual([c.stream]);
-      expect(c.captureStream).toHaveBeenCalledWith(15);
+      expect(c.captureStream).toHaveBeenCalledWith(TRACKING_FPS);
       expect(c.canvas.width).toBe(640);
       expect(c.canvas.height).toBe(480);
       expect(statuses.map((s) => s.state)).toEqual(['starting', 'running']);
@@ -637,9 +637,10 @@ describe('where the models come from', () => {
     expect(WASM_URL).toBe(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${pkg.version}/wasm`);
   });
 
-  it('models come from the public MediaPipe storage and tracking runs at about 15 pictures a second', () => {
+  it('models come from the public MediaPipe storage and tracking runs at about 24 pictures a second', () => {
     expect(HAND_MODEL_URL).toBe('https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task');
     expect(FACE_MODEL_URL).toBe('https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task');
-    expect(TRACKING_FPS).toBe(15);
+    // 24: quick enough that the hand cursor does not lag, low enough that the worker keeps up on a laptop
+    expect(TRACKING_FPS).toBe(24);
   });
 });
