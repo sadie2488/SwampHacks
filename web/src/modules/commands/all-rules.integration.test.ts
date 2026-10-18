@@ -515,18 +515,15 @@ describe('Any-mode rules', () => {
     ['hold W to go to the Command Lab', 'w', 'lab', 'learn'],
   ];
   for (const [name, letter, tab, from] of signRules) {
-    it(name, () => {
-      const holdMs = ruleNamed(name).hold_ms!;
-      expect(holdMs).toBeGreaterThan(0);
+    // Switched off Sun 5:30 AM (Lalitha): modes are chosen on the record menu, not with ASL signs.
+    it(`${name} is switched off: holding the sign does nothing`, () => {
+      expect(ruleNamed(name).enabled).toBe(false);
       setMode(from);
       moment(`vision.sign.${letter}`);
-      vi.advanceTimersByTime(holdMs / 2);
-      expect(fromRule(name), 'fired before the hold time').toEqual([]);
-      vi.advanceTimersByTime(holdMs / 2 + 100);
-      expect(fromRule(name).map((c) => c.value)).toEqual([tab]);
-      expect(controls()['app.mode']).toBe(tab);
-      expect(shownTab).toBe(tab);
-      expect(bus.last('mode')).toBe(modeOf(tab));
+      vi.advanceTimersByTime((ruleNamed(name).hold_ms ?? 2000) + 500);
+      expect(fromRule(name)).toEqual([]);
+      expect(bus.last('mode')).toBe(from);
+      void tab;
     });
     it(`${name}: letting go early does nothing`, () => {
       setMode(from);
