@@ -5,14 +5,13 @@
 - Bass: the lowest voice, at or under E3 (about 165 Hz), one note at a time. (Higher, it is mostly the
   lowest note of the chords when a song has no bass.)
 - Melody: the top voice of what is left, one note at a time, without lonely jumps far from its neighbours.
-- Chords: the remaining held notes, grouped by the half beat they start on; two or more pitches make a chord.
+- Chords: what sounds under the tune, besides the bass, every two beats: its strongest pitches make a chord.
 Melody and bass go through the same beat grid as the pYIN melody (`melody._quantize`); all parts share
 one beat 0. A part with too few notes, or too little of the song covered, is left out and named in
 `omitted` so the caller can say so. Pure Python on lists of dicts, so it is cheap (well under a second).
 """
 from __future__ import annotations
 
-import itertools
 import math
 from statistics import median
 
@@ -28,13 +27,15 @@ MIN_NOTE_SEC = 0.12
 CLUSTER_SEC = 0.06  # notes starting this close together start "at the same time"
 HOLD_LEFT_SEC = 0.15  # a voice keeps its note while this much of it is left, unless the new note is beyond it
 BASS_MAX_PITCH = 52  # E3, about 165 Hz: the top of most bass lines
-MELODY_MIN_PITCH = 55  # G3: lower than this is accompaniment in nearly every song
+MELODY_MIN_PITCH = 53  # F3, just above the bass: low male verses (Smells Like Teen Spirit) sit around F3-G3
 MELODY_MAX_PITCH = 90  # F#6: higher is cymbal and synth sparkle the model reads as notes
 CHORD_MAX_PITCH = 84  # C6
 JUMP_MAX = 12  # a melody note more than an octave from both neighbours is an outlier
-CHORD_MIN_SEC = 0.2
 CHORD_MAX_NOTES = 4
-CHORD_UNIT = 0.5  # chords start on half (counted) beats
+CHORD_UNIT = 0.5  # grid step of the chords part, in (counted) beats
+CHORD_WINDOW_BEATS = 2.0  # one chord at most every two beats (half a bar of 4/4)
+CHORD_KEEP_SHARE = 0.35  # a pitch belongs to the chord when it scores at least this share of the strongest
+CHORD_MIN_SCORE = 0.1  # the strongest pitch must sound with strength 0.4 for a quarter of the stretch (0.1 = 0.4 x 0.25)
 EARLY_OK_BEATS = 0.125  # a note this little before the first beat still snaps onto it
 MIN_PART_NOTES = 8  # fewer notes than this is not a part
 MIN_CHORDS = 4
@@ -149,27 +150,50 @@ def _line_part(line, kind: str, prefix: str, tempo_bpm: float, origin: float, be
 
 
 def chords(notes: list[dict], tempo_bpm: float, origin: float) -> list[list[dict]]:
-    """Held notes grouped by the half beat they start on: one list of note dicts per chord, in time order.
-    Each note gets `on` and `len` in grid steps; the notes of a chord share both."""
+    """The accompaniment as chords, one per stretch of CHORD_WINDOW_BEATS beats (merged while it stays the same).
+
+    In each stretch every pitch scores the time it sounds there times its strength; the strongest pitches (up to
+    CHORD_MAX_NOTES, each at least CHORD_KEEP_SHARE of the best) make the chord, which needs two pitch classes.
+    Strummed, picked and held chords all count, not only notes that start together. Returns one list of note
+    dicts per chord, in time order; each note has `on` and `len` in CHORD_UNIT steps, shared by its chord.
+    """
     step = 60.0 / tempo_bpm * CHORD_UNIT
-    groups: dict[int, list[dict]] = {}
+    per_window = round(CHORD_WINDOW_BEATS / CHORD_UNIT)
+    window = step * per_window
+    scores: dict[int, dict[int, float]] = {}
     for n in notes:
-        if n["end"] - n["start"] >= CHORD_MIN_SEC:
-            groups.setdefault(round((n["start"] - origin) / step), []).append(n)
-    out = []
-    for on in sorted(groups):
-        loudest: dict[int, dict] = {}
-        for n in sorted(groups[on], key=lambda n: -n["amp"]):
-            loudest.setdefault(n["pitch"], n)
-        picked = sorted(list(loudest.values())[:CHORD_MAX_NOTES], key=lambda n: n["pitch"])
-        if len(picked) < 2:
+        first, last = int((n["start"] - origin) // window), int((n["end"] - origin) // window)
+        for w in range(max(first, 0), last + 1):
+            lo, hi = origin + w * window, origin + (w + 1) * window
+            overlap = min(hi, n["end"]) - max(lo, n["start"])
+            if overlap > 0:
+                scores.setdefault(w, {}).setdefault(n["pitch"], 0.0)
+                scores[w][n["pitch"]] += overlap * n["amp"]
+    out: list[list[dict]] = []
+    last_w, last_set = None, None
+    for w in sorted(scores):
+        ranked = sorted(scores[w].items(), key=lambda kv: -kv[1])
+        best = ranked[0][1]
+        if best < CHORD_MIN_SCORE * window:
             continue
-        end = round((median(n["end"] for n in picked) - origin) / step)
-        out.append([{**n, "on": on, "len": max(1, end - on)} for n in picked])
-    for chord, nxt in itertools.pairwise(out):
-        room = nxt[0]["on"] - chord[0]["on"]
+        picked = sorted(p for p, sc in ranked[:CHORD_MAX_NOTES] if sc >= CHORD_KEEP_SHARE * best)
+        if len({p % 12 for p in picked}) < 2:
+            continue
+        if out and last_w == w - 1 and last_set == picked:
+            for n in out[-1]:
+                n["len"] += per_window
+        else:
+            start = origin + w * window
+            amp = min(1.0, best / window)
+            out.append([
+                {"pitch": p, "start": start, "end": start + window, "amp": max(amp, MIN_AMP), "on": w * per_window,
+                 "len": per_window}
+                for p in picked
+            ])  # fmt: skip
+        last_w, last_set = w, picked
+    for chord in out:
         for n in chord:
-            n["len"] = min(n["len"], room)  # a chord ends where the next one starts
+            n["end"] = n["start"] + n["len"] * step
     return out
 
 
