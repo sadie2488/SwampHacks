@@ -157,15 +157,18 @@ test('editing the mapping file applies instantly, with no page reload', T, async
 test('a typo in the mapping file gives a friendly message and the other rules keep working', T, async () => {
   const original = readFileSync(MAPPINGS, 'utf8');
   try {
-    writeFileSync(MAPPINGS, `${original.trimEnd()}\n\n- name: e2e typo rule\n  mode: any\n  when: audio.clapp\n  do: playback.toggle\n  how: trigger\n`);
+    // One rule with a typo next to one good rule: the typo is reported, the good rule still runs (the Play rules are
+    // switched off since History replaced Play, so the good rule is written here too).
+    writeFileSync(MAPPINGS, `${original.trimEnd()}\n\n- name: e2e typo rule\n  mode: any\n  when: audio.clapp\n  do: playback.toggle\n  how: trigger\n\n- name: e2e good rule\n  mode: any\n  when: audio.snap\n  do: playback.volume\n  how: nudge\n  step: -0.1\n`);
     const issue = await until('an issue about the typo', async () => ((await topic('issues')) ?? []).find((i) => /clapp/.test(`${i.where} ${i.message}`)), 15_000);
     assert.equal(issue.level, 'error');
     assert.match(issue.message, /audio\.clap\b/, 'should suggest the right name');
     assert.match((await $('lab-issues').textContent()) ?? '', /clapp/);
-    const before = (await topic('transport')).playing;
+    await until('the good rule is listed', async () => (await page.locator('[data-testid^="rule-"]').count()) > 0, 15_000);
     await sleep(700);
-    await $('fake-audio.clap.double').click();
-    await until('the good clap rule still works',async () => (await topic('transport')).playing === !before);
+    const before = await control('playback.volume');
+    await $('fake-audio.snap').click();
+    await until('the good rule next to the typo still works', async () => (await control('playback.volume')) < before - 0.05);
   } finally {
     writeFileSync(MAPPINGS, original);
   }
