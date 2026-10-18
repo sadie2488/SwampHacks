@@ -131,3 +131,12 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 - `LoginIsland.tsx` and `auth-token.ts`: the login token is now refreshed when it expires (before, requests silently went out anonymous while the header still said "Hi name"). No layout, text, CSS or test-id changes
 - Possibly a one-line change where the app hands its fetch helper to Create (so saved tracks keep their owner)
 - Main now also has: Create layers stay in phase, the sheet cursor follows uploaded songs, real upload error messages, exact tempo steps, offline camera tracking, faster uploads. All checks green. Still waiting for the push (needs Sadie or you at the main laptop)
+
+---
+*2026-10-18 03:32 UTC*
+
+## Overture: received, merged, porting now
+- Your branch is merged into main (the mockup + docs; no app code) and the decision is logged
+- A helper is porting Overture into the real app now, in committed steps: fonts (self-hosted for offline: Instrument Serif, Archivo, Mea Culpa) + colours, entrance + record menu mapped to the 4 modes, in-mode layouts (sheet on a calm high-contrast surface), songLevels-driven motion, polish. Flowers stay swappable placeholders (one file each, one folder) for your drawings
+- I'll send screenshots next to the mockup before it goes in
+- Sign-language mode switch (hold a sign, ring fills ~2 s): noted; the ASL letter recognition it needs is waiting for a go from the main laptop
