@@ -83,14 +83,18 @@ describe('layers: instrument, volume, effects, mute', () => {
 });
 
 describe('layers: recording', () => {
-  it('goes idle -> count-in -> recording -> playing and keeps the notes in the layer', () => {
+  it('goes idle -> count-in -> recording -> idle (everything stops) and keeps the notes in the layer', () => {
     let s = run([{ type: 'addLayer' }]);
     s = reduce(s, { type: 'recordStart' });
     expect(s.phase).toBe('countIn');
+    s = reduce(s, { type: 'countBeat', value: 4 });
+    expect(s.countBeat).toBe(4);
     s = reduce(s, { type: 'recordGo' });
     expect(s.phase).toBe('recording');
+    expect(s.countBeat).toBeUndefined();
     s = reduce(s, { type: 'recordEnd', notes: take, message: 'Recorded 3 notes' });
-    expect(s.phase).toBe('playing');
+    expect(s.phase).toBe('idle');
+    expect(s.layers[0].handPitchEnabled).toBe(true);
     expect(s.layers).toHaveLength(1);
     expect(s.layers[0].notes).toEqual(take);
     expect(s.message).toBe('Recorded 3 notes');
@@ -202,7 +206,7 @@ describe('layers: beat', () => {
     let s = run([{ type: 'beatOn' }, { type: 'play' }]);
     expect(s.phase).toBe('playing');
     expect(reduce(s, { type: 'beatOff' }).phase).toBe('idle');
-    s = run([{ type: 'addLayer' }, { type: 'recordStart' }, { type: 'recordGo' }, { type: 'recordEnd', notes: take }, { type: 'beatOn' }]);
+    s = run([{ type: 'addLayer' }, { type: 'recordStart' }, { type: 'recordGo' }, { type: 'recordEnd', notes: take }, { type: 'beatOn' }, { type: 'play' }]);
     expect(reduce(s, { type: 'beatOff' }).phase).toBe('playing');
   });
 
@@ -218,12 +222,13 @@ describe('layers: words for the screen', () => {
     expect(describeState(s)).toBe('Ready: add a layer or press Record');
     s = reduce(s, { type: 'recordStart' });
     expect(describeState(s)).toBe('Get ready: counting in one bar');
+    expect(describeState(reduce(s, { type: 'countBeat', value: 3 }))).toBe('Get ready: 3');
     s = reduce(s, { type: 'recordGo' });
     expect(describeState(s)).toBe('Recording: hum now');
     s = reduce(s, { type: 'recordEnd', notes: take });
-    expect(describeState(s)).toBe('Loop playing, 1 layer');
+    expect(describeState(s)).toBe('Stopped, 1 layer ready');
     s = run([{ type: 'addLayer' }, { type: 'beatOn' }], s);
-    s = run([{ type: 'selectLayer', id: s.layers[1].id }, { type: 'recordStart' }, { type: 'recordGo' }, { type: 'recordEnd', notes: [note(55, 0)] }], s);
+    s = run([{ type: 'selectLayer', id: s.layers[1].id }, { type: 'recordStart' }, { type: 'recordGo' }, { type: 'recordEnd', notes: [note(55, 0)] }, { type: 'play' }], s);
     expect(describeState(s)).toBe('Loop playing, 3 layers');
     expect(describeState(reduce(s, { type: 'stop' }))).toBe('Stopped, 3 layers ready');
   });
