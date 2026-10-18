@@ -38,8 +38,8 @@ export function GuideLayer({ screen, mode }: { screen: Screen; mode: ModeId }) {
       const lm = latest;
       if (!lm || !parts.length || performance.now() - lastAt > 600) return;
       const aspect = lm.width > 0 && lm.height > 0 ? lm.width / lm.height : 16 / 9;
-      // the landmarks come mirrored (selfie view) but the background shows the camera the true way round: flip back
-      const map = (p: { x: number; y: number }): Pt => toScreen(1 - p.x, p.y, aspect, w, h);
+      // the landmarks come mirrored (selfie view), the same way the background shows the camera: no flip needed
+      const map = (p: { x: number; y: number }): Pt => toScreen(p.x, p.y, aspect, w, h);
       ctx.fillStyle = ink;
       ctx.strokeStyle = ink;
       const dot = (p: Pt, r: number) => {

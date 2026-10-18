@@ -1,5 +1,6 @@
 // The Overture background picture, as one full-screen shader (one draw call):
-// - the player's own camera picture (the true way round, not mirrored; covering the window), toned by the screen's look
+// - the player's own camera picture, mirrored like a mirror (raise your right hand, it shows on the right; covering the
+//   window), toned by the screen's look
 // - a two-ink halftone print on top (the mode's ink pair), its dots grow with the music and the two inks slip apart
 //   on the beat and when the section colour changes
 // - without a camera: a slow cloud field stands in for the picture, breathing with the song's low bands
@@ -25,7 +26,8 @@ float noise(vec2 p){
   vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
   return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x), mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x), f.y);
 }
-vec3 cam(vec2 uv){ return texture2D(uCam, coverUv(uv)).rgb; }
+// the camera picture only is flipped left-right (selfie view); the cloud field and the ripple are not
+vec3 cam(vec2 uv){ return texture2D(uCam, coverUv(vec2(1.-uv.x, uv.y))).rgb; }
 // stand-in picture: slow soft clouds, a little brighter with the low bands, a fine shimmer with the high ones
 float field(vec2 uv){
   vec2 p=uv*vec2(uRes.x/uRes.y,1.)*2.2;
