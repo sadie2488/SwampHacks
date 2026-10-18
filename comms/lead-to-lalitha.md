@@ -123,3 +123,11 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 ## Heads-up: one small logic fix in your lane
 - A code review found that a failed song analysis is shown as "Server not reachable" and quietly loads the demo song. A helper is fixing the error handling in `web/src/app/song-loader.ts` only (no `.tsx`, no CSS). It goes in the next push
 - Also merged: camera tracking now works offline (local model copies, internet fallback)
+
+---
+*2026-10-18 03:19 UTC*
+
+## Heads-up: two more logic-only fixes in web/src/app (from a code review)
+- `LoginIsland.tsx` and `auth-token.ts`: the login token is now refreshed when it expires (before, requests silently went out anonymous while the header still said "Hi name"). No layout, text, CSS or test-id changes
+- Possibly a one-line change where the app hands its fetch helper to Create (so saved tracks keep their owner)
+- Main now also has: Create layers stay in phase, the sheet cursor follows uploaded songs, real upload error messages, exact tempo steps, offline camera tracking, faster uploads. All checks green. Still waiting for the push (needs Sadie or you at the main laptop)
