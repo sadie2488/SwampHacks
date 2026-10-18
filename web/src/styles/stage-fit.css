@@ -26,9 +26,8 @@
 
 .mode-readout p {
   margin: 0;
-  font: 800 10px/1.2 var(--sans);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: var(--label-weight) 11px/1.2 var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--paper-white);
 }
 
@@ -37,12 +36,9 @@
   margin-top: 2px;
   font: 400 24px/1 var(--serif);
   letter-spacing: 0;
-  text-transform: none;
 }
 
 .mode-readout .hand-label {
-  font-weight: 600;
-  letter-spacing: 0.08em;
   opacity: 0.85;
 }
 
@@ -59,7 +55,7 @@
 
 .panel-toggle {
   padding: 5px 12px;
-  font-size: 10px;
+  font-size: 12px;
   background: color-mix(in srgb, var(--bg) 40%, transparent);
 }
 

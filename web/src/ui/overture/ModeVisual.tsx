@@ -100,10 +100,9 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
         }
         ctx.setLineDash([]);
         ctx.fillStyle = 'rgba(242, 238, 230, 0.9)';
-        ctx.font = '800 12px Archivo, sans-serif';
+        ctx.font = "500 13px 'Instrument Sans', sans-serif";
         ctx.textAlign = 'center';
-        (ctx as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing = '3px';
-        ctx.fillText('HUM SOMETHING', cx, cy + 5);
+        ctx.fillText('Hum something', cx, cy + 5);
         if (voice > 0.01) schedule();
       }
     };
