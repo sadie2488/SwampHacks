@@ -120,7 +120,9 @@ describe('layout', () => {
   it('announces the mode on every tab change (Command Lab counts as play) and swaps the panels', async () => {
     expect(seen).toContain('mode:learn');
     await click('tab-play');
-    expect($('sheet')).not.toBeNull();
+    // Play is hands and voice only: no sheet, no panels
+    expect($('sheet')).toBeNull();
+    expect(container.querySelector('.panel-toggles')).toBeNull();
     await click('tab-create');
     expect($('create-panel')).not.toBeNull();
     expect($('sheet')).toBeNull();
@@ -135,7 +137,8 @@ describe('loading a song', () => {
   it('uses the demo song from the server (no notice) and fills the summary and the sheet', async () => {
     await click('use-demo');
     await until(() => $('sheet-ready'), 'the sheet');
-    expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/songs/demo-twinkle/analysis');
+    // (the bus may still remember a song from an earlier test, so the history may ask for its sessions first)
+    expect(vi.mocked(fetch).mock.calls.map((c) => c[0])).toContain('/api/songs/demo-twinkle/analysis');
     expect(text('analysis-title')).toBe('Twinkle, Twinkle, Little Star');
     expect(text('analysis-tempo')).toBe('100 BPM');
     expect(text('analysis-key')).toBe('C major');
@@ -446,14 +449,14 @@ describe('sheet controls', () => {
 describe('practice panel', () => {
   const practiceIds = ['btn-calibrate', 'btn-practice-start', 'btn-practice-stop', 'practice-status'];
 
-  it('sits next to the transport controls on Learn and Play, and not on Create or the Command Lab', async () => {
-    for (const tab of ['tab-learn', 'tab-play']) {
+  it('sits next to the transport controls on Learn, and not on Play, Create or the Command Lab', async () => {
+    for (const tab of ['tab-learn']) {
       await click(tab);
       for (const id of practiceIds) expect($(id), `${tab} ${id}`).not.toBeNull();
       expect($('btn-calibrate')!.closest('.song-controls'), tab).toBe($('btn-play')!.closest('.song-controls'));
       expect($('btn-play')!.closest('.song-controls'), tab).not.toBeNull();
     }
-    for (const tab of ['tab-create', 'tab-lab']) {
+    for (const tab of ['tab-play', 'tab-create', 'tab-lab']) {
       await click(tab);
       expect($('btn-calibrate'), tab).toBeNull();
     }

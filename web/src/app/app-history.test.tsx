@@ -63,8 +63,8 @@ afterEach(async () => {
 });
 
 describe('history in the page', () => {
-  it('is under the practice panel on Learn and Play, and not on the other tabs', async () => {
-    for (const tab of ['tab-learn', 'tab-play']) {
+  it('is under the practice panel on Learn, and not on the other tabs', async () => {
+    for (const tab of ['tab-learn']) {
       await act(async () => void $(tab)!.click());
       const practice = $('btn-practice-start')!.closest('.panel')!;
       const history = $('history')!;
@@ -72,7 +72,7 @@ describe('history in the page', () => {
       expect(practice.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING, tab).toBeTruthy();
       expect($('sheet')!.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_PRECEDING, tab).toBeTruthy();
     }
-    for (const tab of ['tab-create', 'tab-lab']) {
+    for (const tab of ['tab-play', 'tab-create', 'tab-lab']) {
       await act(async () => void $(tab)!.click());
       expect($('history'), tab).toBeNull();
     }
