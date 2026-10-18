@@ -14,6 +14,7 @@ import '@/modules/commands'; // the handPointer topic type
 import { toScreen } from './guide';
 import { emitHandDrag } from './hand-drag';
 import { CLICKABLE, createHandPicker, createHoldMachine, createInkLatch, createShapeTracker, handsOf, hitBox, MENU_FEEL, menuTarget, nearest, PAPER, pickHandColor, smoothPoint, type Box, type MenuItem, type Point, type Side } from './hand-pointer';
+import { createPinchMachine, popRing } from './pinch';
 import { modeLook, type ModeId, type Screen } from './modes';
 import './hand-pointer.css';
 
@@ -70,6 +71,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     let menuItems: Array<MenuItem<Element>> = [];
     const sides: Record<Side, { fist: boolean; open: boolean }> = { left: { fist: false, open: false }, right: { fist: false, open: false } };
     const machine = createHoldMachine<Element>();
+    const pincher = createPinchMachine<Element>();
     const picker = createHandPicker();
     const shapes = createShapeTracker();
     let dragging = false;
@@ -163,6 +165,13 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       const out = machine.update({ t: performance.now(), x: pos.x, y: pos.y, fist, open: !fist && (shape.open || sig.open), target, enabled: active, feel: screenRef.current === 'menu' ? MENU_FEEL : undefined });
       if (out.click) {
         click(out.click);
+        window.setTimeout(refresh, 50);
+      }
+      // pinch (index tip on thumb tip) clicks at once what the cursor was over a frame ago; never during a fist or grab
+      const pinch = pincher.update({ t: performance.now(), points: hand.points, aspect, fist, grabbed: machine.grabbed, target, enabled: active });
+      if (pinch.click) {
+        click(pinch.click);
+        popRing(el);
         window.setTimeout(refresh, 50);
       }
       const nowDragging = machine.phase === 'dragging';
