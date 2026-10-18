@@ -1,6 +1,6 @@
 // Pure helpers for the guide drawing: the hand as dots, the head as its outline with an eye line.
-// Points come from the vision module (already mirrored, 0-1 across the camera picture); the background shows the
-// camera "covering" the window, so the same crop is applied here.
+// Points come from the vision module (already mirrored, 0-1 across the camera picture), which matches the background:
+// it shows the camera mirrored too (selfie view), "covering" the window, so only the same crop is applied here.
 import type { Landmarks } from '@/bus';
 
 export type Pt = [number, number];
