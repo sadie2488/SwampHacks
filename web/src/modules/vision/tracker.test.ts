@@ -183,6 +183,23 @@ describe('thumbs-up', () => {
     expect(rig.states('vision.hand.left.fist')).toEqual(['start']);
     expect(rig.edges('vision.hand.left.thumbs_up')).toEqual([]);
   });
+
+  it('a held thumbs-up is not a fist (a raised left fist ends a Create take)', () => {
+    const rig = new Rig();
+    rig.frames(30, () => left({ curl: 1, thumb: 'up' }));
+    expect(rig.states('vision.hand.left.thumbs_up')).toEqual(['start']);
+    expect(rig.edges('vision.hand.left.fist')).toEqual([]);
+  });
+
+  it('a fist that turns into a thumbs-up stops being a fist, and is a fist again when the thumb comes down', () => {
+    const rig = new Rig();
+    rig.frames(15, () => left({ curl: 1, thumb: 'tucked' }));
+    rig.frames(15, () => thumbAt(THRESHOLDS.thumbUpOn + 0.02));
+    rig.frames(15, () => thumbAt(THRESHOLDS.thumbUpOff - 0.03));
+    expect(rig.states('vision.hand.left.fist')).toEqual(['start', 'end', 'start']);
+    expect(rig.states('vision.hand.left.thumbs_up')).toEqual(['start', 'end']);
+    expect(rig.edges('vision.hand.left.pinch')).toEqual([]);
+  });
 });
 
 describe('drum hit', () => {
