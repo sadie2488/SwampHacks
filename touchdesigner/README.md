@@ -59,7 +59,7 @@ The frame format is described in `contracts/td-message.schema.json`.
 | `audio/pitch` | Pitch as a MIDI note (60 = middle C, can have decimals). **-1 means no clear pitch** |
 | `audio/bpm` | Tempo of the song playing, beats per minute (0 if nothing is loaded) |
 | `audio/beat_phase` | Where we are inside the current beat, 0 to 1 |
-| `audio/band/0` to `audio/band/7` | Eight frequency bands, low to high, 0 to 1. **Always 0 for now: nothing measures them yet** |
+| `audio/band/0` to `audio/band/7` | Eight frequency bands of the song playing, low to high, 0 to 1 (20-60, 60-150, 150-400, 400-1k, 1k-2.5k, 2.5k-6k, 6k-12k, 12k-20k Hz). About 30 updates a second while playing, smoothed; 0 when paused |
 | `hand/left/...` and `hand/right/...` | Per hand: `x` (0 = left edge), `y` (0 = top), `height` (1 = top), `fist` (0 or 1), `open_palm` (0 or 1), `pinch` (0 to 1), `present` (1 when the hand is seen) |
 | `hands/distance` | How far apart the two hands are, 0 to 1 |
 | `mode` | Text: `learn`, `play` or `create`. A CHOP only holds numbers, so read it with an **OSC In DAT** (same port) or from the WebSocket DAT's JSON. Only sent when known |
@@ -74,6 +74,10 @@ A hand that has not been seen for half a second is "gone": `present` is 0 and it
 3. In TouchDesigner add an **OSC In CHOP** with Network Port `7000` and Active on.
 4. Open the web app (add `?fake=1` to the address to use pretend camera and microphone data, no hardware needed) and turn on TouchDesigner in the app.
 5. Watch the relay's status line show frames per second, and the channels in the OSC In CHOP wiggle. Raise a hand or play a song and `hand/right/height`, `audio/rms` and `audio/beat_phase` change.
+
+## No website at all: the fake sender (build visuals on any laptop)
+
+`node bridge/fake-td.mjs` sends made-up music and hand numbers straight to TouchDesigner (port 7000), on the same channels as the real app: a 120 bpm beat (bass bands kick on every beat), a melody in `audio/pitch`, hands drawing circles, a fist now and then, the left hand leaving and coming back, and `mode` changing every 20 s. It needs only Node.js (no `npm install`, no relay, no server). Options: `--bpm 90`, `--osc-port 7001`, `--seconds 60`. Build the TouchDesigner file against it, then copy the `.toe` to the demo laptop: the real app sends the very same channel names.
 
 No relay running? The app still works. It keeps making frames, shows "Relay not found: start it with: node bridge/relay.mjs", and connects by itself as soon as you start the relay.
 
