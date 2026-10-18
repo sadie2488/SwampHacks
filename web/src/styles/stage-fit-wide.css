@@ -9,7 +9,7 @@
     --gut: 28px;
     --top: 88px;
     --toggles-w: 8.5rem;
-    --player-h: 88px;
+    --player-h: 102px;
     --sheet-h: clamp(150px, 26vh, 260px);
     /* room the panels leave at the bottom for the sheet band and the player */
     --low: calc(var(--player-h) + var(--sheet-h) + 14px);
