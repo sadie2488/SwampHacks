@@ -1,42 +1,19 @@
-# Testing brief for Shayaan (from the main laptop)
+# UPDATE for Shayaan: test ONLY Play and Create (from the main laptop, Sun ~5:15 AM)
 
-The demo is in a few hours. Your job: **try every demo command on your own laptop with your real camera and mic, and report what works and what doesn't.** Claude on Shayaan's laptop: walk him through this.
+1. Get the latest: `git checkout main && git pull`, then (if the server packages changed) `cd server && uv sync` and `cd web && npm ci`. Start: `node scripts/dev.mjs`, wait 1 minute, open http://localhost:5173 in Chrome. F12 -> Console -> level **Verbose**.
+2. Click **Enter with camera + sound**. Get into Play: hold the **Y** sign for 2 s (a ring fills), or point at the Play record with your hand, close it into a fist and hold still 1 s.
 
-## 1. Get it running (about 15 minutes the first time)
-1. In the SwampHacks folder: `git checkout main` then `git pull`
-2. First time only: run `/start` (guided setup) or check with `setup/setup-check.ps1` (Windows) / `setup/setup-check.sh` (Mac/Linux). Then `npm ci` inside `web/` and `bridge/`, and `uv sync` inside `server/` (downloads the audio tools, a few hundred MB)
-3. Start it: `node scripts/dev.mjs`. Wait about 1 minute (the server warms up). Open **http://localhost:5173** in **Chrome**
-4. Press **F12**, open **Console**, set the level dropdown to **Verbose** (the mic and speech write what they hear there)
+## Play (bottom-left **Song** -> Use demo song, or upload an MP3; the song loops by itself in Play)
+- P1. **Double clap** = play / pause. A word flashes on screen ("Play", "Pause").
+- P2. **Single clap, desk taps, keyboard, talking** = nothing should happen.
+- P3. **Right hand up / down** = faster / slower (tempo readout follows; a "Tempo" word flashes).
+- P4. **Hold a left fist** and say **pause / play / faster / slower / higher / lower**: each word does exactly one thing. Without the fist: nothing.
 
-## 2. Test list (do each one, note PASS / FAIL / what happened)
-**Entrance and menu**
-- A. Click **Enter with camera + sound**, allow camera and mic. You see yourself in the background, like a mirror
-- B. On the record menu: arrow keys turn the records. Then **open your hand, then close it into a fist**: the chosen record opens
-- C. Click **Overture** (top left): back to the menu
+## Create (hold **C** for 2 s)
+- C1. Say **"start"** alone, hum a short tune (the rings swell), then **raise your left fist** to end the take: a layer appears ("Layers 1").
+- C2. Say **piano**, **synth**, **drums**, **reverb**, **delay**, **next** (records another layer), **beat** (drum beat on).
+- C3. **Right fist** = stop. **"let's start the drums"** said as a sentence = nothing.
+- C4. Tick **Hand controls pitch** on a layer (Layers panel), move your right hand up/down = pitch; **left thumbs-up** = keep it.
 
-**Switching modes with signs** (hold each for 2 seconds; a ring fills, then the mode changes)
-- D. **L** = Learn, **Y** = Play, **C** = Create, **W** = Command Lab
-- E. Let go after 1 second: nothing should happen
-
-**Learn**
-- F. Bottom-left **Song** -> **Use demo song**. Then upload a real MP3 (a 3-4 minute song with several instruments). It should show key + tempo within about 20 s, and **Sheet** shows the notes; the **Part** menu has Melody / Bass / Chords
-- G. Bottom-left **Player** -> play. The notes glide past the line on screen
-
-**Play** (load a song first)
-- H. **Double clap** = play / pause. A **single** clap, desk taps and talking must do NOTHING
-- I. Raise / lower your **right hand** = faster / slower (watch the tempo readout)
-- J. **Hold a left fist** and say **"pause"**, **"play"**, **"faster"**, **"slower"**, **"higher"**, **"lower"**. Without the fist, the words must do nothing
-
-**Create**
-- K. Say **"start"** (just the word), hum a short tune, then **raise your left fist** to end the take: a layer appears
-- L. Say **"piano"**, **"synth"**, **"drums"**; **"reverb"**, **"delay"**; **"next"** (records another layer); **"beat"** (drum beat on)
-- M. **Right fist** = stop. Saying "let's start the drums" in a sentence must do nothing
-
-**Other**
-- N. **Guide** button (top right): instructions overlay. **Hands** button: what your hands say
-- O. The page never scrolls; everything fits your screen
-
-## 3. Report back
-For every FAIL: what you did, what happened, and the console lines around it (lines starting with `[audio-live]` or `[speech]`). Send it to the main laptop:
-`node scripts/comms-send.mjs comms/shayaan-to-lead.md - --append` (type or paste, then Ctrl+Z and Enter on Windows / Ctrl+D on Mac), or send it to Lalitha.
-Never paste keys or passwords.
+## Report each FAIL
+What you did, what happened, and the console lines around it (`[audio-live]` / `[speech]`). Send with `node scripts/comms-send.mjs comms/shayaan-to-lead.md - --append` (then Ctrl+Z, Enter on Windows) or tell Lalitha. Never paste keys.
