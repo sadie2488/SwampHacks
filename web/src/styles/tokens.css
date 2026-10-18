@@ -51,7 +51,12 @@
   --intro-b: #f4e4a1;
   /* type */
   --serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-  --sans: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --sans: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
+  /* small text: labels and buttons in the sans at 500, as written, slightly tight */
+  --label-weight: 500;
+  --label-track: -0.01em;
+  /* section kickers, the only small capitals left: gently spaced */
+  --kicker-track: 0.06em;
   --script: 'Mea Culpa', 'Segoe Script', cursive;
   /* one margin for the frame (corners, header) */
   --m: 28px;

@@ -6,10 +6,9 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  font: 800 11px / 1.2 var(--sans);
-  font-stretch: 100%;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: var(--label-weight) 13px / 1.2 var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
   color: var(--paper-white);
   background: transparent;
   border: 1.5px solid var(--paper-white);
@@ -61,8 +60,8 @@
 .app[data-screen='menu'] .tabs [role='tab'] {
   border-color: transparent;
   background: rgba(242, 238, 230, 0.12);
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-size: 13px;
+  letter-spacing: var(--label-track);
   padding: 7px 13px;
 }
 
@@ -97,7 +96,7 @@
   background: transparent;
   color: var(--paper-white);
   padding: 6px 12px;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .sound-toggle:hover:not(:disabled) {
@@ -128,10 +127,9 @@
   padding: 6px 14px;
   border: 1.5px solid var(--a);
   border-radius: 999px;
-  font: 800 10px / 1.2 var(--sans);
-  font-stretch: 100%;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: var(--label-weight) 12px / 1.2 var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
   background: var(--panel-soft);
   white-space: nowrap;
 }
