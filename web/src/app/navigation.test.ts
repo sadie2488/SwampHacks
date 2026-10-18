@@ -4,7 +4,7 @@ import { parse } from 'yaml';
 import realYaml from '../modules/mappings/mappings.yaml?raw';
 import type { Mode, Signal } from '@/contracts';
 import { createEngine } from '@/modules/commands/engine';
-import { logoTarget, MENU_MODE, publishedMode } from './navigation';
+import { leaveSectionCommands, logoTarget, MENU_MODE, publishedMode, shownSection } from './navigation';
 
 const moment = (id: string, t_ms: number, state: 'start' | 'end' = 'start'): Signal => ({ version: 1, id, kind: 'moment', state, t_ms });
 const slider = (id: string, value: number, t_ms: number): Signal => ({ version: 1, id, kind: 'slider', value, t_ms });
@@ -79,5 +79,23 @@ describe('the Overture logo', () => {
     expect(logoTarget('mode')).toBe('entrance');
     expect(logoTarget('menu')).toBe('entrance');
     expect(logoTarget('entrance')).toBeNull();
+  });
+});
+
+describe('leaving a section stops what it was doing', () => {
+  it('pauses the song when leaving Learn or Play, for another section, the menu or the entrance', () => {
+    expect(leaveSectionCommands('learn', 'play')).toEqual(['playback.pause']);
+    expect(leaveSectionCommands('play', null)).toEqual(['playback.pause']);
+  });
+  it('also stops the Create loop when leaving Create', () => {
+    expect(leaveSectionCommands('create', 'learn')).toEqual(['playback.pause', 'create.loop.stop']);
+  });
+  it('does nothing when no section was left', () => {
+    expect(leaveSectionCommands(null, 'learn')).toEqual([]);
+    expect(leaveSectionCommands('play', 'play')).toEqual([]);
+  });
+  it('knows which section is on screen', () => {
+    expect(shownSection('mode', 'play')).toBe('play');
+    expect(shownSection('menu', 'play')).toBeNull();
   });
 });

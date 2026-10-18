@@ -2,7 +2,7 @@
 // the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
 // screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { bus, isFakeMode, isModuleOn, resumeAudio } from '@/bus';
+import { bus, isFakeMode, isModuleOn, resumeAudio, sendCommand } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
 import { CreatePanel } from '@/modules/create';
@@ -31,7 +31,7 @@ import { CameraPreview } from './CameraPreview';
 import { Devices, TouchDesignerToggle } from './Devices';
 import { HandsCard } from './HandsCard';
 import { LoginButton } from './LoginButton';
-import { logoTarget, publishedMode } from './navigation';
+import { leaveSectionCommands, logoTarget, publishedMode, shownSection } from './navigation';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
 import { autoLoops, usePlayLoop } from './play-loop';
@@ -75,6 +75,14 @@ export function App() {
   useEffect(() => {
     bus.emit('mode', busMode);
   }, [busMode]);
+  // leaving a section (to another section, the menu or the entrance) stops what it was doing right away
+  const section = shownSection(screen, tab);
+  const lastSection = useRef(section);
+  useEffect(() => {
+    const from = lastSection.current;
+    lastSection.current = section;
+    for (const command of leaveSectionCommands(from, section)) sendCommand(command, 'button', { how: 'trigger' });
+  }, [section]);
   useEffect(() => unlockOnFirstGesture(), []);
   // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
   usePlayLoop(autoLoops(screen, tab));
