@@ -13,7 +13,8 @@ How it works:
 - Tempo octave: the result is nudged into 70-160 BPM when the beat grid supports it (see `_fix_octave`).
 - Time signature: 3/4 versus 4/4 from the accent pattern of the beats; 6/8 only with a clear
   three-way split of every beat; otherwise 4/4. For 6/8 the beats are the two dotted-quarter pulses of
-  each bar and `tempo_bpm` counts those pulses (not eighth notes).
+  each bar and `tempo_bpm` counts those pulses (not eighth notes). Note `onset_beat`s are still quarter
+  notes (the melody step converts: one 6/8 pulse is 1.5 quarters).
 - Key: Krumhansl-Schmuckler on a pitch-class histogram of the harmonic part of the sound.
 """
 

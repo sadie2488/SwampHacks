@@ -72,12 +72,15 @@ export function start(): Stop {
     for (const w of words) sendSignal({ id: `audio.keyword.${w}`, kind: 'moment', state: 'start' });
   };
 
+  const listeningStatus = () =>
+    reportStatus(MODULE, 'running', createMode ? 'Listening for Create commands; enable Instrument Voice for instrument names' : KEYWORD_STATUS.armed);
+
   // Play voice commands use the fist; Create needs Start/Next available during its workflow.
   const syncKeywords = () => {
     if (!session || session.fake || !speech) return;
     if (gate.armed || createMode) {
       speech.start();
-      reportStatus(MODULE, 'running', createMode ? 'Listening for Create commands; enable Instrument Voice for instrument names' : KEYWORD_STATUS.armed);
+      listeningStatus();
     } else {
       speech.stop();
       reportStatus(MODULE, 'running', KEYWORD_STATUS.disarmed);
@@ -87,9 +90,12 @@ export function start(): Stop {
   const setUpKeywords = () => {
     if (!speechChecked) {
       speech = createSpeechListener({
-        onText: (texts, first) => fireKeywords(gate.accept(texts, first, createMode)),
+        onText: (texts, first, finals) => fireKeywords(gate.accept(texts, first, createMode, finals)),
         onNewSession: () => gate.newSession(),
         onProblem: (message) => reportStatus(MODULE, 'running', message),
+        onRecovered: () => {
+          if (session && !session.fake && (gate.armed || createMode)) listeningStatus();
+        },
       });
       speechChecked = true;
     }

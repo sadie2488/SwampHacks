@@ -387,8 +387,12 @@ export class GestureTracker {
       thumbs_up: side === 'left' && curlMax(pts, aspect) < THRESHOLDS.fistOff &&
         (s.holds.thumbs_up.active ? thumbRise(pts, aspect) >= THRESHOLDS.thumbUpOff : isThumbsUp(pts, aspect)),
     };
+    // Sat-night fix: the fist check ignores the thumb, so a thumbs-up also looked like a fist (and could end a Create take).
+    // While the thumbs-up is on (or about to be), it is not a fist.
+    const fistShape = wants.fist;
+    if (wants.thumbs_up) wants.fist = false;
     // A fist often tucks the thumb against the index finger: while the fist is on (or about to be), it is not a pinch.
-    if (s.holds.fist.active || wants.fist === true) wants.pinch = false;
+    if (s.holds.fist.active || fistShape === true) wants.pinch = false;
     for (const h of HOLDS) {
       const edge = s.holds[h].update(t, wants[h]);
       if (edge) out.push(moment(`vision.hand.${side}.${h}`, edge, conf, t));

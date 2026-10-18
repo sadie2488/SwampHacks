@@ -20,6 +20,15 @@ export function matchKeywords(text: string, words: readonly string[] = CONFIG.ke
   return found;
 }
 
+/**
+ * The keyword, when the phrase is just that word (an "ok"/"okay" before it and punctuation are fine), otherwise null.
+ * "Start" and "Okay, next!" count; "let's start" and "next I'll add drums" do not.
+ */
+export function loneKeyword(text: string, words: readonly string[] = CONFIG.keywords.words): string | null {
+  const t = text.trim().toLowerCase().replace(/^(?:ok|okay)\b[\s,.!?]*/, '').replace(/[\s.,!?;:]+$/, '');
+  return words.includes(t) ? t : null;
+}
+
 export class KeywordGate {
   private isArmed = false;
   private disarmedAt = -Infinity;
@@ -60,16 +69,24 @@ export class KeywordGate {
   /**
    * Give the gate the text of speech results `firstIndex`, `firstIndex + 1`, ... and get back the keywords to fire now.
    * Nothing is accepted while disarmed. A word is only accepted once per result, and not again within the cooldown.
+   * `allowWhileDisarmed` (Create mode) lets words through without the fist, but only a final result that is the word alone.
+   * `finals[k]` says whether result k is final (missing means final).
    */
-  accept(texts: readonly string[], firstIndex = 0, allowWhileDisarmed = false): string[] {
+  accept(texts: readonly string[], firstIndex = 0, allowWhileDisarmed = false, finals: readonly boolean[] = []): string[] {
     const t = this.now();
-    if (!this.isArmed && !allowWhileDisarmed && (this.cfg.graceAfterReleaseMs <= 0 || t - this.disarmedAt > this.cfg.graceAfterReleaseMs)) return [];
+    const open = this.isArmed || (this.cfg.graceAfterReleaseMs > 0 && t - this.disarmedAt <= this.cfg.graceAfterReleaseMs);
+    if (!open && !allowWhileDisarmed) return [];
+    // Sat-night fix: in Create without the fist, narration like "let's start" or "next I'll add drums" used to fire
+    // commands. Unarmed, only a finished phrase that is the keyword alone counts. With the fist held nothing changes.
+    const loneOnly = !open;
     const fire: string[] = [];
     texts.forEach((text, k) => {
       const idx = firstIndex + k;
       let done = this.seen.get(idx);
       if (!done) this.seen.set(idx, (done = new Map()));
-      for (const [word, count] of countKeywords(text, this.cfg.words)) {
+      const lone = loneOnly ? (finals[k] === false ? null : loneKeyword(text, this.cfg.words)) : undefined;
+      if (lone === null) return;
+      for (const [word, count] of countKeywords(lone ?? text, this.cfg.words)) {
         const already = done.get(word) ?? 0;
         if (count <= already) continue;
         done.set(word, count);

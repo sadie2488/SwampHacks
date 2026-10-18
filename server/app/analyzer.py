@@ -176,13 +176,21 @@ def _start_drums_out(helpers, y, sr: int):
         return None
 
 
+def _extract(melody, y, sr: int, result: dict) -> list[dict]:
+    """`melody.extract_melody` with the tempo step's tempo and beats. The time signature goes along only when
+    it changes the note beats (6/8, 9/8, 12/8: the beat is a dotted quarter, note beats are quarter notes)."""
+    signature = result.get("time_signature")
+    extra = {"time_signature": signature} if signature and melody.quarters_per_beat(signature) != 1.0 else {}
+    return melody.extract_melody(y, sr, result["tempo_bpm"], result["beats"], **extra)
+
+
 def _melody_part(melody, y, sr: int, result: dict, drums_out=None) -> tuple[list[dict], list[str]]:
     """The `parts` list and any warnings from the melody step. This step never fails the upload.
 
     `drums_out`: the sound with the drums taken out, already being made in the background (a future), or None.
     """
     try:
-        notes = melody.extract_melody(y, sr, result["tempo_bpm"], result["beats"])
+        notes = _extract(melody, y, sr, result)
     except melody.AnalysisError as err:
         log.info("No melody found: %s", err)
         notes = []
@@ -222,7 +230,7 @@ def _drums_out_melody(melody, y, sr: int, result: dict, drums_out=None) -> list[
         except separation.SeparationError as err:  # silence, or too short: nothing to separate
             log.info("Could not take the drums out (%s).", err)
             return None
-        return melody.extract_melody(quieter, sr, result["tempo_bpm"], result["beats"])
+        return _extract(melody, quieter, sr, result)
     except melody.AnalysisError as err:
         log.info("Second try without drums found no melody (%s).", err)
     except Exception:

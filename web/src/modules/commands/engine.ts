@@ -57,8 +57,11 @@ export interface LoadResult {
 // Settings you may want to tune
 // ---------------------------------------------------------------------------------------------------------------
 const MAX_SMOOTHING = 0.98; // smoothing: 1 would freeze the value forever, so it is capped just below
-const MIN_CHANGE = 0.01; // a follow rule only sends a new value when it moved by 1% of its range
+// Sat-night fix: was 1%. A resting hand jitters by about that much, which spammed tempo commands (2% = 0.02x of tempo).
+const MIN_CHANGE = 0.02; // a follow rule only sends a new value when it moved by 2% of its range
 const FIRED_EVERY_MS = 200; // follow rules light up the Command Lab at most about 5 times a second
+// Sat-night fix: a practice run ends whenever tempo or pitch change, so follow rules leave these alone during a run.
+const STEADY_DURING_PRACTICE = new Set(['playback.tempo', 'playback.pitch']);
 
 const RULE_KEYS = ['name', 'mode', 'when', 'do', 'how', 'range', 'smoothing', 'min_confidence', 'cooldown_ms', 'only_while', 'step', 'value', 'enabled'];
 const HOWS: RuleHow[] = ['follow', 'trigger', 'toggle', 'nudge'];
@@ -384,6 +387,8 @@ export interface EngineOptions {
   /** Milliseconds. Default: performance.now(). Tests pass a fake clock. */
   now?: () => number;
   catalogs?: Catalogs;
+  /** The current value of a control (index.ts reads the bus). Follow rules start from it and compare against it. */
+  current?: (control: string) => ControlValue | undefined;
 }
 
 export function createEngine(options: EngineOptions = {}) {
@@ -395,6 +400,7 @@ export function createEngine(options: EngineOptions = {}) {
   let issues: EngineIssue[] = [];
   let states = new Map<number, RuleState>();
   let mode: Mode = 'play';
+  let practiceRun = false;
   const held = new Set<string>(); // holdable signals that are active right now (a fist that is closed...)
 
   const stateOf = (rule: Rule): RuleState => {
@@ -423,6 +429,10 @@ export function createEngine(options: EngineOptions = {}) {
     setMode(next: Mode): void {
       mode = next;
     },
+    /** True while a practice run is listening: follow rules then leave tempo and pitch alone (it would end the run). */
+    setPracticeRun(active: boolean): void {
+      practiceRun = active;
+    },
 
     /** Feed one signal reading in; get the commands it causes (usually none). */
     handleSignal(sig: Signal): Emission[] {
@@ -447,14 +457,22 @@ export function createEngine(options: EngineOptions = {}) {
 
         if (rule.how === 'follow') {
           if (sig.kind !== 'slider' || !isNumber(sig.value)) continue;
+          if (practiceRun && STEADY_DURING_PRACTICE.has(rule.do)) {
+            state.smoothed = undefined; // start again from the current value once the run is over
+            continue;
+          }
+          const [a, b] = rule.range ?? [0, 1];
+          const cur = options.current?.(rule.do);
+          const currentValue = isNumber(cur) ? cur : undefined;
           // smoothing: each new reading only moves the value part of the way
           const keep = Math.min(rule.smoothing, MAX_SMOOTHING);
           const x = clamp01(sig.value);
+          // Sat-night fix: the first reading used to jump straight to the hand; now it smooths from the current value.
+          if (state.smoothed === undefined && currentValue !== undefined && b !== a) state.smoothed = clamp01((currentValue - a) / (b - a));
           state.smoothed = state.smoothed === undefined ? x : state.smoothed * keep + x * (1 - keep);
           if (coolingDown) continue;
-          const [a, b] = rule.range ?? [0, 1];
           const mapped = Math.round((a + state.smoothed * (b - a)) * 1000) / 1000;
-          const last = state.lastValue;
+          const last = currentValue ?? state.lastValue;
           // only send when it moved by a meaningful amount, so the bus is not flooded
           if (last !== undefined && (mapped === last || Math.abs(mapped - last) < Math.abs(b - a) * MIN_CHANGE)) continue;
           state.lastValue = mapped;

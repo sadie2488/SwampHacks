@@ -2,16 +2,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
 import type { Feedback, SongAnalysis } from '@/contracts';
+import { quartersPerBar } from '@/modules/sheet/bar-grid';
+import { cursorTiming, wholeNotesAt } from '@/modules/sheet/sheet-cursor';
 import { barRangeSec, barsText, builtInCoaching, cleanBars, coachingFor, coachingIn, fetchCoaching, loopTarget, practiceWords, tempoLine } from './practice-logic';
 
 const song = twinkle as unknown as SongAnalysis;
 const fresh = (): Feedback => structuredClone(rulesTempo) as unknown as Feedback;
+/** The sheet cursor sits exactly at the start of bar `bar` when playback reaches the loop's start. */
+const expectSheetBar = (a: SongAnalysis, bar: number) => {
+  const range = barRangeSec(a, [bar, bar]);
+  const t = cursorTiming(a, a.parts[0]);
+  expect(range).not.toBeNull();
+  expect((wholeNotesAt((range as [number, number])[0], t) * 4) / quartersPerBar(a.time_signature)).toBeCloseTo(bar - 1, 6);
+};
 const answerWith = (body: unknown, status = 200) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
 
 afterEach(() => vi.useRealTimers());
 
 describe('bars to song seconds (Twinkle: 4/4 at 100 BPM, one bar = 2.4 s)', () => {
-  it('uses the downbeats', () => {
+  it('gives the demo song the same bars as before', () => {
     expect(barRangeSec(song, [1, 2])).toEqual([0, 4.8]);
     expect(barRangeSec(song, [3, 3])).toEqual([4.8, 7.2]);
     expect(barRangeSec(song, [5, 6])).toEqual([9.6, 14.4]);
@@ -23,7 +32,7 @@ describe('bars to song seconds (Twinkle: 4/4 at 100 BPM, one bar = 2.4 s)', () =
     expect(barRangeSec(song, [13, 14])).toBeNull();
   });
 
-  it('falls back to the beats and the time signature when there are no downbeats', () => {
+  it('does not need downbeats', () => {
     const noDownbeats = { ...song, downbeats: undefined };
     expect(barRangeSec(noDownbeats, [1, 2])).toEqual([0, 4.8]);
     expect(barRangeSec(noDownbeats, [4, 4])).toEqual([7.2, 9.6]);
@@ -38,9 +47,44 @@ describe('bars to song seconds (Twinkle: 4/4 at 100 BPM, one bar = 2.4 s)', () =
     expect(barRangeSec(bare, [3, 4])).toEqual([4.8, 9.6]);
   });
 
-  it('keeps going at the same spacing when the downbeat list is shorter than the song', () => {
+  it('keeps going past the end of the downbeat list', () => {
     const short = { ...song, downbeats: [0, 2.4, 4.8], duration_sec: 28.8 };
     expect(barRangeSec(short, [4, 4])).toEqual([7.2, 9.6]);
+  });
+
+  it('counts bars like the sheet when the first downbeat is on beat 2', () => {
+    // 4/4 at 100 BPM; the beat tracker heard the first strong beat at 0.6 s, but the notes start bar 1 at 0 s
+    const notes = Array.from({ length: 16 }, (_, k) => ({ ...song.parts[0].notes[0], id: `n${k}`, onset_sec: 0.6 * (k + 1), onset_beat: k + 1 }));
+    const late = { ...song, downbeats: [0.6, 3, 5.4, 7.8], parts: [{ ...song.parts[0], notes }] };
+    expect(barRangeSec(late, [1, 1])).toEqual([0, 2.4]);
+    expect(barRangeSec(late, [2, 2])).toEqual([2.4, 4.8]);
+    expectSheetBar(late, 2);
+  });
+
+  it('counts a pickup as bar 1, like the sheet', () => {
+    // a pickup note at 0.6 s, the first beat at 1.2 s: the sheet starts at the pickup
+    const notes = Array.from({ length: 16 }, (_, k) => ({ ...song.parts[0].notes[0], id: `p${k}`, onset_sec: 0.6 * (k + 1), onset_beat: k }));
+    const beats = Array.from({ length: 30 }, (_, k) => 1.2 + 0.6 * k);
+    const pickup = { ...song, beats, downbeats: [1.2, 3.6, 6], parts: [{ ...song.parts[0], notes }] };
+    expect(barRangeSec(pickup, [1, 1])).toEqual([0.6, 3]);
+    expect(barRangeSec(pickup, [3, 4])).toEqual([5.4, 10.2]);
+    expectSheetBar(pickup, 3);
+  });
+
+  it('uses two dotted-quarter beats per bar in 6/8', () => {
+    // 6/8 at 60 BPM (one dotted quarter a second): a bar is 2 s, not six beats
+    const notes = Array.from({ length: 12 }, (_, k) => ({ ...song.parts[0].notes[0], id: `c${k}`, onset_sec: k, onset_beat: 1.5 * k }));
+    const jig = {
+      ...song,
+      tempo_bpm: 60,
+      time_signature: { numerator: 6, denominator: 8 as const },
+      beats: Array.from({ length: 28 }, (_, k) => k),
+      downbeats: undefined,
+      parts: [{ ...song.parts[0], notes }],
+    };
+    expect(barRangeSec(jig, [1, 1])).toEqual([0, 2]);
+    expect(barRangeSec(jig, [3, 3])).toEqual([4, 6]);
+    expectSheetBar(jig, 3);
   });
 
   it('puts the bars in order and ignores anything that is not a pair of numbers', () => {

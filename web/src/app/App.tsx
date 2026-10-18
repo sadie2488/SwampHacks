@@ -18,6 +18,7 @@ import { SoundToggle } from '@/ui/overture/SoundToggle';
 import { needleDrop, swell, unlockSounds } from '@/ui/overture/sounds';
 import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
+import { apiFetch } from './api-fetch';
 import { CameraPreview } from './CameraPreview';
 import { Devices } from './Devices';
 import { LoginButton } from './LoginButton';
@@ -132,7 +133,7 @@ export function App() {
           {tab === 'create' && (
             <div className="stage-main">
               <PanelBoundary name="Create">
-                <CreatePanel />
+                <CreatePanel fetchFn={apiFetch} />
               </PanelBoundary>
             </div>
           )}

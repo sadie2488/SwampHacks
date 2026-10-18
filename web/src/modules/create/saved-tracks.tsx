@@ -1,10 +1,10 @@
 // The "save and open tracks" part of the Create screen: a name, a Save button, and the list of saved tracks.
 // Opening a track puts its layers into the same store the rest of the screen uses; Play then starts the loop with the
 // same command the Play loop button sends, so the controller does all the sound.
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bus, resumeAudio, sendCommand } from '@/bus';
 import * as realApi from './api';
-import type { ListResult, OpenResult, SaveResult, TrackSummary } from './api';
+import type { FetchFn, ListResult, OpenResult, SaveResult, TrackSummary } from './api';
 import { hasAnyNotes, isRecording, type CreateState } from './layers';
 import { DEFAULT_TRACK_NAME, layersSignature, layersToPayload, type TrackPayload } from './serialize';
 import type { CreateStore } from './store';
@@ -15,11 +15,15 @@ export interface SavedTracksApi {
   loadTrack(track: { id: string; local?: boolean }): Promise<OpenResult>;
 }
 
-const defaultApi: SavedTracksApi = {
-  saveTrack: (payload) => realApi.saveTrack(payload),
-  listTracks: () => realApi.listTracks(),
-  loadTrack: (track) => realApi.loadTrack(track),
-};
+/** The real save/list/open calls. `fetchFn` is the app's fetch that adds the login token; without it, plain fetch. */
+export function serverApi(fetchFn?: FetchFn): SavedTracksApi {
+  const deps = fetchFn ? { fetchFn } : {};
+  return {
+    saveTrack: (payload) => realApi.saveTrack(payload, deps),
+    listTracks: () => realApi.listTracks(deps),
+    loadTrack: (track) => realApi.loadTrack(track, deps),
+  };
+}
 
 /** What the layers looked like when they were last saved or opened, per store. Kept outside the screen so it survives the screen being closed and opened. */
 const lastSaved = new WeakMap<CreateStore, string>();
@@ -47,7 +51,8 @@ interface Status {
   problem: boolean;
 }
 
-export function SavedTracks({ store, api = defaultApi }: { store: CreateStore; api?: SavedTracksApi }) {
+export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore; api?: SavedTracksApi; fetchFn?: FetchFn }) {
+  const api = useMemo(() => given ?? serverApi(fetchFn), [given, fetchFn]);
   const state = useSyncExternalStore(store.subscribe, store.getState);
   const [name, setName] = useState(DEFAULT_TRACK_NAME);
   const [status, setStatus] = useState<Status>({ text: '', problem: false });
