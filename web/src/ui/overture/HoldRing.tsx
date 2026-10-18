@@ -7,8 +7,9 @@ import { bus } from '@/bus';
 import type { HoldProgress } from '@/modules/commands';
 import { MODES } from './modes';
 
-const SIZE = 132;
-const STROKE = 8;
+// Overture look: a thin ring (like a record's edge) in the mode's ink round the mode's name in the thin serif
+const SIZE = 188;
+const STROKE = 3;
 const R = (SIZE - STROKE) / 2;
 const LENGTH = 2 * Math.PI * R;
 const CREAM = '#f4e4a1';
@@ -44,8 +45,8 @@ export function HoldRing() {
       style={{ position: 'fixed', left: '50%', top: '50%', width: SIZE, height: SIZE, margin: -SIZE / 2, zIndex: 60, pointerEvents: 'none' }}
     >
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true" style={{ display: 'block' }}>
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R + STROKE / 2} fill="rgba(10, 10, 12, 0.72)" />
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke={CREAM} strokeOpacity={0.2} strokeWidth={STROKE} />
+        <circle cx={SIZE / 2} cy={SIZE / 2} r={R + STROKE / 2} fill="rgba(11, 10, 12, 0.78)" />
+        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke={CREAM} strokeOpacity={0.22} strokeWidth={1} />
         <circle
           ref={arc}
           cx={SIZE / 2}
@@ -68,10 +69,11 @@ export function HoldRing() {
           placeItems: 'center',
           padding: STROKE * 2,
           textAlign: 'center',
-          color: target.ink,
-          font: '800 14px/1.1 Archivo, system-ui, sans-serif',
+          // paper white: the Lab's cobalt is too dark for type this size on near-black
+          color: '#f2eee6',
+          font: "400 30px/0.9 'Instrument Serif', Georgia, serif",
           textTransform: 'uppercase',
-          letterSpacing: '0.06em',
+          letterSpacing: '-0.01em',
         }}
       >
         {target.label}
