@@ -10,8 +10,9 @@ const at = (side: Side, spec: PoseSpec, dx = 0, dy = 0, homeY = 0.7): HandObs =>
   return { side, score: 0.95, points: makePose({ ...spec, side, size: SIZE, wrist: { x: home.x + (dx * SIZE) / DEFAULT_ASPECT, y: home.y + dy * SIZE } }) };
 };
 
+// The letters are switched off in the app (SIGNS_ENABLED in signs.ts); these tests turn them on to check the classifier.
 class Rig {
-  tracker = new GestureTracker();
+  tracker = new GestureTracker({}, { letters: true });
   t = 0;
   out: SignalOut[] = [];
   frames(n: number, make: (i: number) => HandObs[]): this {
