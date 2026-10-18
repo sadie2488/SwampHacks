@@ -28,11 +28,12 @@
 # The Command Lab (the test page) shows every signal and control name, and lights up each rule when it fires.
 # Full guide: docs/commands-guide.md
 
-# --- Play mode ---------------------------------------------------------------------------------------------------
+# --- Play mode (REMOVED Sun 6 AM: the third record is History now; every rule below is switched off, kept for reference) ---------------------------------------------------------------------------------------------------
 
 # Sat-night fix: this rule now eases in from the current tempo, ignores wobbles under 0.02x,
 # and pauses while a practice run is listening (any tempo change would end the run early).
 - name: hand height controls tempo
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: vision.hand.right.height
   do: playback.tempo
@@ -52,6 +53,7 @@
 
 # A DOUBLE clap, not one: single clap-like sounds (desk taps, keys, the song's own drums) happen by accident and would start and stop the music.
 - name: clap toggles play/pause
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.clap.double
   do: playback.toggle
@@ -61,6 +63,7 @@
 # Voice commands only work while the left fist is held, so the instrument you are playing does not set them off.
 
 - name: say "pause" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.pause
   only_while: vision.hand.left.fist
@@ -68,6 +71,7 @@
   how: trigger
 
 - name: say "play" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.play
   only_while: vision.hand.left.fist
@@ -75,6 +79,7 @@
   how: trigger
 
 - name: say "slower" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.slower
   only_while: vision.hand.left.fist
@@ -83,6 +88,7 @@
   step: -0.1
 
 - name: say "faster" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.faster
   only_while: vision.hand.left.fist
@@ -91,6 +97,7 @@
   step: 0.1
 
 - name: say "higher" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.higher
   only_while: vision.hand.left.fist
@@ -99,6 +106,7 @@
   step: 1
 
 - name: say "lower" only while left fist is held
+  enabled: false        # Play section removed Sun 6 AM; History replaced it
   mode: play
   when: audio.keyword.lower
   only_while: vision.hand.left.fist
@@ -140,7 +148,8 @@
   how: trigger
   value: false
 
-- name: right hand position controls layer volume
+- name: right hand position controls layer volume        # switched off (Lalitha): volume by hand is out of scope; the layer chip's slider sets it
+  enabled: false
   mode: create
   when: vision.hand.right.x
   do: create.layer.volume
@@ -239,10 +248,25 @@
 
 
 # --- Learn mode ------------------------------------------------------------------------------------------------------
-# Show the ASL letter V (two fingers up) to pause the song; show it again to count down 3, 2, 1 and play on from
-# where the song is (drag the sheet with a closed hand while paused to move it). Only works on the Learn screen itself.
+# Hold up two fingers (a peace sign, either hand) to pause the song; show it again to count down 3, 2, 1 and play on
+# from where the song is (drag the sheet with a closed hand while paused to move it). Only works on the Learn screen itself.
 
-- name: V sign pauses and resumes
+- name: right hand two fingers up pauses and resumes
+  mode: learn
+  when: vision.hand.right.peace
+  do: learn.pause
+  how: trigger
+  cooldown_ms: 1500
+
+- name: left hand two fingers up pauses and resumes
+  mode: learn
+  when: vision.hand.left.peace
+  do: learn.pause
+  how: trigger
+  cooldown_ms: 1500
+
+- name: V sign pauses and resumes        # switched off Sun (lead): ASL letters are off (SIGNS_ENABLED false), so vision.sign.v never arrives; the two-fingers rules above do this job
+  enabled: false
   mode: learn
   when: vision.sign.v
   do: learn.pause

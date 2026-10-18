@@ -54,12 +54,14 @@ describe('the entrance and the record menu are neutral', () => {
     expect(rules.filter((r) => r.mode === MENU_MODE && !String(r.do).startsWith('learn.'))).toEqual([]);
   });
 
-  it('on the menu, the V sign fires learn.pause, which nothing reacts to there (the Learn screen is not mounted), so the song is untouched', () => {
+  it('on the menu, two fingers up fires learn.pause, which nothing reacts to there (the Learn screen is not mounted), so the song is untouched', () => {
     const { feed, fired } = setup(publishedMode('menu', 'learn'));
     const transportBefore = bus.last('transport');
     const commands: string[] = [];
     const off = bus.on('command', (c) => commands.push(c.command));
-    feed(moment('vision.sign.v', 500));
+    feed(moment('vision.hand.right.peace', 500));
+    feed(moment('vision.hand.left.peace', 2500));
+    feed(moment('vision.sign.v', 4500)); // the old V-sign rule is switched off
     off();
     expect(fired.filter((c) => !c.startsWith('learn.'))).toEqual([]);
     expect(commands).toEqual([]);

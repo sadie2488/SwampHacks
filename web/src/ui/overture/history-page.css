@@ -1,0 +1,164 @@
+/* The History page: one quiet sheet over the camera, fits 1280x800 with no page scroll (the feedback list and the
+   Past creations list scroll inside themselves). Type: the Overture serif for the title, the sans for everything else. */
+.history-page {
+  position: absolute;
+  inset: 118px 48px 28px;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 26px 32px 22px;
+  color: var(--paper-white);
+  background: rgba(12, 9, 7, 0.62);
+  border: 1px solid rgba(242, 238, 230, 0.16);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.history-head {
+  display: flex;
+  align-items: baseline;
+  gap: 22px;
+}
+
+.history-title {
+  margin: 0;
+  font: 400 56px / 0.9 var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.history-lead {
+  margin: 0;
+  font: 500 14px / 1.4 var(--sans);
+  color: rgba(242, 238, 230, 0.72);
+}
+
+.history-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 32px;
+  min-height: 0;
+}
+
+.history-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.history-progress svg {
+  width: 100%;
+  flex: 0 1 auto;
+  color: #ff7a00;
+}
+
+.history-stats {
+  display: flex;
+  gap: 40px;
+  margin: 0;
+}
+
+.history-stats div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.history-stats dt {
+  font: 500 11px / 1.3 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(242, 238, 230, 0.62);
+}
+
+.history-stats dd {
+  margin: 0;
+  font: 400 34px / 1 var(--serif);
+}
+
+.history-axis,
+.history-muted,
+.history-empty {
+  margin: 0;
+  font: 500 13px / 1.45 var(--sans);
+  color: rgba(242, 238, 230, 0.72);
+}
+
+.history-empty {
+  font: 400 26px / 1.2 var(--serif);
+  color: var(--paper-white);
+  align-self: center;
+  margin: auto 0;
+}
+
+.history-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.history-kicker {
+  margin: 0;
+  font: 500 11px / 1.3 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(242, 238, 230, 0.62);
+}
+
+.history-feedback-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  min-height: 0;
+  font: 500 13px / 1.45 var(--sans);
+}
+
+.history-feedback-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(242, 238, 230, 0.14);
+}
+
+.history-feedback-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.history-feedback-list b {
+  font: 400 18px / 1.1 var(--serif);
+}
+
+.history-coach em {
+  font-style: normal;
+  color: #ff7a00;
+}
+
+.history-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.history-creations {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 74px;
+  max-height: 62%;
+  overflow: auto;
+  padding: 16px 20px;
+  background: rgba(12, 9, 7, 0.94);
+  border: 1px solid rgba(242, 238, 230, 0.18);
+  border-radius: 14px;
+  z-index: 4;
+}
+
+.history-creations h3 {
+  margin: 0 0 8px;
+  font: 400 22px / 1.1 var(--serif);
+}

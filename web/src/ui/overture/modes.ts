@@ -18,7 +18,8 @@ export interface ModeLook {
 
 export const MODES: readonly ModeLook[] = [
   { id: 'learn', name: 'Learn', big: ['Learn', 'By Ear'], sub: 'Upload a song. Read it. Play along.', a: '#1fb3bf', b: '#ff4a3d' },
-  { id: 'play', name: 'Play', big: ['Play', 'With Hands'], sub: 'Your hands and voice drive the music.', a: '#ff7a00', b: '#ff2d8a' },
+  // the third record: History (the id stays 'play' because the contracts' Mode type is learn | play | create)
+  { id: 'play', name: 'History', big: ['History', 'Your Journey'], sub: 'Your feedback and progress, in one place.', a: '#ff7a00', b: '#ff2d8a' },
   { id: 'create', name: 'Create', big: ['Create', 'From Hums'], sub: 'Hum it. Loop it. Keep it.', a: '#c9a8ff', b: '#ff4fa3' },
   { id: 'lab', name: 'Command Lab', big: ['Command', 'Lab'], sub: 'Try every gesture and word.', a: '#2f5bff', b: '#ff9a1f' },
 ];
@@ -32,14 +33,14 @@ export const modeLook = (id: ModeId): ModeLook => MODES.find((m) => m.id === id)
 export const GUIDES: Record<ModeId | 'menu', ReadonlyArray<'hand' | 'head'>> = {
   menu: ['hand'],
   learn: [],
-  play: ['head', 'hand'],
+  play: [],
   create: ['hand'],
   lab: ['head', 'hand'],
 };
 
 /**
  * The record's name in big stacked letters: two words stack as they are, one long word splits in half
- * (LEA / RN, PL / AY, CRE / ATE, COMMAND / LAB).
+ * (LEA / RN, HIST / ORY, CRE / ATE, COMMAND / LAB).
  */
 export function stackedName(name: string): string[] {
   const upper = name.toUpperCase();

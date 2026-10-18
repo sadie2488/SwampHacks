@@ -531,7 +531,9 @@ describe('practice panel', () => {
     expect(song.contains($('btn-enable-audio'))).toBe(false);
     expect(devices.contains($('status-vision'))).toBe(true);
     expect(devices.contains($('status-audio-live'))).toBe(true);
-    await click('tab-play');
-    expect($('use-demo')!.closest('.side-card')).toBe($('btn-enable-vision')!.closest('.side-card'));
+    // the other modes keep one left card with the devices in it
+    await click('tab-create');
+    expect($('use-demo')).toBeNull();
+    expect($('btn-enable-vision')!.closest('.side-card')!.classList.contains('devices-card')).toBe(false);
   });
 });

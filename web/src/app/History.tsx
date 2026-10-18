@@ -8,8 +8,9 @@ import { useBusValue } from './hooks';
 const LIST_LENGTH = 10;
 const CHART = { width: 200, height: 60 };
 
-function Trend({ runs }: { runs: Run[] }) {
-  const { points, mid } = trendPoints(runs, CHART.width, CHART.height);
+/** The trend line: oldest run on the left, the dashed line is the song's tempo. The History page shows it larger. */
+export function Trend({ runs, width = CHART.width, height = CHART.height }: { runs: Run[]; width?: number; height?: number }) {
+  const { points, mid } = trendPoints(runs, width, height);
   if (points.length === 0) return null;
   return (
     <svg
@@ -17,12 +18,12 @@ function Trend({ runs }: { runs: Run[] }) {
       data-points={points.length}
       role="img"
       aria-label={`Your tempo over your last ${points.length} ${points.length === 1 ? 'run' : 'runs'}, oldest on the left. The dashed line is the song's tempo.`}
-      viewBox={`0 0 ${CHART.width} ${CHART.height}`}
-      width={CHART.width}
-      height={CHART.height}
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
       style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
     >
-      <line data-testid="history-trend-ideal" x1={0} x2={CHART.width} y1={mid} y2={mid} stroke="currentColor" strokeOpacity={0.5} strokeDasharray="4 3" />
+      <line data-testid="history-trend-ideal" x1={0} x2={width} y1={mid} y2={mid} stroke="currentColor" strokeOpacity={0.5} strokeDasharray="4 3" />
       {points.length > 1 && <polyline data-testid="history-trend-line" points={points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />}
       {points.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={i === points.length - 1 ? 3.5 : 2.5} fill="currentColor" />
@@ -31,7 +32,8 @@ function Trend({ runs }: { runs: Run[] }) {
   );
 }
 
-export function History() {
+/** The loaded song's saved runs (server and this browser, merged), newest first, plus the saver's state. Shared with the History page. */
+export function usePracticeRuns(): { songId: string | undefined; runs: Run[]; saves: ReturnType<typeof getSaveState> } {
   const songId = useBusValue('analysis')?.song_id;
   const saves = useSyncExternalStore(subscribeSaves, getSaveState);
   const [fromServer, setFromServer] = useState<{ songId: string; runs: Run[] } | null>(null);
@@ -58,6 +60,11 @@ export function History() {
     // localVersion changes whenever this browser's copy does
     [songId, fromServer, saves.localVersion],
   );
+  return { songId, runs, saves };
+}
+
+export function History() {
+  const { songId, runs, saves } = usePracticeRuns();
   const recent = recentRuns(runs);
 
   return (

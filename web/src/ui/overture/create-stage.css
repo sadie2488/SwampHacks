@@ -1,0 +1,505 @@
+/* The Create playground (laptops and up): one fixed layer over the camera, under the big mode title, laid out as
+     hum column | make column        (rings + heard note on the left; instruments above the big Record button)
+     layers strip                    (Play / Stop pills, one chip per layer, "+ Add layer" at the end)
+     foot                            (the save line bottom right; the hand legend sits bottom left, from ModeVisual)
+   Nothing here is a panel: the section's box look from panels.css / wireframe.css is switched off. Motion uses
+   transform only. Phones keep the normal flowing page. */
+.app[data-screen='mode'] section.create-stage,
+section.create-stage {
+  position: fixed;
+  z-index: 14;
+  left: var(--gut, 28px);
+  right: var(--gut, 28px);
+  top: calc(var(--top, 88px) + 150px);
+  bottom: 14px;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'hum make'
+    'layers layers'
+    'foot foot';
+  column-gap: 28px;
+  row-gap: 12px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.create-stage > * {
+  min-width: 0;
+  pointer-events: auto;
+}
+
+/* the big mode title already says CREATE; these headings stay for screen readers only */
+.create-stage .create-stage-title,
+.create-stage .tracks-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.create-stage .create-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: 400 13px/1.3 var(--sans);
+  color: var(--warning);
+}
+
+/* ---------- left: hum ---------- */
+.create-stage .hum-col {
+  grid-area: hum;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* room for the rings ModeVisual draws above the words (HUM_RINGS in CreateStage.tsx) */
+  padding-top: 190px;
+  text-align: center;
+}
+
+.create-stage .hum-words {
+  margin: 0;
+  font: 400 26px/1.1 var(--serif);
+  color: var(--paper-white);
+}
+
+.create-stage .hum-heard {
+  margin: 8px 0 8px;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.create-stage .hum-heard output {
+  display: block;
+  margin-top: 2px;
+  font: 400 44px/1 var(--serif);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--paper-white);
+}
+
+.create-stage .hum-small {
+  margin: 2px 0;
+  font: 400 12px/1.35 var(--sans);
+  color: var(--muted);
+}
+
+.create-stage .hum-fake {
+  margin-top: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+/* ---------- middle: what, then how ---------- */
+.create-stage .make-col {
+  grid-area: make;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+section.create-stage .instrument-row {
+  margin: 0;
+  justify-content: center;
+  gap: 10px;
+}
+
+.create-stage .instrument-pill {
+  padding: 10px 20px;
+  min-height: 42px;
+  font: var(--label-weight) 15px/1.2 var(--sans);
+  letter-spacing: var(--label-track);
+  text-transform: none;
+  border: 1.5px solid var(--paper-white);
+}
+
+section.create-stage .record-row {
+  margin: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 26px;
+}
+
+.create-stage .record-big {
+  flex: none;
+  width: 164px;
+  height: 164px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 50%;
+  font: 500 18px/1.2 var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+  background: var(--a);
+  color: var(--on-a);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--a) 22%, transparent);
+  transition:
+    transform 0.15s ease-out,
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.create-stage .record-big:hover:not(:disabled) {
+  transform: scale(1.04);
+  background: var(--a);
+  color: var(--on-a);
+}
+
+.create-stage .record-big[aria-pressed='true'],
+.create-stage .record-big[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--paper-white);
+  color: var(--night);
+  animation: record-pulse 1s ease-in-out infinite;
+}
+
+@keyframes record-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.create-stage .record-side {
+  display: grid;
+  gap: 6px;
+  max-width: 380px;
+}
+
+.create-stage .create-status {
+  margin: 0;
+  font: 400 15px/1.3 var(--sans);
+  color: var(--paper-white);
+}
+
+.create-stage .loop-info {
+  margin: 0;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.create-stage .record-extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 4px 0 0;
+  font: 400 12px/1.3 var(--sans);
+  color: var(--muted);
+}
+
+.create-stage .record-extras label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.create-stage .record-extras .pill {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.create-stage .record-extras select {
+  padding: 4px 10px;
+  min-height: 28px;
+  font: 500 11px/1.2 var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------- layers strip ---------- */
+.create-stage .layers-row {
+  grid-area: layers;
+  /* above the saved-tracks list (open in automated browsers), so every chip stays clickable */
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 14px;
+}
+
+.create-stage .layers-title {
+  margin: 0;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.create-stage .loop-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.create-stage .layer-strip {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 2px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+}
+
+.create-stage .layer-chip {
+  flex: none;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--wire, var(--rule-strong));
+  background: var(--wire-fill, var(--panel));
+}
+
+.create-stage .layer-chip[aria-current='true'] {
+  border-color: var(--a);
+  box-shadow: inset 0 0 0 1px var(--a);
+}
+
+.create-stage .chip-name {
+  padding: 4px 12px;
+  min-height: 30px;
+  font: 500 14px/1.2 var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.create-stage .chip-meta {
+  font: 400 13px/1.2 var(--sans);
+  white-space: nowrap;
+}
+
+.create-stage .chip-tools {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font: 400 11px/1.2 var(--sans);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.create-stage .chip-tools label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.create-stage .chip-volume input[type='range'] {
+  width: 64px;
+  height: 14px;
+  margin: 0;
+}
+
+/* the mute switch is a small dot: hollow when the layer sounds, filled in the second ink when it is muted */
+.create-stage .mute-dot {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border: 1.5px solid var(--paper-white);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.create-stage .mute-dot:checked {
+  background: var(--b);
+  border-color: var(--b);
+}
+
+.create-stage .layer-chip-add {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  border-style: dashed;
+  background: none;
+}
+
+.create-stage .chip-add {
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 0;
+  font: 500 15px/1.2 var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.create-stage .layers-hint {
+  grid-column: 3;
+  margin: 0;
+  font: 400 12px/1.3 var(--sans);
+  color: var(--muted);
+}
+
+/* ---------- foot: the save line (bottom right) ---------- */
+.create-stage .tracks-foot {
+  grid-area: foot;
+  position: relative;
+  justify-self: end;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  max-width: 46vw;
+}
+
+.create-stage .save-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font: 400 12px/1.3 var(--sans);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.create-stage .save-line label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-stage .save-line input[type='text'] {
+  width: 180px;
+  padding: 6px 10px;
+  font: 400 14px/1.2 var(--sans);
+  color: var(--paper-white);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+.create-stage .save-line .pill {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.create-stage .save-status {
+  margin: 0;
+  min-height: 1.2em;
+  font: 400 12px/1.2 var(--sans);
+  color: var(--paper-white);
+}
+
+.create-stage .save-status[data-problem='true'] {
+  color: var(--error);
+}
+
+.create-stage .tracks-hint {
+  margin: 0;
+  font: 400 11px/1.2 var(--sans);
+  color: var(--muted);
+}
+
+.create-stage .load-warning {
+  margin: 0;
+  font: 400 12px/1.3 var(--sans);
+}
+
+/* the saved-tracks list opens upward from the save line and scrolls inside itself */
+.create-stage .tracks-list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: min(560px, 46vw);
+  max-height: 200px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px 14px;
+  background: var(--wire-fill, var(--panel));
+  border: 1px solid var(--wire, var(--rule-strong));
+  font: 400 12px/1.35 var(--sans);
+  text-align: left;
+}
+
+.create-stage .tracks-list[data-open='false'] {
+  display: none;
+}
+
+.create-stage .tracks-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  font: var(--label-weight) 11px/1.3 var(--sans);
+  letter-spacing: var(--kicker-track);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.create-stage .tracks-list p {
+  margin: 4px 0;
+}
+
+.create-stage .tracks-list ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.create-stage .tracks-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.create-stage .tracks-list button {
+  padding: 4px 10px;
+  min-height: 26px;
+  font-size: 10px;
+}
+
+/* phones: the normal flowing page */
+@media (max-width: 700px) {
+  .app[data-screen='mode'] section.create-stage,
+  section.create-stage {
+    position: static;
+    display: block;
+    padding: 12px 0;
+  }
+
+  .create-stage .hum-col {
+    padding-top: 0;
+  }
+
+  .create-stage .tracks-foot {
+    max-width: none;
+  }
+
+  .create-stage .tracks-list {
+    position: static;
+    width: auto;
+    margin-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-stage .record-big,
+  .create-stage .record-big[aria-pressed='true'] {
+    animation: none;
+    transition: none;
+  }
+}

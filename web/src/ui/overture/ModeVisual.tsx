@@ -3,40 +3,42 @@
 //   lights up and swells with the song's loudness while it sounds. Readout: key and tempo.
 // - Create: three rings that swell with the voice, "HUM SOMETHING"; readout: the note heard, the layer count and
 //   tiny labels of what each hand is doing. Nothing else.
-// - Play: readout of the tempo and the pitch shift (the hand guide draws the hand and head).
+// - History (the 'play' id): no canvas picture; the History page (feedback, progress, past creations) is shown instead.
 // One canvas, never clickable; it draws at most 30 times a second and only while something changes.
 import { useEffect, useRef, useState } from 'react';
 import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { CountIn } from './CountIn';
-import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { CreateStage, HUM_RINGS } from './CreateStage';
+import { HistoryPage } from './HistoryPage';
+import { keyWords, noteName, placeNotes, staffGeometry, staffNotes } from './mode-visual';
 import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
 const FRAME_MS = 1000 / 30 - 2;
-const HAND_WORDS: Record<string, string> = { fist: 'fist', open_palm: 'open hand', raised: 'raised', pinch: 'pinch', thumbs_up: 'thumbs up', drum_hit: 'drum hit' };
+const HAND_WORDS: Record<string, string> = { fist: 'fist', open_palm: 'open hand', raised: 'raised', pinch: 'pinch', thumbs_up: 'thumbs up', peace: 'two fingers', drum_hit: 'drum hit' };
 
-/** What the hands do in Create, always shown under the hum rings; the part in use lights up in the mode colour. */
+/** What the hands do in Create, always shown bottom-left under the layers strip; the part in use lights up in the
+ *  mode colour. (Volume by hand is switched off in mappings.yaml, so it is not listed.) */
 const HAND_LEGEND: Array<[string, string]> = [
-  ['pitch', 'Right hand up / down: pitch'],
-  ['volume', 'side to side: volume'],
-  ['keep', 'left thumbs-up: keep'],
-  ['stop', 'fist: stop'],
+  ['pitch', 'Right hand up / down: pitch of the selected layer'],
+  ['keep', 'Left thumbs-up: keep it'],
+  ['stop', 'Right fist: stop'],
 ];
 const LEGEND_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  top: 'calc(80% + 48px)',
+  position: 'fixed',
+  left: 'var(--gut, 28px)',
+  bottom: 22,
+  maxWidth: '52vw',
   margin: 0,
-  textAlign: 'center',
-  font: "500 12px / 1.4 var(--sans, 'Instrument Sans', sans-serif)",
-  letterSpacing: '0.04em',
+  textAlign: 'left',
+  font: "500 11px / 1.4 var(--sans, 'Instrument Sans', sans-serif)",
+  letterSpacing: '0.03em',
   textTransform: 'uppercase',
   color: 'rgba(242, 238, 230, 0.7)',
   pointerEvents: 'none',
-  zIndex: 3,
+  zIndex: 15,
 };
 
 interface Readout {
@@ -54,7 +56,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx || mode === 'lab') return setReadout(null);
+    if (!canvas || !ctx || mode === 'lab' || mode === 'play') return setReadout(null);
     const ink = modeLook(mode).a;
     let analysis: SongAnalysis | undefined = bus.last('analysis');
     let notes = staffNotes(analysis);
@@ -69,7 +71,6 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
 
     const text = () => {
       if (mode === 'learn') return setReadout({ a: ['Key', keyWords(analysis)], b: ['Tempo', analysis ? `${Math.round(transport?.bpm ?? analysis.tempo_bpm)} bpm` : '—'] });
-      if (mode === 'play') return setReadout({ a: [PLAY_READOUT_LABELS.tempo, transport?.bpm ? `${Math.round(transport.bpm)} bpm` : '—'], b: [PLAY_READOUT_LABELS.pitch, signedSemitones(transport?.pitch ?? 0)] });
       const layers = document.querySelectorAll('[data-testid="create-panel"] li[data-testid^="layer-"]').length;
       const handList = Object.entries(hands).map(([side, what]) => `${side} hand · ${what}`);
       setReadout({ a: ['Heard', heard === null ? '—' : noteName(heard)], b: ['Layers', String(layers)], hands: handList });
@@ -116,19 +117,15 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
         }
         if (playing) schedule();
       } else if (mode === 'create') {
-        const cx = w / 2;
-        const cy = h * 0.52;
+        // small rings on the left, over the CreateStage's hum column ("Hum something" and the heard note sit under them)
+        const { cx, cy, r } = HUM_RINGS;
         for (let k = 0; k < 3; k++) {
           ctx.setLineDash(k ? [1, 9] : []);
           ctx.beginPath();
-          ctx.arc(cx, cy, h * 0.28 + k * 18 + voice * 40 * (k + 1), 0, Math.PI * 2);
+          ctx.arc(cx, cy, r - 20 + k * 10 + voice * 18 * (k + 1), 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(242, 238, 230, 0.9)';
-        ctx.font = "500 13px 'Instrument Sans', sans-serif";
-        ctx.textAlign = 'center';
-        ctx.fillText('Hum something', cx, cy + 5);
         if (voice > 0.01) schedule();
       }
     };
@@ -164,7 +161,6 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
           if (c.source !== 'gesture') return;
           // light the legend part the hands are using right now
           if (c.command === 'create.layer.pitch') light('pitch', 400);
-          else if (c.command === 'create.layer.volume') light('volume', 400);
           else if (c.command === 'create.layer.confirm_pitch') light('keep', 1200);
           else if (c.command === 'create.loop.stop' || (c.command === 'create.loop.record' && c.value === false)) light('stop', 1200);
         }),
@@ -193,7 +189,9 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
       {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
+      {mode === 'play' && <HistoryPage />}
       {mode === 'create' && <CountIn />}
+      {mode === 'create' && <CreateStage />}
       {mode === 'create' && (
         <p className="hand-legend" data-testid="hand-legend" aria-live="off" style={LEGEND_STYLE}>
           {HAND_LEGEND.map(([key, words], i) => (

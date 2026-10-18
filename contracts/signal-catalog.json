@@ -16,6 +16,8 @@
     { "id": "vision.hand.right.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Right thumb and index finger pinch together." },
     { "id": "vision.hand.left.pinch", "kind": "moment", "source": "vision", "holdable": true, "description": "Left thumb and index finger pinch together." },
     { "id": "vision.hand.left.thumbs_up", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand gives a thumbs-up." },
+    { "id": "vision.hand.right.peace", "kind": "moment", "source": "vision", "holdable": true, "description": "Right hand holds up two fingers (index and middle straight, ring and little finger curled, thumb anywhere), like a peace sign or the letter V. Ends when the shape changes or the hand leaves." },
+    { "id": "vision.hand.left.peace", "kind": "moment", "source": "vision", "holdable": true, "description": "Left hand holds up two fingers (index and middle straight, ring and little finger curled, thumb anywhere), like a peace sign or the letter V. Ends when the shape changes or the hand leaves." },
     { "id": "vision.head.nod", "kind": "moment", "source": "vision", "description": "Head nods once." },
     { "id": "vision.hand.right.drum_hit", "kind": "moment", "source": "vision", "description": "Right hand makes a quick downward hit, like hitting a drum (wrist speed)." },
     { "id": "vision.hand.left.drum_hit", "kind": "moment", "source": "vision", "description": "Left hand makes a quick downward hit, like hitting a drum (wrist speed)." },

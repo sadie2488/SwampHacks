@@ -7,7 +7,7 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 ## 1. The walking skeleton (due 9:30 AM)
 | # | What should happen | How |
 |---|---|---|
-| 1 | Open the site: four tabs show (Learn, Play, Create, Command Lab) | Auto |
+| 1 | Open the site: four tabs show (Learn, History, Create, Command Lab) | Auto |
 | 2 | Click "Use demo song": it shows 100 BPM, C major, 4/4 | Auto |
 | 3 | Sheet music appears with all 42 melody notes drawn | Auto |
 | 4 | Click Play: the song plays and the time counter moves | Auto |
@@ -22,8 +22,8 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 | # | What should happen | How |
 |---|---|---|
 | 11 | The Lab lists every signal and every control from the catalogs | Auto |
-| 12 | Moving a made-up hand slider changes the tempo through the mapping file; moving it back restores it | Auto |
-| 13 | A made-up **double** clap toggles play and pause; a single clap does nothing (so a desk tap or a drum in the song cannot start the music); a second double clap too fast is ignored (cooldown) | Auto |
+| 12 | Play section removed (Sun 6 AM): the hand-height tempo rule is switched off and does nothing | Auto (unit test) |
+| 13 | Play section removed (Sun 6 AM): the double-clap rule is switched off and does nothing | Auto (unit test) |
 | 14 | A voice command only works while the left fist is held ("arming") | Auto (unit test) |
 | 15 | Editing `mappings.yaml` and saving changes behaviour instantly, with no reload | Auto |
 | 16 | A typo (like `audio.clapp`) shows a friendly message that suggests the right name; every other rule keeps working | Auto |
@@ -71,6 +71,7 @@ The main laptop wrote these. Read them and reply **"approved"** (or tell it what
 | 38 | Upload a real song (MP3, WAV, FLAC or OGG): it shows its real tempo and key; a single-instrument recording also gets real sheet music; a full band mix shows a warning that the notes may be wrong | By hand (needs a few real songs) |
 | 39 | Songs, practice runs and tracks are stored in Tiger Data when it is connected, and in memory (lost on restart) when it is not | Auto (memory); By hand (real database) |
 | 40 | A song with loud drums: the app takes the drums out and reads the melody again. A melody with drum hits on every beat gives (nearly) the right notes; a song it still can't read keeps the "may be wrong" warning; plain noise or drums alone still give "no music found" | Auto (made-up drum mixes); By hand (real songs) |
+| 42 | The entrance: "Enter with sound only" opens the record menu without the camera, the arrow keys turn the records, clicking the Learn record opens Learn | Auto (awaiting human approval) |
 
 ## Not tested yet (later tasks)
 Separating every instrument of a song (only the drums are taken out so far), a trained model of our own, deployment, and the final design.
