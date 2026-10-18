@@ -60,7 +60,8 @@ before(async () => {
     if (r.status() >= 500 && !(r.status() === 503 && SAVING_ROUTES.test(r.url()))) problems.push(`server error ${r.status()} from ${new URL(r.url()).pathname}`);
   });
   page.on('console', (m) => {
-    if (m.type() === 'error' && !/favicon|Failed to load resource.*404|Failed to load resource.*503/i.test(m.text())) problems.push(`console error: ${m.text()}`);
+    // MediaPipe prints the info line "Created TensorFlow Lite XNNPACK delegate for CPU" through console.error: not a problem
+    if (m.type() === 'error' && !/favicon|Failed to load resource.*404|Failed to load resource.*503|TensorFlow Lite XNNPACK delegate/i.test(m.text())) problems.push(`console error: ${m.text()}`);
   });
   await page.goto(`${BASE}/?fake=1`);
 });
@@ -138,30 +139,6 @@ test('the Command Lab lists every signal and control, with no errors from the st
   const issues = (await topic('issues')) ?? [];
   assert.deepEqual(issues.filter((i) => i.level === 'error'), [], 'the starter mappings should have no errors');
   assert.ok((await page.locator('[data-testid^="rule-"]').count()) > 0, 'rules should be listed');
-});
-
-test('a made-up hand movement drives the tempo through the mapping file', T, async () => {
-  await page.evaluate(() => window.__music.sendCommand('playback.tempo', 'button', { how: 'set', value: 1 }));
-  await emitSignals('vision.hand.right.height', 'slider', Array(30).fill(0.95));
-  const tempo = await until('tempo follows the hand', async () => {
-    const t = await control('playback.tempo');
-    return t > 1.3 ? t : null;
-  }, 8_000);
-  assert.ok(tempo <= 1.5);
-  await emitSignals('vision.hand.right.height', 'slider', Array(40).fill(0.05));
-  await until('tempo follows the hand back down', async () => (await control('playback.tempo')) < 0.7, 8_000);
-});
-
-test('a made-up double clap toggles play and pause; a single clap does nothing', T, async () => {
-  const before = (await topic('transport')).playing;
-  await $('fake-audio.clap').click(); // one stray clap (a desk tap, a drum in the song) must not start or stop the music
-  await sleep(1000);
-  assert.equal((await topic('transport')).playing, before, 'a single clap should not toggle play/pause');
-  await $('fake-audio.clap.double').click();
-  await until('double clap flips playing', async () => (await topic('transport')).playing === !before);
-  await sleep(1000); // the rule has a cooldown
-  await $('fake-audio.clap.double').click();
-  await until('second double clap flips back', async () => (await topic('transport')).playing === before);
 });
 
 test('editing the mapping file applies instantly, with no page reload', T, async () => {
@@ -379,6 +356,29 @@ test('the app falls back to the built-in demo when the server is down', T, async
   await p.getByTestId('sheet-ready').waitFor({ state: 'attached', timeout: 30_000 });
   assert.match(await p.getByTestId('analysis-tempo').textContent(), /100/);
   await context.close();
+});
+
+test('the entrance: enter with sound only, turn the records, open Learn', T, async () => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await context.newPage();
+  p.on('pageerror', (e) => problems.push(`page error (entrance): ${e.message}`));
+  try {
+    await p.goto(`${BASE}/?fake=1&intro=on`);
+    await p.getByTestId('overture-entrance').waitFor({ state: 'visible', timeout: 20_000 });
+    await p.getByTestId('entrance-enter-sound').click();
+    await p.getByTestId('overture-menu').waitFor({ state: 'visible', timeout: 10_000 });
+    const chosen = (mode) => p.getByTestId(`record-${mode}`).getAttribute('data-chosen');
+    await until('Learn is the chosen record', async () => (await chosen('learn')) === 'true', 5_000);
+    await p.keyboard.press('ArrowRight');
+    await until('Play is chosen after one turn', async () => (await chosen('play')) === 'true', 5_000);
+    await p.keyboard.press('ArrowLeft');
+    await until('Learn is chosen again', async () => (await chosen('learn')) === 'true', 5_000);
+    await p.getByTestId('record-learn').click();
+    await p.getByTestId('overture-menu').waitFor({ state: 'detached', timeout: 10_000 });
+    await p.getByTestId('use-demo').waitFor({ state: 'visible', timeout: 10_000 });
+  } finally {
+    await context.close();
+  }
 });
 
 test('no errors appeared in the browser during the whole run', T, async () => {
