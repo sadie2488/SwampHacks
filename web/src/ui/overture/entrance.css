@@ -104,6 +104,15 @@
   inset: 0;
 }
 
+/* the entrance flower is fully open from the start: only its open picture shows, whatever the pointer does */
+.entrance .spray-flower .bloom .bloom-state {
+  opacity: 0;
+}
+
+.entrance .spray-flower .bloom .bloom-open {
+  opacity: 1;
+}
+
 /* the heart flower's centre: as you step into the menu it lights up in the main ink and travels to become the
    chosen record's hole (view transition "journey"; the record side is .record-hole in menu.css) */
 .bloom-heart {

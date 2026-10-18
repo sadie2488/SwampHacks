@@ -1,11 +1,11 @@
-// The entrance's flowers: three of Lalitha's hand-drawn section flowers (the same drawings as on the records),
-// placed around the spray point on the right of the screen. Units: 1 = the spray unit (--u in entrance.css, about
-// 13% of the window height); (0, 0) = the spray point, y up. The last one is the chrysanthemum, the specimen the
-// "Fig. 01" plate names; its centre becomes the first record's hole when you enter.
+// The entrance's flower: Lalitha's hand-drawn orchid (the same drawing as on the Learn record), fully open from the
+// start and filling most of the right side of the screen. Units: 1 = the spray unit (--u in entrance.css, about 13%
+// of the window height); (0, 0) = the spray point, y up. The "Fig. 01" plate names it; its centre becomes the first
+// record's hole when you enter.
 import type { SectionId } from '@/ui/flowers/sections';
 
 export interface SprayFlower {
-  /** Which section's drawing (sections.ts: menu = chrysanthemum, learn = orchid, play = hibiscus, ...). */
+  /** Which section's drawing (sections.ts: learn = orchid, menu = chrysanthemum, play = hibiscus, ...). */
   section: SectionId;
   x: number;
   y: number;
@@ -13,18 +13,15 @@ export interface SprayFlower {
   r: number;
 }
 
-export const SPRAY: readonly SprayFlower[] = [
-  // sizes keep the flowers clear of the wordmark (left), the Fig. plate (top right) and the window edge at 1280x800+
-  { section: 'learn', x: -1.7, y: 1.8, r: 1.4 },
-  { section: 'play', x: 1.9, y: -1.45, r: 1.575 },
-  { section: 'menu', x: 0.3, y: 0, r: 2.6 },
-];
+/** One orchid, about 87% of the window height, between the wordmark (left) and the window edge, under the plate. */
+export const SPRAY: readonly SprayFlower[] = [{ section: 'learn', x: 0.65, y: -0.08, r: 3.3 }];
 
 /** The flower whose centre travels to the first record's hole (the shared hand-over into the menu). */
 export const HEART = SPRAY.length - 1;
 
 /**
- * How open each flower should be: 0 closed, 1 outer petals open, 2 fully open.
+ * How open each flower should be: 0 closed, 1 outer petals open, 2 fully open. (The entrance flower is drawn open
+ * from the start, see entrance.css; this still times the soft bloom tone as the pointer nears the Enter button.)
  * `near` is 1 with the pointer on the Enter button and 0 far away; flowers open one after another.
  */
 export function bloomStage(near: number, index: number, count: number): 0 | 1 | 2 {
