@@ -248,10 +248,25 @@
 
 
 # --- Learn mode ------------------------------------------------------------------------------------------------------
-# Show the ASL letter V (two fingers up) to pause the song; show it again to count down 3, 2, 1 and play on from
-# where the song is (drag the sheet with a closed hand while paused to move it). Only works on the Learn screen itself.
+# Hold up two fingers (a peace sign, either hand) to pause the song; show it again to count down 3, 2, 1 and play on
+# from where the song is (drag the sheet with a closed hand while paused to move it). Only works on the Learn screen itself.
 
-- name: V sign pauses and resumes
+- name: right hand two fingers up pauses and resumes
+  mode: learn
+  when: vision.hand.right.peace
+  do: learn.pause
+  how: trigger
+  cooldown_ms: 1500
+
+- name: left hand two fingers up pauses and resumes
+  mode: learn
+  when: vision.hand.left.peace
+  do: learn.pause
+  how: trigger
+  cooldown_ms: 1500
+
+- name: V sign pauses and resumes        # switched off Sun (lead): ASL letters are off (SIGNS_ENABLED false), so vision.sign.v never arrives; the two-fingers rules above do this job
+  enabled: false
   mode: learn
   when: vision.sign.v
   do: learn.pause

@@ -52,6 +52,9 @@ export const THRESHOLDS = {
   /** Pinch: thumb tip to index tip, as a fraction of hand size. */
   pinchOn: 0.3,
   pinchOff: 0.5,
+  /** Peace (two fingers up): index and middle straighter than openOn/openOff, ring and little finger more curled than these. */
+  peaceCurledOn: 0.9,
+  peaceCurledOff: 1.05,
   /** Raised: palm above the forehead line; the line is kept between these two heights (0 = top of picture). */
   raisedLineMin: 0.2,
   raisedLineMax: 0.5,
@@ -111,6 +114,23 @@ export function pinchRatio(hand: Pt[], aspect = DEFAULT_ASPECT): number {
 export const isFist = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMax(hand, aspect) < THRESHOLDS.fistOn;
 export const isOpenPalm = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => curlMin(hand, aspect) > THRESHOLDS.openOn;
 export const isPinch = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => pinchRatio(hand, aspect) < THRESHOLDS.pinchOn && !isFist(hand, aspect);
+
+/**
+ * Peace / "two fingers up": index and middle finger straight, ring and little finger curled, thumb anywhere.
+ * true = clearly on, false = clearly off, null = in the grey zone (the latch keeps its old answer). Cheap: curl ratios only,
+ * so it does not care which way the hand faces. By construction it never overlaps an open palm (all four straight) or a
+ * fist (all four curled).
+ */
+export function peaceWant(hand: Pt[], aspect = DEFAULT_ASPECT): boolean | null {
+  const [index, middle, ring, pinky] = fingerCurlRatios(hand, aspect);
+  const straightest = Math.min(index, middle); // the less straight of the two raised fingers
+  const curled = Math.max(ring, pinky); // the less curled of the two folded fingers
+  const up = straightest > THRESHOLDS.openOn ? true : straightest < THRESHOLDS.openOff ? false : null;
+  const down = curled < THRESHOLDS.peaceCurledOn ? true : curled > THRESHOLDS.peaceCurledOff ? false : null;
+  if (up === false || down === false) return false;
+  return up && down ? true : null;
+}
+export const isPeace = (hand: Pt[], aspect = DEFAULT_ASPECT): boolean => peaceWant(hand, aspect) === true;
 /** How far the thumb tip is above its middle (IP) joint, as a fraction of hand size. Negative = the tip is lower. */
 export function thumbRise(hand: Pt[], aspect = DEFAULT_ASPECT): number {
   return (hand[HAND.THUMB_IP].y - hand[HAND.THUMB_TIP].y) / Math.max(1e-6, handSize(hand, aspect));
@@ -291,7 +311,7 @@ const bandBelow = (v: number, on: number, off: number): boolean | null => (v < o
 /** true above `on`, false below `off`, null in between (bigger = more "on"). */
 const bandAbove = (v: number, on: number, off: number): boolean | null => (v > on ? true : v < off ? false : null);
 
-const HOLDS = ['fist', 'open_palm', 'raised', 'pinch', 'thumbs_up'] as const;
+const HOLDS = ['fist', 'open_palm', 'raised', 'pinch', 'thumbs_up', 'peace'] as const;
 type Hold = (typeof HOLDS)[number];
 
 interface SideState {
@@ -307,7 +327,7 @@ interface SideState {
 
 /**
  * Feed it one FrameObs per camera frame (in time order); it returns the signals to send for that frame.
- * Sliders come out at most every `sliderMs`. Holdable moments (fist, open palm, raised, pinch) come out only when they
+ * Sliders come out at most every `sliderMs`. Holdable moments (fist, open palm, raised, pinch, thumbs-up, peace) come out only when they
  * start or end. One-shots (drum hit, nod) come out once per event.
  */
 export class GestureTracker {
@@ -329,7 +349,7 @@ export class GestureTracker {
 
   private newSide(): SideState {
     const latch = () => new Latch(this.o.onMs, this.o.offMs);
-    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch(), thumbs_up: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity, palmSince: null, palmLast: -Infinity, lastGrab: -Infinity };
+    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch(), thumbs_up: latch(), peace: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity, palmSince: null, palmLast: -Infinity, lastGrab: -Infinity };
   }
 
   update(frame: FrameObs): SignalOut[] {
@@ -412,6 +432,8 @@ export class GestureTracker {
       // Only the left thumbs-up is in the signal catalog. Once on, it stays on until the thumb drops below thumbUpOff.
       thumbs_up: side === 'left' && curlMax(pts, aspect) < THRESHOLDS.fistOff &&
         (s.holds.thumbs_up.active ? thumbRise(pts, aspect) >= THRESHOLDS.thumbUpOff : isThumbsUp(pts, aspect)),
+      // Two fingers up (Learn's pause/resume). Its own thresholds already rule out an open palm and a fist.
+      peace: peaceWant(pts, aspect),
     };
     // Sat-night fix: the fist check ignores the thumb, so a thumbs-up also looked like a fist (and could end a Create take).
     // While the thumbs-up is on (or about to be), it is not a fist.

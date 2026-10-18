@@ -280,6 +280,30 @@ describe('Play mode rules: the Play section was removed Sun 6 AM (History replac
     moment('audio.clap');
     expect(transport().playing).toBe(false);
   });
+
+  it('two fingers up (either hand) fires learn.pause in Learn, once per cooldown; the old V-sign rule is switched off', () => {
+    expect(ruleNamed('V sign pauses and resumes').enabled).toBe(false);
+    setMode('learn');
+    moment('vision.sign.v');
+    expect(fromRule('V sign pauses and resumes')).toEqual([]);
+    for (const side of ['right', 'left'] as const) {
+      const name = `${side} hand two fingers up pauses and resumes`;
+      const cooldown = ruleNamed(name).cooldown_ms ?? 0;
+      expect(cooldown).toBeGreaterThan(0);
+      moment(`vision.hand.${side}.peace`, 'start', 1);
+      expect(fromRule(name).map((c) => c.command)).toEqual(['learn.pause']);
+      moment(`vision.hand.${side}.peace`, 'end', 1);
+      vi.advanceTimersByTime(cooldown / 2);
+      moment(`vision.hand.${side}.peace`, 'start', 1); // inside the cooldown: the same moment
+      expect(fromRule(name)).toHaveLength(1);
+      vi.advanceTimersByTime(cooldown);
+      moment(`vision.hand.${side}.peace`, 'start', 1);
+      expect(fromRule(name)).toHaveLength(2);
+      moment(`vision.hand.${side}.peace`, 'end', 1);
+      vi.advanceTimersByTime(cooldown + 1);
+    }
+    expect(commands.filter((c) => !c.command.startsWith('learn.'))).toEqual([]);
+  });
 });
 
 describe('Play mode voice words need the left fist', () => {
