@@ -106,17 +106,22 @@ describe('Command Lab', () => {
 
   it('lists the loaded rules, greys out disabled ones, and lights a rule when it fires', async () => {
     expect(q('rule-0').textContent).toContain('hand height controls tempo');
+    // the Play section was removed Sun 6 AM: every Play rule is kept in the file but switched off
+    expect(q('rule-0').dataset.enabled).toBe('false');
     expect(q('rule-1').dataset.enabled).toBe('false');
-    expect(q('rule-2').dataset.enabled).toBe('true');
-    expect(q('rule-2').dataset.fired).toBe('false');
+    expect(q('rule-2').dataset.enabled).toBe('false');
+    // the first Create rule is live
+    expect(q('rule-9').textContent).toContain('right hand height pitches the enabled layer');
+    expect(q('rule-9').dataset.enabled).toBe('true');
+    expect(q('rule-9').dataset.fired).toBe('false');
     act(() => {
-      const command = { version: 1 as const, command: 'playback.toggle', source: 'gesture' as const, mapping: 'clap toggles play/pause', t_ms: 1 };
-      bus.emit('fired', { mapping: 'clap toggles play/pause', command });
+      const command = { version: 1 as const, command: 'create.layer.pitch', source: 'gesture' as const, mapping: 'right hand height pitches the enabled layer', t_ms: 1 };
+      bus.emit('fired', { mapping: 'right hand height pitches the enabled layer', command });
     });
-    expect(q('rule-2').dataset.fired).toBe('true');
+    expect(q('rule-9').dataset.fired).toBe('true');
     expect(q('rule-0').dataset.fired).toBe('false');
     await wait(700);
-    expect(q('rule-2').dataset.fired).toBe('false');
+    expect(q('rule-9').dataset.fired).toBe('false');
   });
 
   it('shows problems in plain words, and "Everything looks fine" when there are none', () => {

@@ -3,13 +3,14 @@
 //   lights up and swells with the song's loudness while it sounds. Readout: key and tempo.
 // - Create: three rings that swell with the voice, "HUM SOMETHING"; readout: the note heard, the layer count and
 //   tiny labels of what each hand is doing. Nothing else.
-// - Play: readout of the tempo and the pitch shift (the hand guide draws the hand and head).
+// - History (the 'play' id): no canvas picture; the History page (feedback, progress, past creations) is shown instead.
 // One canvas, never clickable; it draws at most 30 times a second and only while something changes.
 import { useEffect, useRef, useState } from 'react';
 import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { CountIn } from './CountIn';
-import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { HistoryPage } from './HistoryPage';
+import { keyWords, noteName, placeNotes, staffGeometry, staffNotes } from './mode-visual';
 import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
 
@@ -54,7 +55,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx || mode === 'lab') return setReadout(null);
+    if (!canvas || !ctx || mode === 'lab' || mode === 'play') return setReadout(null);
     const ink = modeLook(mode).a;
     let analysis: SongAnalysis | undefined = bus.last('analysis');
     let notes = staffNotes(analysis);
@@ -69,7 +70,6 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
 
     const text = () => {
       if (mode === 'learn') return setReadout({ a: ['Key', keyWords(analysis)], b: ['Tempo', analysis ? `${Math.round(transport?.bpm ?? analysis.tempo_bpm)} bpm` : '—'] });
-      if (mode === 'play') return setReadout({ a: [PLAY_READOUT_LABELS.tempo, transport?.bpm ? `${Math.round(transport.bpm)} bpm` : '—'], b: [PLAY_READOUT_LABELS.pitch, signedSemitones(transport?.pitch ?? 0)] });
       const layers = document.querySelectorAll('[data-testid="create-panel"] li[data-testid^="layer-"]').length;
       const handList = Object.entries(hands).map(([side, what]) => `${side} hand · ${what}`);
       setReadout({ a: ['Heard', heard === null ? '—' : noteName(heard)], b: ['Layers', String(layers)], hands: handList });
@@ -193,6 +193,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
       {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
+      {mode === 'play' && <HistoryPage />}
       {mode === 'create' && <CountIn />}
       {mode === 'create' && (
         <p className="hand-legend" data-testid="hand-legend" aria-live="off" style={LEGEND_STYLE}>
