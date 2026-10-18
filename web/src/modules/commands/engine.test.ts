@@ -299,7 +299,9 @@ describe('follow rules', () => {
   it('smoothing 0 is jumpy (follows exactly), higher smoothing lags behind', () => {
     const jumpy = run(FOLLOW('  smoothing: 0\n  range: [0, 1]\n'));
     const smooth = run(FOLLOW('  smoothing: 0.9\n  range: [0, 1]\n'));
-    expect(Math.max(...jumpy.map((e) => e.command.value as number))).toBeCloseTo(0.949, 2);
+    const jumpyPeak = Math.max(...jumpy.map((e) => e.command.value as number));
+    expect(jumpyPeak).toBeLessThanOrEqual(0.949);
+    expect(jumpyPeak).toBeGreaterThan(0.949 - 0.02); // within the 2% step a follow rule needs before it sends
     expect(Math.max(...smooth.map((e) => e.command.value as number))).toBeLessThan(0.85);
   });
 
@@ -472,5 +474,66 @@ describe('switching rules off and reloading', () => {
     feed(fist[0]);
     engine.load(starterYaml);
     expect(feed(moment('audio.keyword.pause', 2500))).toHaveLength(1);
+  });
+});
+
+// Sat-night fixes: a resting hand must not jump the tempo, spam commands, or cut a practice run short.
+describe('hand tempo: smooth start, deadband, practice runs', () => {
+  const HAND = '- when: vision.hand.right.height\n  do: playback.tempo\n  how: follow\n  range: [0.5, 1.5]\n  smoothing: 0.5\n';
+  const withTempo = (tempo: { value: number }) => {
+    let now = 0;
+    const engine = createEngine({ now: () => now, current: (c) => (c === 'playback.tempo' ? tempo.value : undefined) });
+    engine.load(HAND);
+    const feed = (value: number, t_ms: number) => {
+      now = t_ms;
+      const out = engine.handleSignal(slider('vision.hand.right.height', value, t_ms));
+      for (const e of out) tempo.value = e.command.value as number; // the bus would update controls like this
+      return out;
+    };
+    return { engine, feed };
+  };
+
+  it('the first reading smooths from the current tempo instead of jumping to the hand', () => {
+    const tempo = { value: 1 };
+    const { feed } = withTempo(tempo);
+    expect(feed(1, 0)[0].command.value).toBe(1.25); // halfway from 1.0 toward 1.5 (smoothing 0.5), not straight to 1.5
+    expect(feed(1, 100)[0].command.value).toBe(1.375);
+  });
+
+  it('jitter smaller than 0.02x sends nothing; a real move does', () => {
+    const tempo = { value: 1 };
+    const { feed } = withTempo(tempo);
+    expect(feed(0.5, 0)).toEqual([]); // the hand sits where the tempo already is
+    expect(feed(0.51, 100)).toEqual([]);
+    expect(feed(0.49, 200)).toEqual([]);
+    expect(feed(0.53, 300)).toEqual([]); // smoothed to about 1.01x: still under the deadband
+    expect(feed(0.6, 400)).toHaveLength(1);
+  });
+
+  it('compares with the real current tempo, so a button change is noticed', () => {
+    const tempo = { value: 1 };
+    const { feed } = withTempo(tempo);
+    for (let i = 0; i < 20; i++) feed(1, i * 100); // settles near 1.5
+    tempo.value = 1; // someone pressed a tempo button
+    expect(feed(1, 3000)).toHaveLength(1);
+  });
+
+  it('while a practice run listens, the hand leaves tempo alone; afterwards it starts again from the current tempo', () => {
+    const tempo = { value: 1 };
+    const { engine, feed } = withTempo(tempo);
+    engine.setPracticeRun(true);
+    for (let i = 0; i < 10; i++) expect(feed(i % 2 ? 1 : 0, i * 100)).toEqual([]);
+    expect(tempo.value).toBe(1);
+    engine.setPracticeRun(false);
+    expect(feed(1, 2000)[0].command.value).toBe(1.25);
+  });
+
+  it('a practice run does not pause follow rules for other controls', () => {
+    let now = 0;
+    const engine = createEngine({ now: () => now });
+    engine.load('- when: vision.hand.right.height\n  do: playback.volume\n  how: follow\n');
+    engine.setPracticeRun(true);
+    now = 10;
+    expect(engine.handleSignal(slider('vision.hand.right.height', 0.9, 10))).toHaveLength(1);
   });
 });
