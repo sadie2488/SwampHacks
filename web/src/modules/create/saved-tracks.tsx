@@ -160,6 +160,7 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
           <input
             type="text"
             data-testid="input-track-name"
+            placeholder="Name your track"
             value={name}
             maxLength={60}
             onChange={(e) => setName(e.target.value)}
@@ -169,7 +170,7 @@ export function SavedTracks({ store, api: given, fetchFn }: { store: CreateStore
           />
         </label>{' '}
         <button type="button" data-testid="btn-save-track" disabled={!canSave || busy} onClick={() => void save()}>
-          Save this track
+          Save to History
         </button>{' '}
         <button type="button" data-testid="btn-refresh-tracks" onClick={() => void refresh()}>
           Refresh list
