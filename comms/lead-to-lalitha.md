@@ -148,3 +148,10 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 - Pull main on your laptop now: `git checkout main && git pull`
 - Includes the Overture mockup + your docs, all fixes from two code reviews, offline camera, faster uploads, `songLevels`, the style-director agent (`.claude/agents/style-director.md`)
 - The Overture port into the app is in progress on the main laptop (first working version targeted in ~30 min)
+
+---
+*2026-10-18 05:33 UTC*
+
+## TouchDesigner brief is ready
+- Read it: `node scripts/comms-read.mjs briefs/lalitha-touchdesigner.md`
+- It has the channel list, setup on your laptop with a fake-data sender (no website needed), design notes in the Overture colours, and how to bring the .toe to the demo laptop
