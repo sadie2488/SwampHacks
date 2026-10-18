@@ -20,6 +20,8 @@ from . import melody
 GHOST_INTERVALS = (12, 19, 24)  # overtones 2, 3 and 4 of a note, in semitones
 GHOST_MAX_AMP_SHARE = 0.9  # an overtone note is at most this loud compared with the note under it...
 GHOST_MIN_OVERLAP = 0.7  # ...and sounds inside it for at least this share of its own length
+LOW_GHOST_PITCH = 48  # under C3 an octave starting with the note is its overtone, however loud...
+LOW_GHOST_LAG_SEC = 0.3  # ...even when the model hears the low note this much later
 MIN_AMP = 0.25  # the model's note strength (0 to 1); fainter notes are mostly bleed and noise
 MIN_NOTE_SEC = 0.12
 CLUSTER_SEC = 0.06  # notes starting this close together start "at the same time"
@@ -30,6 +32,7 @@ JUMP_MAX = 12  # a melody note more than an octave from both neighbours is an ou
 CHORD_MIN_SEC = 0.2
 CHORD_MAX_NOTES = 4
 CHORD_UNIT = 0.5  # chords start on half (counted) beats
+EARLY_OK_BEATS = 0.125  # a note this little before the first beat still snaps onto it
 MIN_PART_NOTES = 8  # fewer notes than this is not a part
 MIN_CHORDS = 4
 MIN_COVER_SHARE = 0.15  # a part must sound for at least this share of the song
@@ -39,22 +42,33 @@ NAMES = {"melody": "Melody", "bass": "Bass", "harmony": "Chords"}
 
 
 def drop_ghosts(notes: list[dict]) -> list[dict]:
-    """Remove overtone notes and notes that are too short or too faint."""
+    """Remove overtone notes and notes that are too short or too faint.
+
+    Lowest notes first, and only notes already kept count as the note under an overtone, so the overtone of an
+    overtone cannot take a real note with it.
+    """
     kept = [n for n in notes if n["end"] - n["start"] >= MIN_NOTE_SEC and n["amp"] >= MIN_AMP]
     by_pitch: dict[int, list[dict]] = {}
-    for n in kept:
-        by_pitch.setdefault(n["pitch"], []).append(n)
-    return [g for g in kept if not _is_ghost(g, by_pitch)]
+    out = []
+    for g in sorted(kept, key=lambda n: (n["pitch"], n["start"])):
+        if not _is_ghost(g, by_pitch):
+            by_pitch.setdefault(g["pitch"], []).append(g)
+            out.append(g)
+    return sorted(out, key=lambda n: (n["start"], n["pitch"]))
 
 
 def _is_ghost(g: dict, by_pitch: dict[int, list[dict]]) -> bool:
     length = g["end"] - g["start"]
     for step in GHOST_INTERVALS:
         for f in by_pitch.get(g["pitch"] - step, ()):
-            if f["start"] > g["start"] + CLUSTER_SEC or f["end"] <= g["start"]:
+            # Under a very low note the model often hears the octave louder, and sooner, than the note itself.
+            low_octave = step == 12 and f["pitch"] < LOW_GHOST_PITCH and abs(f["start"] - g["start"]) <= LOW_GHOST_LAG_SEC
+            if (f["start"] > g["start"] + CLUSTER_SEC and not low_octave) or f["end"] <= g["start"]:
                 continue
             overlap = min(f["end"], g["end"]) - max(f["start"], g["start"])
-            if overlap >= GHOST_MIN_OVERLAP * length and g["amp"] <= GHOST_MAX_AMP_SHARE * f["amp"] + 0.05:
+            if overlap < GHOST_MIN_OVERLAP * length:
+                continue
+            if low_octave or g["amp"] <= GHOST_MAX_AMP_SHARE * f["amp"] + 0.05:
                 return True
     return False
 
@@ -222,7 +236,7 @@ def _origin(notes: list[dict], tempo_bpm: float, beats) -> float:
     spb = 60.0 / tempo_bpm
     first = min((n["start"] for n in notes), default=0.0)
     origin = float(beats[0]) if beats is not None and len(beats) > 0 else first
-    if first < origin:
+    if first < origin - EARLY_OK_BEATS * spb:
         origin -= math.ceil((origin - first) / spb - 1e-9) * spb
     return origin
 
