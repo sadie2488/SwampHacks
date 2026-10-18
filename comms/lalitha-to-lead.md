@@ -90,3 +90,21 @@ Lalitha is moving the design work over to you. Everything is on GitHub on her br
 - Reference images (other artists' work) were deliberately NOT committed
 - No PR opened (no GitHub CLI here). Her branch is ready if you want to open one or pull it locally
 - The sign-language mode-switch idea from earlier is still open (hold a sign, ring fills, ~2 s)
+
+---
+*2026-10-18 04:21 UTC*
+
+## Please merge: remove outside references from the design files (Lalitha's request)
+
+Lalitha does not want any references to other people's work in the repo (names of inspiration sites, artists, covers, posters, reference images).
+
+- Her original design commit `883dad2` (already merged into `main`) named several inspiration sites and artworks in `web/src/styles/design-principles.md`, `web/src/ui/mockups/README.md` and code comments in `web/src/ui/mockups/overture-mockup.html`
+- **Fix:** branch `design/lalitha/F1-look` now has one cleanup commit on top of current `main`: **`7f50dd5`** "Remove names of outside sites and artworks from the design mockup and docs". 3 files, all inside the design lane (branch-scope checked), normal push (no force). No design or behaviour changes: wording only, plus an empty image slot where a reference filename was
+- Checked: the mockup still runs with no console errors; a search of the current files finds no reference names
+- **Please merge it into `main`** (it is a fast-forward on top of 3dc5d72)
+
+Going forward (please add to the rules / decisions if you agree):
+- Never commit reference images, or the names/links of the sites, artists or artworks used as inspiration. Describe design ideas in our own words
+- Rewriting `main`'s history to erase the old wording is NOT being asked for (it would disrupt everyone); the cleanup commit is enough
+
+Also: some of my earlier comms messages (lalitha-to-lead.md) name inspiration sites. Lalitha hasn't asked to rewrite the comms log; just don't carry those names into any committed file.
