@@ -48,6 +48,8 @@ TEMPO_HIGH = 160.0
 VERY_SLOW = 45.0
 SLOW_PULSE_RATIO = 0.5  # in-between beats at least this share of a slow beat's strength: double the tempo
 HALVE_RATIO = 0.45  # every other beat weaker than this share of its neighbours: halve the tempo
+FAST_BPM = 140.0  # above this the slower pulse is the likelier one, so it needs less proof:
+FAST_HALVE_RATIO = 0.6  # every other beat under 60 percent (Hotel California's eighth notes measure 0.47)
 EVEN_STRONG_RATIO = 0.75  # ...but only when the remaining beats are this even with each other
 MIN_BEATS = 4
 
@@ -149,14 +151,14 @@ def _subdivide(times, parts):
     return np.append(inner, times[-1])
 
 
-def _slow_pulse_is_clear(strengths) -> bool:
+def _slow_pulse_is_clear(strengths, ratio: float = HALVE_RATIO) -> bool:
     """True when every second beat is clearly weak and the other beats are even with each other.
 
     A strong-weak-medium-weak bar is ordinary 4/4 and does not count: its strong beats differ.
     """
     a, b = strengths[0::2], strengths[1::2]
     strong, weak = (a, b) if a.mean() >= b.mean() else (b, a)
-    if weak.mean() >= HALVE_RATIO * strong.mean():
+    if weak.mean() >= ratio * strong.mean():
         return False
     first, second = strong[0::2].mean(), strong[1::2].mean()
     return bool(min(first, second) >= EVEN_STRONG_RATIO * max(first, second))
@@ -172,7 +174,8 @@ def _fix_octave(times, aenv, sr):
       example sustained chords with no drums), so each gap is split into 4 (or 2 from 35 BPM up). The
       split beats are a guess, and the low tempo confidence says so.
     - 100 to 160: if every second beat is clearly weak (under 45 percent of the strength of the
-      others, which are even with each other), the slower pulse is the real one, so halve it.
+      others, which are even with each other; 60 percent above 140 BPM), the slower pulse is the real
+      one, so halve it.
     Everything between 70 and 100 is left alone.
     """
     for _ in range(3):
@@ -191,7 +194,7 @@ def _fix_octave(times, aenv, sr):
         elif bpm < VERY_SLOW:
             times = _subdivide(times, 4 if bpm < 35.0 else 2)
     elif bpm >= 100.0 and len(times) >= 16:
-        if _slow_pulse_is_clear(strengths):
+        if _slow_pulse_is_clear(strengths, HALVE_RATIO if bpm <= FAST_BPM else FAST_HALVE_RATIO):
             times = _halve(times, strengths)
     return times
 
