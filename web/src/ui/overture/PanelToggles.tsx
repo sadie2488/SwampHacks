@@ -44,12 +44,14 @@ export function usePanels() {
       }),
     [],
   );
+  /** Open a panel if it is closed (Learn opens the player on arrival; the person can still close it). */
+  const openPanel = useCallback((name: PanelName) => setOpen((prev) => (prev.has(name) ? prev : new Set(prev).add(name))), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen((prev) => (prev.size ? new Set() : prev));
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  return { isOpen: (name: PanelName) => open.has(name), toggle };
+  return { isOpen: (name: PanelName) => open.has(name), toggle, openPanel };
 }
 
 export function PanelToggles({ mode, isOpen, toggle }: { mode: ModeId; isOpen: (n: PanelName) => boolean; toggle: (n: PanelName) => void }) {

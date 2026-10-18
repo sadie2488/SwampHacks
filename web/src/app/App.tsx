@@ -65,8 +65,12 @@ export function App() {
   const [hands, setHands] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
-  const { isOpen, toggle: togglePanel } = usePanels();
+  const { isOpen, toggle: togglePanel, openPanel } = usePanels();
   useModules();
+  // arriving in Learn shows the player bar (play, pause, Restart) without a click; it can still be closed
+  useEffect(() => {
+    if (screen === 'mode' && tab === 'learn') openPanel('player');
+  }, [screen, tab, arrive.n, openPanel]);
   useDeviceAutostart(screen);
 
   // On the entrance and the record menu a neutral mode is published, so the last mode's voice and hand rules stop

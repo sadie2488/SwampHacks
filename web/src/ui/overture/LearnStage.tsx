@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { bus, sendCommand, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { seek } from '@/modules/playback';
-import { learnView, setLetters } from '@/modules/sheet';
+import { learnView, setLetters } from '@/modules/sheet/learn-view';
 import { useBusValue } from '@/app/hooks';
 import { HAND_DRAG_EVENT, type HandDragDetail } from './hand-drag';
 import { createLearnPause, type PauseView } from './learn-pause';

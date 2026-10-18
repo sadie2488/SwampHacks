@@ -1,7 +1,7 @@
 // Drag the sheet while Learn is paused: sideways hand (or mouse) travel moves the song position. Pure maths, plus the
 // list of wrong notes drawn in red during practice and the rule that clears them when the song is moved back.
 import type { SongAnalysis } from '@/contracts';
-import { quartersPerBar, sheetGrid } from '@/modules/sheet';
+import { quartersPerBar, sheetGrid } from '@/modules/sheet/bar-grid';
 
 /** Hand travel (screen px) that moves the song by one bar. */
 export const PX_PER_BAR = 180;
