@@ -3,3 +3,4 @@
 export { Sheet } from './Sheet';
 export { notesToMusicXml } from './notes-to-musicxml';
 export { barAt, barOfQuarter, barStartAt, beatsPerBar, quartersPerBar, quartersPerBeat, sheetGrid, type SheetGrid } from './bar-grid';
+export { DEFAULT_LEARN_VIEW, learnView, setLetters, type LearnView } from './learn-view';

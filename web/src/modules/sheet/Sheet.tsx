@@ -6,6 +6,8 @@ import type { SongAnalysis } from '@/contracts';
 import { buildScore, INSTRUMENT_CHOICES, type Score } from './notes-to-musicxml';
 import { emptySheetMessage } from './sheet-empty';
 import { cursorTiming, DEFAULT_TIMING, stepAt, wholeNotesAt, type CursorTiming } from './sheet-cursor';
+import { learnView, setLetters } from './learn-view';
+import { fitWholeSystems, systemTopsOf, systemTopFor } from './sheet-systems';
 
 type DrawState =
   | { status: 'empty' }
@@ -23,7 +25,13 @@ interface Cursor {
 export function Sheet() {
   const [analysis, setAnalysis] = useState<SongAnalysis | undefined>();
   const [partId, setPartId] = useState('');
-  const [beginner, setBeginner] = useState(false);
+  // "Beginner mode" is the same switch as the Learn screen's "Show letters" pill (see learn-view.ts)
+  const [beginner, setBeginnerState] = useState(() => learnView().letters);
+  useEffect(() => bus.on('learnView', (v) => setBeginnerState(v.letters), { replay: true }), []);
+  const setBeginner = (on: boolean) => {
+    setBeginnerState(on);
+    setLetters(on);
+  };
   const [instrument, setInstrument] = useState('auto');
   const [draw, setDraw] = useState<DrawState>({ status: 'empty' });
 
@@ -33,6 +41,22 @@ export function Sheet() {
   const cursorRef = useRef<Cursor>({ times: [], index: -1 });
   const positionRef = useRef(0);
   const timingRef = useRef<CursorTiming>(DEFAULT_TIMING);
+  /** Where each system (line of music) starts inside the host, in px, after the last draw. */
+  const systemsRef = useRef<number[]>([]);
+
+  // The band shows whole systems only: its height is the largest number of systems that fit (at least one).
+  const fitBand = () => {
+    const host = hostRef.current;
+    const osmd = osmdRef.current;
+    if (!host || !osmd) return;
+    systemsRef.current = systemTopsOf(osmd);
+    host.style.height = '';
+    const fitted = fitWholeSystems(systemsRef.current, host.clientHeight);
+    if (fitted !== null) {
+      host.style.flex = 'none';
+      host.style.height = `${fitted}px`;
+    }
+  };
 
   // Listen for the loaded song (and pick its first part).
   useEffect(
@@ -78,10 +102,11 @@ export function Sheet() {
         osmd.cursor.next();
         c.index++;
       }
-      // Keep the cursor in view inside the sheet box (without scrolling the whole page).
+      // Keep the cursor in view inside the sheet box (without scrolling the whole page): turn to the page that starts
+      // with the cursor's own system, so whole systems show.
       const el = osmd.cursor.cursorElement;
       if (el && (el.offsetTop < host.scrollTop || el.offsetTop + el.offsetHeight > host.scrollTop + host.clientHeight)) {
-        host.scrollTop = Math.max(0, el.offsetTop - 24);
+        host.scrollTop = Math.max(0, systemTopFor(systemsRef.current, el.offsetTop) ?? el.offsetTop - 24);
       }
     } catch {
       // the cursor is only a nice-to-have
@@ -153,6 +178,7 @@ export function Sheet() {
         cursorRef.current = { times: steps, index: steps.length ? 0 : -1 };
         if (!host.querySelector('svg')) throw new Error('OpenSheetMusicDisplay drew no SVG');
         setDraw({ status: 'ready', noteCount: score.noteCount });
+        fitBand();
         followRef.current();
       } catch (e) {
         console.error('[sheet] could not draw the sheet music', e);
@@ -164,6 +190,20 @@ export function Sheet() {
       cancelled = true;
     };
   }, [score]);
+
+  // After a window resize OSMD redraws on its own; fit the band again once it has.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(fitBand, 400);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
 
   // Stop OSMD listening to window resizes when the sheet goes away.
   useEffect(

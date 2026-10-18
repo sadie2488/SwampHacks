@@ -57,6 +57,9 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
   const ink = modeLook(mode).a;
   const screenRef = useRef(screen);
   screenRef.current = screen;
+  // Learn has no fist music rules, so the hand works like a mouse there too (and a grab over the sheet scrubs the song)
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   useEffect(() => {
     const el = root.current;
@@ -75,9 +78,11 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     const picker = createHandPicker();
     const shapes = createShapeTracker();
     let dragging = false;
+    let claimed = false; // Learn's drag-to-scrub took this drag: no page scrolling from it
     const endDrag = () => {
       if (dragging) emitHandDrag({ phase: 'end', dx: 0 });
       dragging = false;
+      claimed = false;
     };
     const latch = createInkLatch();
     let hoverInk: string | null = null;
@@ -103,7 +108,7 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
       bus.emit('handPointer', { active: on });
     };
     const refresh = () => {
-      setActive(screenRef.current !== 'mode' || !!document.querySelector(OPEN_PANELS));
+      setActive(screenRef.current !== 'mode' || modeRef.current === 'learn' || !!document.querySelector(OPEN_PANELS));
       targets = [];
       menuItems = [];
       for (const t of document.querySelectorAll(CLICKABLE)) {
@@ -175,11 +180,11 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
         window.setTimeout(refresh, 50);
       }
       const nowDragging = machine.phase === 'dragging';
-      if (nowDragging && !dragging) emitHandDrag({ phase: 'start', dx: 0 });
+      if (nowDragging && !dragging) claimed = emitHandDrag({ phase: 'start', dx: 0, x: pos.x, y: pos.y });
       else if (!nowDragging) endDrag();
       dragging = nowDragging;
-      if (out.move?.dx) emitHandDrag({ phase: 'move', dx: out.move.dx });
-      const overMenu = !!document.elementFromPoint(pos.x, pos.y)?.closest('[data-hand-drag]');
+      if (out.move?.dx) emitHandDrag({ phase: 'move', dx: out.move.dx, x: pos.x, y: pos.y });
+      const overMenu = claimed || !!document.elementFromPoint(pos.x, pos.y)?.closest('[data-hand-drag]');
       if (out.wheel && !overMenu) {
         const under = scrollable(document.elementFromPoint(pos.x, pos.y));
         under.dispatchEvent(new WheelEvent('wheel', { deltaX: out.wheel.dx, deltaY: out.wheel.dy, clientX: pos.x, clientY: pos.y, bubbles: true, cancelable: true }));
