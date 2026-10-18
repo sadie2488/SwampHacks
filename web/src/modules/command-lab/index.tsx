@@ -2,7 +2,7 @@
 //   - live camera with the tracking drawn on top
 //   - a live meter for every signal the app can sense
 //   - every control and its current value (it flashes when a command arrives)
-//   - the loaded mapping rules (a lamp lights when one fires) and any problems found in mappings.yaml
+//   - the loaded mapping rules, as a grid of cards (a card lights up when its rule fires) and any problems found in mappings.yaml
 //   - a "Test without a camera" panel: buttons and sliders that send fake signals, so mappings can be tried with no hardware
 // Everything arrives over the bus. The one exception: the rule list is read from mappings.yaml itself (same lane as the engine),
 // because the bus has no topic for "the loaded rules".
@@ -309,26 +309,67 @@ function RulesPanel() {
     <section aria-labelledby="lab-rules-heading">
       <h2 id="lab-rules-heading">Rules</h2>
       <p>
-        Loaded from mappings.yaml (changes apply as soon as you save). Current mode: <strong>{mode}</strong>. A rule's lamp lights when it fires.
+        Loaded from mappings.yaml (changes apply as soon as you save). Current mode: <strong>{mode}</strong>. A rule's card lights up when it fires.
       </p>
       {rules.length === 0 ? <p>No rules loaded.</p> : null}
-      <ul className="lab-list">
+      <ul className="lab-rule-grid" aria-label="Loaded rules">
         {rules.map((r) => (
-          <li key={r.index} data-testid={`rule-${r.index}`} data-enabled={String(r.enabled)} data-fired={String(!!lit[r.label])}>
-            <span className="lab-lamp" data-on={String(!!lit[r.label])} aria-hidden="true" />{' '}
-            <strong>
-              Rule {r.index + 1}: {r.label}
-            </strong>
-            {r.enabled ? null : ' (switched off)'}
-            <div className="lab-hint">
-              when {r.when}
-              {r.onlyWhile ? `, only while ${r.onlyWhile}` : ''} → {r.how} {r.do} (in {r.mode === 'any' ? 'every mode' : `${r.mode} mode`})
+          <li
+            key={r.index}
+            className="lab-rule-card"
+            data-testid={`rule-${r.index}`}
+            data-enabled={String(r.enabled)}
+            data-fired={String(!!lit[r.label])}
+            data-section={r.mode}
+          >
+            <div className="lab-rule-top">
+              <span className="lab-lamp" data-on={String(!!lit[r.label])} aria-hidden="true" />
+              <span className="lab-rule-number">Rule {r.index + 1}</span>
+              <span className="lab-rule-tag" data-section={r.mode}>
+                {sectionName(r.mode)}
+              </span>
             </div>
+            <strong className="lab-rule-name">{r.label}</strong>
+            {r.enabled ? null : <span className="lab-rule-off">Switched off</span>}
+            <dl className="lab-rule-facts">
+              <div>
+                <dt>When</dt>
+                <dd>
+                  <code>{r.when}</code>
+                  {r.onlyWhile ? (
+                    <>
+                      {' '}
+                      while <code>{r.onlyWhile}</code>
+                    </>
+                  ) : null}
+                </dd>
+              </div>
+              <div>
+                <dt>Does</dt>
+                <dd>
+                  {r.how} <code>{r.do}</code>
+                  {actionDetail(r)}
+                </dd>
+              </div>
+            </dl>
           </li>
         ))}
       </ul>
     </section>
   );
+}
+
+/** The section a rule works in, as the tag on its card shows it. */
+function sectionName(mode: Rule['mode']): string {
+  return mode === 'any' ? 'Any' : mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+/** The value part of a rule's action: the range it follows, the step it nudges by, or the value it sets. */
+function actionDetail(r: Rule): string {
+  if (r.how === 'follow' && r.range) return ` from ${r.range[0]} to ${r.range[1]}`;
+  if (r.how === 'nudge' && r.step !== undefined) return ` by ${r.step > 0 ? '+' : ''}${r.step}`;
+  if (r.value !== undefined) return ` to ${String(r.value)}`;
+  return '';
 }
 
 function IssuesPanel() {
