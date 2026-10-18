@@ -149,6 +149,14 @@ export const CONFIG = {
   // ---- spoken keywords ----
   keywords: {
     words: ['play', 'pause', 'slower', 'faster', 'higher', 'lower', 'start', 'next', 'piano', 'synth', 'bass', 'pluck', 'drums', 'none', 'reverb', 'delay', 'filter', 'beat'] as const,
+    /** The words that count in each mode (these match the audio.keyword.* rules in mappings.yaml). A Play word heard
+     * in Create does nothing, and fewer words to choose from means fewer false matches. */
+    playWords: ['play', 'pause', 'slower', 'faster', 'higher', 'lower'] as readonly string[],
+    createWords: ['start', 'next', 'piano', 'synth', 'bass', 'pluck', 'drums', 'none', 'reverb', 'delay', 'filter', 'beat'] as readonly string[],
+    /** Words that count in both modes (none today). */
+    globalWords: [] as readonly string[],
+    /** How many guesses to ask the browser for per phrase; every guess of a finished phrase is checked. */
+    maxAlternatives: 5,
     /** The same word is not accepted again within this many ms. */
     cooldownMs: 800,
     /** Voice results are only accepted while the arming gesture is held (plus this many ms after letting go). */
