@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import rulesTempo from '@fixtures/feedback/rules-tempo.json';
 import twinkle from '@fixtures/song-analysis/twinkle.json';
-import { bus, resetControls, type Topics } from '@/bus';
+import { bus, reportStatus, resetControls, type Topics } from '@/bus';
 import * as audioLive from '@/modules/audio-live';
 import * as commands from '@/modules/commands';
 import * as create from '@/modules/create';
@@ -106,6 +106,17 @@ describe('layout', () => {
     expect($('sheet')).not.toBeNull();
     expect($('analysis-summary')).toBeNull();
     expect(text('transport-state')).toBe('no song');
+  });
+
+  it('the small record next to the logo is the Records button; the header has no TouchDesigner switch', () => {
+    const records = container.querySelector<HTMLButtonElement>('header button[aria-label="Records"]');
+    expect(records).not.toBeNull();
+    expect(records!.querySelector('svg.record-mark')).not.toBeNull();
+    expect(container.querySelector('header .records-pill')).toBeNull();
+    expect(container.querySelector('header [data-testid="btn-enable-td"]')).toBeNull();
+    // login is not shown anywhere, and the header is never inert (the logo works on every screen)
+    expect(container.querySelector('[data-testid="btn-login"], .login-box')).toBeNull();
+    expect(container.querySelector('header')?.hasAttribute('inert')).toBe(false);
   });
 
   it('starts every module once and stops them when the page goes away', async () => {
@@ -279,6 +290,8 @@ describe('devices', () => {
   it('toggles each device with an enable event and shows status in plain words', async () => {
     expect(text('btn-enable-vision')).toBe('Camera off');
     expect(text('btn-enable-audio')).toBe('Microphone off');
+    expect($('btn-enable-td')).toBeNull(); // TouchDesigner is switched only in the Command Lab
+    await click('tab-lab');
     expect(text('btn-enable-td')).toBe('TouchDesigner off');
     await click('btn-enable-vision');
     await click('btn-enable-audio');
@@ -302,6 +315,7 @@ describe('devices', () => {
   const status = (module: string, state: Topics['status']['state'], message?: string) => emit('status', { module, state, message });
 
   it('keeps the TouchDesigner button on while it retries, however many problems it reports', async () => {
+    await click('tab-lab');
     await click('btn-enable-td');
     expect(text('btn-enable-td')).toBe('TouchDesigner on');
     await status('touchdesigner', 'starting', 'Connecting to the TouchDesigner relay...');
@@ -358,6 +372,7 @@ describe('devices', () => {
     bus.emit('status', { module: 'touchdesigner', state: 'error', message: 'Relay not found: start it with: node bridge/relay.mjs.' });
     root = createRoot(container);
     await act(async () => root.render(<App />));
+    await click('tab-lab');
     expect(text('btn-enable-vision')).toBe('Camera on');
     expect(text('status-vision')).toBe('On (Camera tracking is on)');
     expect(text('btn-enable-audio')).toBe('Microphone off');
@@ -467,6 +482,7 @@ describe('practice panel', () => {
     const stop = bus.on('practiceControl', (c) => control.push(c.action));
     await click('use-demo');
     await until(() => $('sheet-ready'), 'the sheet');
+    await act(async () => reportStatus('audio-live', 'running', 'Listening')); // the microphone is on (off, Start would turn it on first)
     await click('btn-practice-start');
     expect(control).toEqual(['start']);
     expect(seen).toContain('command:playback.play:button:trigger:');

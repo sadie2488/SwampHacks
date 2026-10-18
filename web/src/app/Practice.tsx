@@ -1,10 +1,10 @@
 // Practice: play along with the song and get friendly feedback. This panel only talks to the listening part through
 // the bus (practiceControl in; practice and feedback out) and to the server for the coach's wording.
 import { useEffect, useState } from 'react';
-import { bus, sendCommand, type Topics } from '@/bus';
+import { bus, getStatus, sendCommand, type Topics } from '@/bus';
 import { FeedbackCard } from './FeedbackCard';
 import { afterAudioWakes, useBusValue, useModuleStatus } from './hooks';
-import { NO_SONG_MESSAGE, practiceWords } from './practice-logic';
+import { MIC_FAILED_MESSAGE, MIC_STARTING_MESSAGE, NO_SONG_MESSAGE, practiceWords, startMicThen } from './practice-logic';
 
 type Action = Topics['practiceControl']['action'];
 
@@ -50,8 +50,15 @@ export function Practice() {
         setNotice(NO_SONG_MESSAGE);
         return;
       }
-      bus.emit('practiceControl', { action });
-      if (!transport?.playing) sendCommand('playback.play', 'button', { how: 'trigger' });
+      const go = () => {
+        setNotice(null);
+        bus.emit('practiceControl', { action });
+        if (!bus.last('transport')?.playing) sendCommand('playback.play', 'button', { how: 'trigger' });
+      };
+      if (getStatus('audio-live')?.state === 'running') return go();
+      // the microphone is off: turn it on first (the same as the "Turn on microphone" button), then start
+      setNotice(MIC_STARTING_MESSAGE);
+      startMicThen(go, () => setNotice(MIC_FAILED_MESSAGE));
     });
 
   return (

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import realYaml from '../modules/mappings/mappings.yaml?raw';
+import { bus } from '@/bus';
 import type { Mode, Signal } from '@/contracts';
 import { createEngine } from '@/modules/commands/engine';
 import { leaveSectionCommands, logoTarget, MENU_MODE, publishedMode, shownSection } from './navigation';
@@ -48,9 +49,21 @@ describe('the entrance and the record menu are neutral', () => {
     expect(publishedMode('entrance', 'play')).toBe(MENU_MODE);
   });
 
-  it('mappings.yaml has no Learn rules, so the neutral mode only leaves the "any" rules live', () => {
-    const rules = parse(realYaml) as Array<{ mode?: string }>;
-    expect(rules.filter((r) => r.mode === MENU_MODE)).toEqual([]);
+  it('mappings.yaml has no Learn rules except learn.* ones (the app ignores those off the Learn screen), so the menu stays neutral', () => {
+    const rules = parse(realYaml) as Array<{ mode?: string; do?: string }>;
+    expect(rules.filter((r) => r.mode === MENU_MODE && !String(r.do).startsWith('learn.'))).toEqual([]);
+  });
+
+  it('on the menu, the V sign fires learn.pause, which nothing reacts to there (the Learn screen is not mounted), so the song is untouched', () => {
+    const { feed, fired } = setup(publishedMode('menu', 'learn'));
+    const transportBefore = bus.last('transport');
+    const commands: string[] = [];
+    const off = bus.on('command', (c) => commands.push(c.command));
+    feed(moment('vision.sign.v', 500));
+    off();
+    expect(fired.filter((c) => !c.startsWith('learn.'))).toEqual([]);
+    expect(commands).toEqual([]);
+    expect(bus.last('transport')).toBe(transportBefore);
   });
 
   it('on the menu, Create and Play words and hand moves do nothing (after leaving Create or Play)', () => {

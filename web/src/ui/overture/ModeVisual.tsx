@@ -11,6 +11,7 @@ import type { SongAnalysis } from '@/contracts';
 import { CountIn } from './CountIn';
 import { CreateStage, HUM_RINGS } from './CreateStage';
 import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
@@ -187,6 +188,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
   return (
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
+      {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
       {mode === 'create' && <CountIn />}
       {mode === 'create' && <CreateStage />}
       {mode === 'create' && (

@@ -53,12 +53,6 @@ h1.brand {
   color: var(--paper-white);
 }
 
-.records-pill {
-  border-color: var(--rule-strong);
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
 .tabs {
   display: flex;
   flex-wrap: wrap;
