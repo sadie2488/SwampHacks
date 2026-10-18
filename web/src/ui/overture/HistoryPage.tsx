@@ -1,7 +1,7 @@
 // The History page: the third record (its id stays 'play' because the contracts' Mode type is learn | play | create).
 // It replaced the Play section Sun 6 AM. One calm page: your practice progress as a graph, the coach's feedback per
 // run, and "Past creations", the tracks you saved in Create. Nothing on this page loads or plays a song by itself.
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { apiFetch } from '@/app/api-fetch';
 import { Trend, usePracticeRuns } from '@/app/History';
 import { recentRuns, runLine, type Run } from '@/app/history-logic';
@@ -59,7 +59,38 @@ function useCoaching(feedback: Feedback | undefined): Coaching | null {
   return knownCoaching(feedback) ?? (got?.for === feedback ? got.value : null);
 }
 
+/** Space between the mode title's last line and the top of the box. */
+const TITLE_GAP = 16;
+
+/**
+ * The box starts under the mode's big words ("HISTORY / YOUR JOURNEY" and the line under them), never over or beside
+ * them: the title's bottom edge is measured live (it depends on the window width and the header) and handed to the
+ * stylesheet as --history-top; the stylesheet's own value stays as the fallback where nothing can be measured.
+ */
+function useTopBelowTitle(ref: RefObject<HTMLElement>) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const title = el.closest('.stage')?.querySelector<HTMLElement>('.mode-title') ?? document.querySelector<HTMLElement>('.mode-title');
+    const place = () => {
+      const bottom = title?.getBoundingClientRect().bottom ?? 0;
+      if (bottom > 0) el.style.setProperty('--history-top', `${Math.round(bottom + TITLE_GAP)}px`);
+      else el.style.removeProperty('--history-top');
+    };
+    place();
+    window.addEventListener('resize', place);
+    const watcher = title && typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+    if (title) watcher?.observe(title);
+    return () => {
+      window.removeEventListener('resize', place);
+      watcher?.disconnect();
+    };
+  }, [ref]);
+}
+
 export function HistoryPage() {
+  const ref = useRef<HTMLElement>(null);
+  useTopBelowTitle(ref);
   const { songId, runs: songRuns, saves } = usePracticeRuns();
   // with a song loaded: that song's runs (server and this browser); with none: every run saved in this browser
   const runs = recentRuns(songId ? songRuns : [...readLocalRuns()].sort((a, b) => b.startedAt - a.startedAt));
@@ -67,15 +98,9 @@ export function HistoryPage() {
   const coaching = useCoaching(feedback);
   const [creations, setCreations] = useState(false);
 
+  // no title of its own: the mode's big words "HISTORY / YOUR JOURNEY" and their line sit right above this box
   return (
-    <section className="history-page" data-testid="history-page" aria-labelledby="history-page-title">
-      <header className="history-head">
-        <h2 id="history-page-title" className="history-title">
-          History
-        </h2>
-        <p className="history-lead">Your feedback and progress, in one place.</p>
-      </header>
-
+    <section ref={ref} className="history-page" data-testid="history-page" aria-label="History">
       <div className="history-body">
         <div className="history-progress" data-testid="history-progress">
           {runs.length === 0 ? (
