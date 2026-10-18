@@ -65,7 +65,7 @@
   text-transform: none;
 }
 
-/* ---------- the spray: positioned from the middle of the spray, in spray units (--u) ---------- */
+/* ---------- the flowers: positioned from the spray point, in spray units (--u); see spray.ts ---------- */
 .spray {
   --u: 13.2vh;
   position: absolute;
@@ -73,7 +73,6 @@
   top: 53.2vh;
   width: 0;
   height: 0;
-  transform: rotate(-35deg);
 }
 
 .spray-sway {
@@ -91,27 +90,18 @@
   }
 }
 
-.spray-stems {
-  position: absolute;
-  left: calc(-4 * var(--u));
-  top: calc(-4 * var(--u));
-  width: calc(8 * var(--u));
-  height: calc(8 * var(--u));
-  overflow: visible;
-  fill: none;
-  stroke: #f6f2ea;
-  stroke-width: 0.03;
-  stroke-dasharray: 0.08 0.05;
-  opacity: 0.75;
-}
-
-.bloom {
+/* one drawn flower's square (its SectionBloom fills it; the drawing's centre is the square's centre) */
+.spray-flower {
   position: absolute;
   left: calc(var(--x) * var(--u) - var(--r) * var(--u));
   top: calc(var(--y) * var(--u) * -1 - var(--r) * var(--u));
   width: calc(var(--r) * var(--u) * 2);
   height: calc(var(--r) * var(--u) * 2);
-  transform: rotate(var(--tilt));
+}
+
+.spray-flower .bloom {
+  position: absolute;
+  inset: 0;
 }
 
 /* the heart flower's centre: as you step into the menu it lights up in the main ink and travels to become the

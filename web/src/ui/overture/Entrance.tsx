@@ -1,4 +1,5 @@
-// Screen 1, the entrance: the Overture logo, one button in, and the chrysanthemum spray that blooms near it.
+// Screen 1, the entrance: the Overture logo, one button in, and Lalitha's drawn flowers (her chrysanthemum, orchid
+// and hibiscus, the same drawings as on the records) that bloom as the pointer nears the button.
 // "Enter with camera + sound" turns on the camera and the microphone (the click is the person's permission);
 // "Enter with sound only" never asks for the camera: the pointer then stands in for the hand.
 // Either way the record menu comes next, and nothing is blocked if a permission is refused.
