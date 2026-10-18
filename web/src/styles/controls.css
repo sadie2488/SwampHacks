@@ -1,10 +1,9 @@
-/* The compact "− value +" pills for speed and pitch. */
+/* The compact "− value +" pills for speed and pitch: one outlined pill, the value in the serif in the middle. */
 .seg {
   display: inline-flex;
   align-items: stretch;
-  border: var(--border);
-  border-radius: 99px;
-  background: #fff;
+  border: 1.5px solid var(--a);
+  border-radius: 999px;
   overflow: hidden;
 }
 
@@ -13,15 +12,20 @@
 .seg > button:active:not(:disabled) {
   border: 0;
   border-radius: 0;
-  box-shadow: none;
-  transform: none;
+  min-height: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.seg > button {
   background: transparent;
-  padding: 0.25rem 0.7rem;
-  font-weight: 800;
+  color: var(--paper-white);
 }
 
 .seg > button:hover:not(:disabled) {
-  background: var(--mustard-soft);
+  background: var(--a);
+  color: var(--on-a);
 }
 
 .seg > button:focus-visible {
@@ -29,13 +33,10 @@
 }
 
 .seg > output {
-  min-width: 3rem;
-  border: 0;
-  border-radius: 0;
-  background: var(--teal-deep);
-  color: #fff;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
+  min-width: 3.2rem;
+  padding: 0.3rem 0.4rem 0.2rem;
+  font-size: 18px;
+  border-inline: 1px solid var(--rule);
 }
 
 /* Narrow window (phones): a compact bar of three short rows, so it covers as little of the page as possible.
@@ -50,8 +51,7 @@
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.25rem 0.75rem;
     padding: 0.3rem 0.7rem 0.35rem;
-    border-radius: 18px;
-    box-shadow: 5px 5px 0 var(--ink);
+    border-radius: 22px;
     transform: translateX(-50%);
   }
 
@@ -59,7 +59,6 @@
   .play-button:hover:not(:disabled) {
     width: 2.75rem;
     height: 2.75rem;
-    box-shadow: 3px 3px 0 var(--ink);
   }
 
   .play-button::after {
@@ -134,8 +133,7 @@
     grid-column: 1 / -1;
     grid-row: 3;
     margin-top: 0.15rem;
-    height: 0.5rem;
-    border-width: 2px;
+    height: 2px;
   }
 
   .player-status {
@@ -175,7 +173,6 @@
     height: 2.5rem;
     padding: 0 0.8rem;
     font-size: 0.85rem;
-    box-shadow: 3px 3px 0 var(--ink);
   }
 
   .player-label,

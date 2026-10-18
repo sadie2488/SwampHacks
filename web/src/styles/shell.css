@@ -79,10 +79,18 @@
 }
 
 /* sound toggle: a speaker made of two small arcs, struck through when off */
-.sound-toggle {
+.sound-toggle,
+.sound-toggle[aria-pressed] {
   border-color: var(--rule-strong);
+  background: transparent;
+  color: var(--paper-white);
   padding: 6px 12px;
   font-size: 10px;
+}
+
+.sound-toggle:hover:not(:disabled) {
+  background: var(--paper-white);
+  color: var(--night);
 }
 
 .sound-icon {

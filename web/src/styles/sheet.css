@@ -1,15 +1,41 @@
-/* The strip spans the whole layout, so its content (heading, controls, staff) is centred in the window,
-   with the same gap on the left and the right. */
+/* The sheet music sits on a calm, plain paper band that runs the full width of the window: paper white with Night
+   ink, nothing from the moving background showing through, for the best possible reading contrast. */
+.sheet-strip {
+  position: relative;
+  isolation: isolate;
+  margin: 4px 0;
+  padding: 22px 0 26px;
+  color: var(--sheet-ink);
+  --a-text: var(--sheet-ink);
+}
+
+.sheet-strip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -100vw;
+  right: -100vw;
+  background: var(--sheet-paper);
+  z-index: -1;
+}
+
 .sheet-strip-inner {
   max-width: 72rem;
   margin-inline: auto;
 }
 
-.sheet-strip-inner > h2 {
+.sheet-strip .kicker {
+  color: rgba(11, 10, 12, 0.6);
   margin-bottom: 0.3rem;
 }
 
-/* Part / Written for / Beginner mode: one compact line right above the staff. */
+.sheet-strip .muted,
+.sheet-strip .small-note {
+  color: rgba(11, 10, 12, 0.66);
+}
+
+/* Part / Written for / Beginner mode: one compact line right above the staff, in dark ink on the paper */
 .sheet-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -19,14 +45,36 @@
   font-size: 0.88rem;
 }
 
-.sheet-toolbar label + label {
-  margin-left: 0;
+.sheet-strip select,
+.sheet-strip button {
+  color: var(--sheet-ink);
+  background: transparent;
+  border-color: rgba(11, 10, 12, 0.55);
 }
 
-.sheet-toolbar select {
+.sheet-strip select {
   font-size: 0.85rem;
   padding: 0.25rem 0.5rem 0.25rem 0.75rem;
-  box-shadow: 2px 2px 0 var(--ink);
+  min-height: 32px;
+}
+
+.sheet-strip option {
+  color: var(--sheet-ink);
+  background: var(--sheet-paper);
+}
+
+.sheet-strip button:hover:not(:disabled),
+.sheet-strip button[aria-pressed='true'] {
+  background: var(--sheet-ink);
+  color: var(--sheet-paper);
+}
+
+.sheet-strip :focus-visible {
+  outline-color: var(--sheet-ink);
+}
+
+.sheet-strip input[type='checkbox'] {
+  accent-color: var(--sheet-ink);
 }
 
 .sheet-status {
@@ -44,4 +92,3 @@
 .sheet-host[hidden] {
   display: none;
 }
-

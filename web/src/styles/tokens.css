@@ -87,6 +87,8 @@
   --a: var(--lab-a);
   --b: var(--lab-b);
   --a-text: #4a72ff;
+  /* text on a filled Cobalt button must be light to stay readable */
+  --on-a: var(--paper-white);
 }
 
 .app[data-screen='entrance'] {

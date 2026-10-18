@@ -1,29 +1,15 @@
-/* Paper Reef (look C1): paper-tag cards with an ink border and a hard offset shadow, pill buttons, and a calm
-   torn-paper strip behind the sheet music. The layered paper landscape behind everything is web/src/ui/backdrop. */
+/* Overture base: bright inks on near-black. Text is paper white; the mode's main colour (--a) marks only things you
+   can act on (buttons, active controls), so colour shows the way. Labels are small heavy Archivo capitals, numbers
+   and titles are Instrument Serif. The look's colours and fonts live in web/src/styles/tokens.css. */
 :root {
-  --ink: #17313a;
-  --muted: #4b5f66;
-  --cream: #fff0d6;
-  --paper: #fff4e0;
-  --strip: #fff6e6;
-  --coral: #ff7a59;
-  --coral-text: #c8431f;
-  --mustard: #ffc23d;
-  --mustard-soft: #ffe7a6;
-  --teal: #1f8f86;
-  --teal-deep: #17706a;
-  --mint: #bfe6cf;
-  --line: rgba(23, 49, 58, 0.28);
-  --error: #b3261e;
-  --border: 2.5px solid var(--ink);
-  --display: var(--sans);
-  --mono: var(--sans);
-  font-family: var(--display);
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.45;
-  color: var(--ink);
-  background: var(--cream);
-  accent-color: var(--teal-deep);
+  color: var(--paper-white);
+  background: var(--night);
+  accent-color: var(--a);
+  /* text on a filled button in the mode colour (Cobalt needs light text) */
+  --on-a: var(--night);
 }
 
 * {
@@ -32,93 +18,85 @@
 
 body {
   margin: 0;
-  background: var(--cream);
+  background: var(--night);
 }
 
-/* The app sits above the landscape. It is full width so the paper strip can reach both edges of the window,
-   and it clips sideways so that strip never makes the page scroll left and right. */
-/* ---------- buttons and form controls ---------- */
-
+/* ---------- buttons: outlined pills in the mode colour; the main action of each panel is filled ---------- */
 button,
 select,
 input::file-selector-button {
-  font: 600 0.95rem/1.2 var(--display);
-  color: var(--ink);
-  background: var(--paper);
-  border: var(--border);
-  border-radius: 99px;
-  padding: 0.45rem 1.05rem;
-  box-shadow: 3px 3px 0 var(--ink);
+  font: 800 11px/1.2 var(--sans);
+  font-stretch: 100%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  background: transparent;
+  border: 1.5px solid var(--a);
+  border-radius: 999px;
+  padding: 9px 16px;
+  min-height: 36px;
   cursor: pointer;
   transition:
-    box-shadow 0.08s ease-out,
-    transform 0.08s ease-out,
-    background-color 0.12s;
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 
 select {
-  padding-right: 0.6rem;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 7px 12px;
+  background: var(--panel-strong);
+}
+
+option {
+  color: var(--paper-white);
+  background: var(--night);
 }
 
 button:hover:not(:disabled),
-select:hover:not(:disabled),
 input::file-selector-button:hover {
-  background-color: #fffaf0;
-  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--a);
+  color: var(--on-a);
 }
 
-button:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+select:hover:not(:disabled) {
+  border-color: var(--paper-white);
 }
 
 button:disabled,
 select:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
-  box-shadow: 2px 2px 0 var(--ink);
+  opacity: 0.4;
+  border-color: var(--rule-strong);
 }
 
-/* the main thing to press on each card: coral; the easy way in: mustard */
 [data-testid='btn-play'],
-[data-testid='btn-practice-start'] {
-  background: var(--coral);
+[data-testid='btn-practice-start'],
+[data-testid='use-demo'],
+button[aria-pressed='true'] {
+  background: var(--a);
+  color: var(--on-a);
 }
 
 [data-testid='btn-play']:hover:not(:disabled),
-[data-testid='btn-practice-start']:hover:not(:disabled) {
-  background: #ff8d70;
-}
-
-[data-testid='use-demo'],
-.tabs button[aria-selected='true']:hover {
-  background: var(--mustard);
-}
-
-[data-testid='use-demo']:hover:not(:disabled) {
-  background: #ffcd5c;
-}
-
-button[aria-pressed='true'] {
-  background: var(--teal-deep);
-  color: #fff;
-}
-
+[data-testid='btn-practice-start']:hover:not(:disabled),
+[data-testid='use-demo']:hover:not(:disabled),
 button[aria-pressed='true']:hover:not(:disabled) {
-  background: #13615c;
-}
-
-input::file-selector-button {
-  margin-right: 0.6rem;
+  background: var(--paper-white);
+  border-color: var(--paper-white);
+  color: var(--night);
 }
 
 input[type='file'] {
-  font: 500 0.85rem var(--display);
+  font: 500 0.85rem var(--sans);
   max-width: 100%;
 }
 
 input[type='range'] {
-  accent-color: var(--coral-text);
+  accent-color: var(--a);
 }
 
 label {
@@ -130,181 +108,31 @@ label > input:not([type='checkbox'], [type='radio']) {
   margin-left: 0.4rem;
 }
 
-label + label {
-  margin-left: 0.6rem;
-}
-
 input[type='text'],
 input[type='search'],
 input[type='number'],
-input:not([type]) {
-  font: 500 0.95rem var(--display);
-  color: var(--ink);
-  background: #fff;
-  border: var(--border);
-  border-radius: 12px;
-  padding: 0.35rem 0.7rem;
+input:not([type]),
+textarea {
+  font: 500 0.95rem var(--sans);
+  color: var(--paper-white);
+  background: var(--panel-strong);
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  padding: 0.45rem 0.7rem;
   max-width: 100%;
 }
 
-:focus-visible {
-  outline: 3px solid var(--ink);
+/* keyboard focus: always a clear paper-white ring */
+:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--paper-white);
   outline-offset: 3px;
 }
 
-button:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--teal-deep);
-  outline-offset: 4px;
-}
-
-/* ---------- small text pieces ---------- */
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem 0.75rem;
-  margin: 0.65rem 0;
-}
-
-.row > span:first-child {
-  font: 500 0.75rem var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  min-width: 3.4rem;
-}
-
-output {
-  display: inline-block;
-  min-width: 4.5rem;
-  text-align: center;
-  font: 500 0.85rem var(--mono);
-  font-variant-numeric: tabular-nums;
-  padding: 0.25rem 0.6rem;
-  border: 2px solid var(--ink);
-  border-radius: 99px;
-  background: #fff;
-}
-
-[data-testid='transport-state'],
-[data-testid='transport-position'] {
-  font-family: var(--mono);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1.75rem;
-  margin: 0;
-}
-
-.facts dt {
-  font: 500 0.7rem var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--teal-deep);
-}
-
-.facts dd {
-  margin: 0;
-  font-weight: 800;
-  font-size: 1.05rem;
-}
-
-.facts dd.unsure {
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-
-.analysis-warnings {
-  margin: 0 0 0.75rem;
-}
-
-.analysis-warnings-title {
-  margin: 0 0 0.25rem;
-  font-weight: 800;
-}
-
-.analysis-warnings ul {
-  margin: 0;
-  padding-left: 1.2rem;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.notice {
-  background: var(--mustard-soft);
-  border: 2px solid var(--ink);
-  border-radius: 14px;
-  padding: 0.45rem 0.8rem;
-}
-
-.error {
-  color: var(--error);
-  font-weight: 700;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border: 2px solid var(--ink);
-  border-radius: 99px;
-  background: var(--mustard);
-  color: var(--ink);
-  font: 500 0.72rem var(--mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* ---------- sheet music on its calm torn-paper strip ---------- */
-
-/* The strip runs the full width of the window. Nothing from the landscape shows through it, so the staff reads
-   clearly. Its torn edges are masks; a soft ink edge underneath lifts it off the landscape. */
-.sheet-strip {
-  position: relative;
-  isolation: isolate;
-  margin: 0.75rem 0;
-  padding: 2rem 0 2.25rem;
-}
-
-.sheet-strip::before,
-.sheet-strip::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -100vw;
-  right: -100vw;
-  background: var(--strip);
-  -webkit-mask:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='14'%3E%3Cpath d='M0 14 L0 5.3 L8 5.8 L14 3.5 L20 5.6 L26 9.4 L34 3.3 L46 5.9 L54 3.6 L66 3.4 L72 9.6 L78 7 L90 3.3 L98 3.3 L106 5 L114 6.8 L124 6.9 L132 3.7 L140 5.6 L146 7 L154 6.5 L166 8.4 L178 7.1 L190 5.5 L198 8.6 L206 3.6 L216 6.7 L226 8.1 L236 7.3 L240 5.3 L240 14 Z'/%3E%3C/svg%3E") top left / 240px 14px repeat-x,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='14'%3E%3Cpath d='M0 0 L0 8.7 L8 8.2 L14 10.5 L20 8.4 L26 4.6 L34 10.7 L46 8.1 L54 10.4 L66 10.6 L72 4.4 L78 7 L90 10.7 L98 10.7 L106 9 L114 7.2 L124 7.1 L132 10.3 L140 8.4 L146 7 L154 7.5 L166 5.6 L178 6.9 L190 8.5 L198 5.4 L206 10.4 L216 7.3 L226 5.9 L236 6.7 L240 8.7 L240 0 Z'/%3E%3C/svg%3E") bottom left / 240px 14px repeat-x,
-    linear-gradient(#000, #000) center / 100% calc(100% - 27px) no-repeat;
-  mask:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='14'%3E%3Cpath d='M0 14 L0 5.3 L8 5.8 L14 3.5 L20 5.6 L26 9.4 L34 3.3 L46 5.9 L54 3.6 L66 3.4 L72 9.6 L78 7 L90 3.3 L98 3.3 L106 5 L114 6.8 L124 6.9 L132 3.7 L140 5.6 L146 7 L154 6.5 L166 8.4 L178 7.1 L190 5.5 L198 8.6 L206 3.6 L216 6.7 L226 8.1 L236 7.3 L240 5.3 L240 14 Z'/%3E%3C/svg%3E") top left / 240px 14px repeat-x,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='14'%3E%3Cpath d='M0 0 L0 8.7 L8 8.2 L14 10.5 L20 8.4 L26 4.6 L34 10.7 L46 8.1 L54 10.4 L66 10.6 L72 4.4 L78 7 L90 10.7 L98 10.7 L106 9 L114 7.2 L124 7.1 L132 10.3 L140 8.4 L146 7 L154 7.5 L166 5.6 L178 6.9 L190 8.5 L198 5.4 L206 10.4 L216 7.3 L226 5.9 L236 6.7 L240 8.7 L240 0 Z'/%3E%3C/svg%3E") bottom left / 240px 14px repeat-x,
-    linear-gradient(#000, #000) center / 100% calc(100% - 27px) no-repeat;
-  z-index: -1;
-}
-
-/* the soft edge: the same torn shape, a little lower and to the side, in faint ink */
-.sheet-strip::after {
-  background: rgba(23, 49, 58, 0.16);
-  transform: translate(-5px, 7px);
-  z-index: -2;
-}
-
-
 /* ---------- camera pictures ---------- */
-
-/* The "see yourself" camera preview. Only the VIDEO is mirrored: the camera stream arrives unflipped and the person
-   expects a mirror. The overlay canvas is NOT flipped (and neither is anything that holds both): the vision module
-   already publishes the landmarks mirrored, so a second flip would draw the hands on the wrong side. */
+/* Only the VIDEO is mirrored: the vision module already publishes the landmarks mirrored, so the overlay is not. */
 .camera-preview {
   max-width: 320px;
   padding: 0.6rem;
@@ -314,9 +142,8 @@ output {
   position: relative;
   width: 100%;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--mint), #7cc4b0);
-  border: 1px solid var(--ink);
-  border-radius: 14px;
+  background: var(--night);
+  border: 1px solid var(--rule);
 }
 
 .camera-preview-video,
@@ -334,195 +161,8 @@ output {
 
 .camera-preview figcaption {
   margin-top: 0.45rem;
-  font: 500 0.72rem var(--mono);
-  letter-spacing: 0.1em;
+  font: 800 10px var(--sans);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-/* ---------- practice, feedback, history ---------- */
-
-.practice-steps {
-  list-style: none;
-  counter-reset: step;
-  margin: 0 0 0.75rem;
-  padding: 0;
-}
-
-.practice-steps li {
-  counter-increment: step;
-  display: flex;
-  gap: 0.7rem;
-  align-items: flex-start;
-  margin: 0.45rem 0;
-  line-height: 1.3;
-}
-
-.practice-steps li::before {
-  content: counter(step);
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border: 2.5px solid var(--ink);
-  border-radius: 50%;
-  font: 800 0.75rem var(--display);
-}
-
-.practice-steps li[aria-current='step']::before {
-  background: var(--coral);
-}
-
-.feedback-card {
-  margin-top: 0.85rem;
-  padding: 0.7rem 0.95rem;
-  border: 2px solid var(--ink);
-  border-radius: 16px;
-  background: #e6f5ec;
-}
-
-.feedback-card h3 {
-  margin: 0 0 0.4rem;
-}
-
-.feedback-card h4 {
-  margin: 0.6rem 0 0.2rem;
-  font: 500 0.72rem var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--teal-deep);
-}
-
-.feedback-card ul {
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-.feedback-coach {
-  margin-top: 0.6rem;
-}
-
-.feedback-coach p {
-  margin: 0.2rem 0;
-}
-
-.history ul {
-  margin: 0.4rem 0 0;
-  padding-left: 1.25rem;
-}
-
-/* ---------- Create and the Command Lab ---------- */
-
-[data-testid='create-panel'] [role='group'] {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin: 0.6rem 0;
-}
-
-.command-lab {
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 1.75rem;
-}
-
-.command-lab > section {
-  margin: 0;
-  min-width: 0;
-}
-
-/* the lab's title and introduction are paper tags too, so they read over the landscape */
-.command-lab > h1,
-.command-lab > p {
-  justify-self: start;
-  margin: 0;
-  background: var(--paper);
-  border: var(--border);
-  box-shadow: 4px 4px 0 var(--ink);
-}
-
-.command-lab > h1 {
-  padding: 0.25rem 1rem 0.35rem;
-  font-size: 1.9rem;
-  font-weight: 800;
-  border-radius: 14px;
-  transform: rotate(-0.8deg);
-}
-
-.command-lab > p {
-  margin-top: -0.5rem;
-  max-width: 46rem;
-  padding: 0.6rem 1rem;
-  border-radius: 16px;
-}
-
-.command-lab code {
-  font-family: var(--mono);
-  font-size: 0.85em;
-  background: #fff;
-  border: 1.5px solid var(--line);
-  border-radius: 6px;
-  padding: 0 0.3em;
-}
-
-.lab-list > li {
-  border: 2px dashed var(--line);
-  border-radius: 14px;
-  padding: 0.55rem 0.8rem;
-  background: #fffaf0;
-}
-
-.lab-hint {
   color: var(--muted);
-}
-
-.lab-reading meter {
-  width: 12rem;
-  max-width: 100%;
-}
-
-.lab-camera {
-  max-width: 640px;
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--mint), #7cc4b0);
-  border: var(--border);
-  border-radius: 14px;
-}
-
-.lab-lamp {
-  border: 2px solid var(--ink);
-  background: #fff;
-}
-
-.lab-lamp[data-on='true'] {
-  background: var(--coral);
-  box-shadow: none;
-}
-
-[data-testid^='control-'][data-flash='true'] {
-  background: var(--mustard-soft);
-}
-
-[data-testid^='rule-'][data-fired='true'] {
-  background: var(--mint);
-}
-
-[data-testid='lab-issues'] li[data-level='error'] {
-  border-color: var(--error);
-  border-style: solid;
-}
-
-[data-testid='lab-issues'] li[data-level='warning'] {
-  border-color: #c98a00;
-  border-style: solid;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button,
-  select,
-  input::file-selector-button {
-    transition: none;
-  }
 }
