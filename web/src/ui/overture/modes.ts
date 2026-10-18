@@ -19,7 +19,7 @@ export interface ModeLook {
 export const MODES: readonly ModeLook[] = [
   { id: 'learn', name: 'Learn', big: ['Learn', 'By Ear'], sub: 'Upload a song. Read it. Play along.', a: '#1fb3bf', b: '#ff4a3d' },
   { id: 'play', name: 'Play', big: ['Play', 'With Hands'], sub: 'Your hands and voice drive the music.', a: '#ff7a00', b: '#ff2d8a' },
-  { id: 'create', name: 'Create', big: ['Create', 'From a Hum'], sub: 'Hum it. Loop it. Keep it.', a: '#c9a8ff', b: '#ff4fa3' },
+  { id: 'create', name: 'Create', big: ['Create', 'From Hums'], sub: 'Hum it. Loop it. Keep it.', a: '#c9a8ff', b: '#ff4fa3' },
   { id: 'lab', name: 'Command Lab', big: ['Command', 'Lab'], sub: 'Try every gesture and word.', a: '#2f5bff', b: '#ff9a1f' },
 ];
 
