@@ -1,0 +1,63 @@
+/* The hand cursor: a small ring in the mode's ink, never clickable. Moves by transform only. */
+.hand-pointer {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  will-change: transform;
+}
+.hand-pointer svg {
+  display: block;
+  overflow: visible;
+}
+.hand-pointer-dot {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  transition: transform 0.15s ease;
+}
+.hand-pointer[data-fist='true'] .hand-pointer-dot {
+  transform: scale(0.7);
+}
+.hand-pointer-fill {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* What the hand is over: a ring in the mode's ink and a gentle lift. */
+.hand-hover {
+  outline: 2px solid var(--hand-ink, currentColor);
+  outline-offset: 4px;
+  scale: 1.05;
+  transition: scale 0.15s ease;
+}
+
+/* Bigger hit areas (at least 48 x 48) without changing the look: an invisible layer round small buttons. */
+.app-header button,
+.panel-toggle,
+.entrance button,
+.guide-overlay button,
+.hands-overlay button {
+  position: relative;
+}
+.app-header button::after,
+.panel-toggle::after,
+.entrance button::after,
+.guide-overlay button::after,
+.hands-overlay button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 48px);
+  height: max(100%, 48px);
+  transform: translate(-50%, -50%);
+}

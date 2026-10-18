@@ -539,23 +539,10 @@ describe('Any-mode rules', () => {
     });
   }
 
-  for (const side of ['right', 'left'] as const) {
-    const name = `grab with the ${side} hand to enter the chosen record`;
-    // The effect (entering the chosen record) lives in the record menu (RecordMenu.tsx, a React screen): here we check
-    // the rule sends app.enter in every mode, and the static test below checks RecordMenu still listens for it.
-    it(name, () => {
-      for (const mode of ['learn', 'play', 'create'] as Mode[]) {
-        setMode(mode);
-        vi.advanceTimersByTime(2000);
-        moment(`vision.hand.${side}.grab`);
-      }
-      expect(fromRule(name).map((c) => [c.command, c.mode])).toEqual([
-        ['app.enter', 'learn'],
-        ['app.enter', 'play'],
-        ['app.enter', 'create'],
-      ]);
-    });
-  }
+  // The grab -> app.enter rules were replaced by the hand cursor's hold-to-click (ui/overture/HandPointer.tsx).
+  it('has no grab -> app.enter rules any more', () => {
+    expect(RAW_RULES.filter((r) => String(r.when).endsWith('.grab'))).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------------------

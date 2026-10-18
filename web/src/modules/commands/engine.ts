@@ -418,6 +418,9 @@ export function createEngine(options: EngineOptions = {}) {
   let states = new Map<number, RuleState>();
   let mode: Mode = 'play';
   let practiceRun = false;
+  // While the hand works as a mouse (HandPointer), a fist means "click", so mode-bound hand rules stay quiet.
+  let pointerActive = false;
+  const pointerBlocks = (rule: Rule) => pointerActive && rule.mode !== 'any' && rule.when.startsWith('vision.hand.');
   const held = new Set<string>(); // holdable signals that are active right now (a fist that is closed...)
   // hold_ms rules whose gesture is on: when it started, and whether the rule already fired for this hold
   const holding = new Map<number, { since: number; done: boolean }>();
@@ -430,7 +433,8 @@ export function createEngine(options: EngineOptions = {}) {
   };
   const momentValue = (rule: Rule) => (rule.how === 'nudge' ? rule.step : rule.value);
   /** Still allowed to run right now (mode and only_while), ignoring the signal itself. */
-  const armed = (rule: Rule) => rule.enabled && (rule.mode === 'any' || rule.mode === mode) && (!rule.onlyWhile || held.has(rule.onlyWhile));
+  const armed = (rule: Rule) =>
+    rule.enabled && (rule.mode === 'any' || rule.mode === mode) && (!rule.onlyWhile || held.has(rule.onlyWhile)) && !pointerBlocks(rule);
 
   const stateOf = (rule: Rule): RuleState => {
     let s = states.get(rule.index);
@@ -464,6 +468,11 @@ export function createEngine(options: EngineOptions = {}) {
       practiceRun = active;
     },
 
+    /** True while the hand is used as a mouse: hand rules that are not "mode: any" are skipped. */
+    setPointerActive(active: boolean): void {
+      pointerActive = active;
+    },
+
     /** Feed one signal reading in; get the commands it causes (usually none). */
     handleSignal(sig: Signal): Emission[] {
       // Keep track of held gestures first, so a rule sees the newest state.
@@ -478,6 +487,7 @@ export function createEngine(options: EngineOptions = {}) {
       for (const rule of rules) {
         if (!rule.enabled || rule.when !== sig.id) continue;
         if (rule.mode !== 'any' && rule.mode !== mode) continue;
+        if (pointerBlocks(rule)) continue;
         if ((sig.confidence ?? 1) < rule.minConfidence) continue;
         if (rule.onlyWhile && !held.has(rule.onlyWhile)) continue;
 
