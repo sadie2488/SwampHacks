@@ -80,25 +80,25 @@ describe('Create take end', () => {
     expect(store.getState().layers[0].loopBeats).toBe(8);
   });
 
-  it('ends early when Record is pressed again, with the loop length from the elapsed time', () => {
+  it('ends early when Record is pressed again, with the loop length from the elapsed time in whole bars', () => {
     const { store, engine, ends } = setup();
     startTakeAndHum(engine);
-    clock = TAKE_START + 3000; // 3 s at 120 bpm is 6 beats
+    clock = TAKE_START + 3000; // 3 s at 120 bpm is 6 beats: the part-filled second bar is kept
     pressRecord();
     expect(store.getState().phase).toBe('playing');
     expect(ends).toHaveLength(1);
     expect(store.getState().layers[0].notes).toHaveLength(3);
-    expect(store.getState().layers[0].loopBeats).toBe(6);
+    expect(store.getState().layers[0].loopBeats).toBe(8);
   });
 
-  it('ends early on the left-fist gesture, with the loop length from the elapsed time', () => {
+  it('ends early on the left-fist gesture, with the loop length from the elapsed time in whole bars', () => {
     const { store, engine, ends } = setup();
     startTakeAndHum(engine);
-    clock = TAKE_START + 2500; // 5 beats
+    clock = TAKE_START + 2500; // 5 beats: one beat past the bar line counts as a late press, so one bar
     leftFist();
     expect(store.getState().phase).toBe('playing');
     expect(ends).toHaveLength(1);
-    expect(store.getState().layers[0].loopBeats).toBe(5);
+    expect(store.getState().layers[0].loopBeats).toBe(4);
   });
 
   it('a late pass end does nothing after an early stop', () => {
@@ -110,7 +110,7 @@ describe('Create take end', () => {
     hooks.onPassEnd(TAKE_START + 4000);
     vi.runAllTimers();
     expect(ends).toHaveLength(1);
-    expect(store.getState().layers[0].loopBeats).toBe(6);
+    expect(store.getState().layers[0].loopBeats).toBe(8);
   });
 
   it('a gesture during the tail wins and the waiting pass end is dropped', () => {

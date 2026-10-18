@@ -2,14 +2,19 @@
 // Layout of the Tone.Transport timeline (4/4):
 //   bar 0       count-in clicks (only when a take is starting)
 //   bar 1 ...   the loop itself, `bars` long; the transport jumps back to bar 1 when it reaches the end
-// Every layer is a Tone.Part started at bar 1, so all layers loop together and stay in time.
+// Every layer is a looping Tone.Part kept in phase with the bar its take started on (loop-grid.ts), so all layers
+// stay in time however late a part is built. When the clock starts from the top, every part is rebuilt from bar 1.
 import * as Tone from 'tone';
 import { getAudioContext, resumeAudio } from '@/bus';
 import type { Note } from '@/contracts';
 import type { LoopEngine, LoopHooks } from './engine';
 import { createEffect, createInstrument, type InstrumentVoice } from './instruments';
 import type { Layer } from './layers';
+import { barToTicks, LOOP_TOP_BAR, partStart } from './loop-grid';
 import { BEATS_PER_BAR, type EffectId, type InstrumentId } from './music';
+
+/** How far ahead of the clock a part built while the loop runs is started. */
+const PART_START_MARGIN_SEC = 0.05;
 
 let toneBound = false;
 /** Tone makes its own context unless told otherwise; the app has one shared context, so Tone must use that. Done once. */
@@ -38,7 +43,7 @@ interface Voice {
   gain: Tone.Gain;
   part: Tone.Part<PartEvent> | null;
   /** What the part was built from, to know when it has to be rebuilt. */
-  builtFrom: { notes: readonly Note[]; loopBeats: number; bpm: number } | null;
+  builtFrom: { notes: readonly Note[]; loopBeats: number; bpm: number; startBar: number } | null;
 }
 
 export function createToneEngine(): LoopEngine {
@@ -85,6 +90,8 @@ class ToneLoopEngine implements LoopEngine {
     if (!wasRunning) {
       transport.stop();
       this.silenceAll();
+      // parts were placed on the old run's clock; build them again from the loop top
+      for (const v of this.voices.values()) v.builtFrom = null;
     }
     this.clearMarks();
     this.apply();
@@ -104,7 +111,7 @@ class ToneLoopEngine implements LoopEngine {
       this.markIds.push(
         transport.scheduleOnce((time) => {
           const at = this.heardAtMs(time);
-          later(() => hooks.onGo(at));
+          later(() => hooks.onGo(at, goBar));
         }, `${goBar}:0:0`),
       );
       // Temporary team decision (Sat evening, Veda away): a take also ends by itself after one pass of the
@@ -196,8 +203,9 @@ class ToneLoopEngine implements LoopEngine {
       v.pitchShift.pitch = layer.pitchSemitones ?? 0;
       v.gain.gain.rampTo(layer.muted ? 0 : layer.volume, 0.03);
       const loopBeats = layer.loopBeats ?? bars * BEATS_PER_BAR;
+      const startBar = layer.startBar ?? LOOP_TOP_BAR;
       const b = v.builtFrom;
-      if (!b || b.notes !== layer.notes || b.loopBeats !== loopBeats || b.bpm !== bpm) this.buildPart(v, layer.notes, loopBeats, bpm);
+      if (!b || b.notes !== layer.notes || b.loopBeats !== loopBeats || b.bpm !== bpm || b.startBar !== startBar) this.buildPart(v, layer.notes, loopBeats, bpm, startBar);
     }
     for (const [id, v] of this.voices) {
       if (seen.has(id)) continue;
@@ -236,10 +244,10 @@ class ToneLoopEngine implements LoopEngine {
     }
   }
 
-  private buildPart(v: Voice, notes: readonly Note[], loopBeats: number, bpm: number) {
+  private buildPart(v: Voice, notes: readonly Note[], loopBeats: number, bpm: number, startBar: number) {
     v.part?.dispose();
     v.part = null;
-    v.builtFrom = { notes, loopBeats, bpm };
+    v.builtFrom = { notes, loopBeats, bpm, startBar };
     const transport = Tone.getTransport();
     const ppq = transport.PPQ;
     const events: PartEvent[] = [];
@@ -249,16 +257,25 @@ class ToneLoopEngine implements LoopEngine {
       events.push({ time: `${Math.round(onsetBeat * ppq)}i`, pitch: n.pitch, beats: n.duration_beat ?? (n.duration_sec * bpm) / 60, velocity: n.velocity ?? 0.8 });
     }
     if (events.length === 0) return;
-    const positionBar = Number(String(transport.position).split(':')[0]) || 0;
-    const startBar = transport.state === 'started' ? Math.floor(positionBar) + 1 : 1;
+    const loopTicks = Math.round(loopBeats * ppq);
+    // join the loop part-way, in phase with the bar the take started on, instead of waiting for a later bar
+    const at = partStart({
+      anchorTicks: barToTicks(startBar, ppq),
+      loopTicks,
+      topTicks: barToTicks(LOOP_TOP_BAR, ppq),
+      running: transport.state === 'started',
+      nowTicks: transport.ticks,
+      // the clock has already handled ticks up to about now; leave room for one more update of it
+      marginTicks: Math.ceil(PART_START_MARGIN_SEC * (bpm / 60) * ppq),
+    });
     const part = new Tone.Part<PartEvent>((time, ev) => {
       const secPerBeat = 60 / Tone.getTransport().bpm.value;
       v.instrument.play(ev.pitch, ev.beats * secPerBeat, time, ev.velocity);
     }, events);
     part.loop = true;
     part.loopStart = 0;
-    part.loopEnd = `${Math.round(loopBeats * ppq)}i`;
-    v.part = part.start(`${startBar}:0:0`);
+    part.loopEnd = `${loopTicks}i`;
+    v.part = part.start(`${at.startTicks}i`, `${at.offsetTicks}i`);
   }
 
   private disposeVoice(v: Voice) {
