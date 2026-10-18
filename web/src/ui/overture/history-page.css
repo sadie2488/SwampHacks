@@ -1,8 +1,14 @@
 /* The History page: one quiet sheet over the camera, fits 1280x800 with no page scroll (the feedback list and the
    Past creations list scroll inside themselves). Type: the Overture serif for the title, the sans for everything else. */
 .history-page {
-  position: absolute;
+  /* pinned to the window, never to the page: a fixed box from under the header to the bottom margin, so nothing
+     can run off the screen; what does not fit scrolls inside .history-body (and inside the Past creations list) */
+  position: fixed;
   inset: 118px 48px 28px;
+  height: calc(100vh - 146px);
+  height: calc(100dvh - 146px);
+  box-sizing: border-box;
+  overflow: hidden;
   z-index: 3;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -39,6 +45,10 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 32px;
   min-height: 0;
+  /* the content area: everything between the title and the bottom row scrolls here, never the page */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
 }
 
 .history-progress {
@@ -148,9 +158,11 @@
   position: absolute;
   left: 32px;
   right: 32px;
+  top: 118px;
   bottom: 74px;
-  max-height: 62%;
-  overflow: auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px 20px;
   background: rgba(12, 9, 7, 0.94);
   border: 1px solid rgba(242, 238, 230, 0.18);
