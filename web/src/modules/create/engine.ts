@@ -2,8 +2,11 @@
 import type { Layer } from './layers';
 
 export interface LoopHooks {
-  /** The take starts now: the count-in bar is over. `atMs` is when that is heard, on the page clock (performance.now()). */
-  onGo(atMs?: number): void;
+  /**
+   * The take starts now: the count-in bar is over. `atMs` is when that is heard, on the page clock (performance.now()).
+   * `startBar` is the loop-clock bar the take starts on; the layer keeps it so it plays back in the same place.
+   */
+  onGo(atMs?: number, startBar?: number): void;
   /** One pass of the default loop length has been heard since onGo. `atMs` is when that is heard. */
   onPassEnd(atMs?: number): void;
 }

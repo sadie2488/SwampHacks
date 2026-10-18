@@ -16,6 +16,8 @@ export interface Layer {
   pitchConfirmed?: boolean;
   instrumentVoiceEnabled?: boolean;
   loopBeats?: number;
+  /** Loop-clock bar the layer's take started on; its loop repeats from there (see loop-grid.ts). Default: the loop top. */
+  startBar?: number;
   effects: EffectId;
   muted: boolean;
   notes: Note[];
@@ -53,7 +55,7 @@ export type Action =
   | { type: 'setMuted'; id: string; muted: boolean }
   | { type: 'recordStart' }
   | { type: 'recordGo' }
-  | { type: 'recordEnd'; notes: Note[]; loopBeats?: number; message?: string }
+  | { type: 'recordEnd'; notes: Note[]; loopBeats?: number; startBar?: number; message?: string }
   | { type: 'recordCancel' }
   | { type: 'play' }
   | { type: 'stop' }
@@ -172,7 +174,7 @@ export function reduce(s: CreateState, a: Action): CreateState {
     case 'recordEnd': {
       if (!isRecording(s) || !s.recordingId) return s;
       // A take with no notes leaves the layer as it was
-      const next = a.notes.length > 0 ? withLayer(s, s.recordingId, (l) => ({ ...l, notes: a.notes, loopBeats: a.loopBeats ?? l.loopBeats, pitchSemitones: 0, handPitchEnabled: true, pitchConfirmed: false, instrumentVoiceEnabled: true })) : s;
+      const next = a.notes.length > 0 ? withLayer(s, s.recordingId, (l) => ({ ...l, notes: a.notes, loopBeats: a.loopBeats ?? l.loopBeats, startBar: a.startBar ?? l.startBar, pitchSemitones: 0, handPitchEnabled: true, pitchConfirmed: false, instrumentVoiceEnabled: true })) : s;
       // the loop carries on with the new notes, unless there is still nothing to hear
       return { ...next, phase: hasAnyNotes(next) ? 'playing' : 'idle', recordingId: null, message: a.message ?? '' };
     }

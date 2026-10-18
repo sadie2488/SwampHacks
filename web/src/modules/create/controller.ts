@@ -6,6 +6,7 @@ import type { CommandEvent } from '@/contracts';
 import type { LoopEngine } from './engine';
 import { fitTakeToKey } from './key';
 import { currentLayer, describeState, hasAnyNotes, hasBeat, isRecording, type CreateState } from './layers';
+import { earlyTakeLoopBeats } from './loop-grid';
 import { isEffect, isInstrument, loopBeats as defaultLoopBeats } from './music';
 import { segmentNotes } from './segment-notes';
 import { applyAnalysis, createSettings, type SettingsStore } from './settings';
@@ -36,6 +37,8 @@ export function startController(opts: ControllerOptions): Stop {
   let heard: Array<{ at: number; frame: PitchFrame }> = [];
   let framesSeen = 0;
   let takeStartMs = 0;
+  /** Loop-clock bar the running take started on (from the engine), so the layer plays back in the same place. */
+  let takeStartBar: number | undefined;
   let takeId = 0;
   let finishTimer: ReturnType<typeof setTimeout> | undefined;
   let lastStatus = '';
@@ -86,7 +89,8 @@ export function startController(opts: ControllerOptions): Stop {
   // ---- recording ----
   // Temporary team decision (Sat evening, while Veda was away): a take ends at whichever comes first:
   // the left-fist gesture (record off), pressing Record again, or one pass of the default loop length.
-  // The gesture and the button end it early, with a loop length taken from how long the take ran.
+  // The gesture and the button end it early, with a loop length taken from how long the take ran, in whole bars
+  // so the new layer stays on the same bar grid as the others (see earlyTakeLoopBeats).
   const clearFinishTimer = () => {
     if (finishTimer !== undefined) clearTimeout(finishTimer);
     finishTimer = undefined;
@@ -102,6 +106,7 @@ export function startController(opts: ControllerOptions): Stop {
     clearFinishTimer();
     heard = [];
     framesSeen = 0;
+    takeStartBar = undefined;
     settings.set({ take: undefined });
     const id = ++takeId;
     store.dispatch({ type: 'recordStart' });
@@ -109,9 +114,10 @@ export function startController(opts: ControllerOptions): Stop {
       engine.startLoop(
         { countIn: true },
         {
-          onGo: (atMs) => {
+          onGo: (atMs, startBar) => {
             if (id !== takeId) return;
             takeStartMs = atMs ?? now();
+            takeStartBar = startBar;
             heard = [];
             framesSeen = 0;
             store.dispatch({ type: 'recordGo' });
@@ -136,14 +142,14 @@ export function startController(opts: ControllerOptions): Stop {
 
   /**
    * The take is over: turn what we heard into notes and let the loop carry on with them.
-   * `passBeats` is set when the take ran a full pass; an early end measures the loop from the elapsed time.
+   * `passBeats` is set when the take ran a full pass; an early end measures the loop from the elapsed time (whole bars).
    */
   function finishTake(passBeats?: number) {
     clearFinishTimer();
     const s = state();
     if (s.phase !== 'recording') return;
     const elapsedMs = Math.max(0, now() - takeStartMs);
-    const loopBeats = passBeats ?? Math.max(0.25, Math.round(((elapsedMs * s.bpm) / 60000) * 4) / 4);
+    const loopBeats = passBeats ?? earlyTakeLoopBeats(elapsedMs, s.bpm);
     const loopSeconds = (loopBeats * 60) / s.bpm;
     const take = heard.map(({ at, frame }) => ({ ...frame, t_ms: at - takeStartMs - inputLatencyMs }));
     const heardNotes = segmentNotes(take, { bpm: s.bpm, quantize: true, lengthSec: loopSeconds });
@@ -156,7 +162,7 @@ export function startController(opts: ControllerOptions): Stop {
           ? 'No microphone sound came in. Turn the microphone on, or try Simulate humming'
           : 'No hum heard, so the layer is unchanged';
     heard = [];
-    store.dispatch({ type: 'recordEnd', notes, loopBeats, message });
+    store.dispatch({ type: 'recordEnd', notes, loopBeats, startBar: takeStartBar, message });
     const completed = currentLayer(state());
     if (state().phase === 'playing' && completed?.instrumentVoiceEnabled) {
       sendCommand('create.instrument.voice', 'button', { how: 'set', value: true });
