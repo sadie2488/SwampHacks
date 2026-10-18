@@ -378,8 +378,8 @@ def _estimate_key(y, sr) -> dict:
 # --- public ------------------------------------------------------------------------------------
 
 
-def analyze_tempo_key(y, sr) -> dict:
-    """Tempo, beats, downbeats, time signature and key of the samples `y` (mono, rate `sr`)."""
+def _prepare(y, sr):
+    """Mono float32 samples at SAMPLE_RATE, first MAX_SECONDS only: `(y, sr)`."""
     _require_libs()
     y = np.nan_to_num(np.asarray(y, dtype=np.float32))
     if y.ndim > 1:
@@ -388,6 +388,20 @@ def analyze_tempo_key(y, sr) -> dict:
     if sr != SAMPLE_RATE and y.size:
         y = librosa.resample(y, orig_sr=sr, target_sr=SAMPLE_RATE)
         sr = SAMPLE_RATE
+    return y, sr
+
+
+def estimate_key(y, sr) -> dict:
+    """The `key` entry of `analyze_tempo_key`, on its own. Most of its time is spent outside Python's lock,
+    so the server runs it in a thread next to the melody step (`analyze_tempo_key(..., with_key=False)`)."""
+    return _estimate_key(*_prepare(y, sr))
+
+
+def analyze_tempo_key(y, sr, *, with_key: bool = True) -> dict:
+    """Tempo, beats, downbeats, time signature and key of the samples `y` (mono, rate `sr`).
+
+    `with_key=False` leaves `key` out (see `estimate_key`)."""
+    y, sr = _prepare(y, sr)
     if y.size < MIN_SECONDS * sr:
         raise AnalysisError("This recording is too short to analyze. Try one that is a few seconds long.")
     if float(np.max(np.abs(y))) < 1e-3 or float(np.sqrt(np.mean(y.astype(np.float64) ** 2))) < 1e-4:
@@ -414,15 +428,18 @@ def analyze_tempo_key(y, sr) -> dict:
         raise AnalysisError("I couldn't find a steady beat in this recording.")
     bpm = _steady_bpm(beats)
 
-    return {
+    result = {
         "duration_sec": round(float(len(y)) / sr, 3),
         "tempo_bpm": round(bpm, 2),
         "tempo_confidence": round(_tempo_confidence(env, beats, bpm, sr), 3),
         "beats": [round(float(t), 3) for t in beats],
         "downbeats": [round(float(t), 3) for t in downbeats],
-        "key": _estimate_key(y, sr),
+        "key": _estimate_key(y, sr) if with_key else None,
         "time_signature": {"numerator": numerator, "denominator": denominator},
     }
+    if not with_key:
+        del result["key"]
+    return result
 
 
 def analyze_file(path) -> dict:
