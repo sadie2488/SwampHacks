@@ -31,6 +31,36 @@ afterEach(() => {
   setMappingsText(original);
 });
 
+/**
+ * The Play section was removed Sun 6 AM (History replaced it), so its rules are switched off in the real file. The
+ * wiring below is what these tests check, so they load their own copy of three of those rules.
+ */
+const TEST_RULES = [
+  '- name: clap toggles play/pause',
+  '  mode: play',
+  '  when: audio.clap.double',
+  '  do: playback.toggle',
+  '  how: trigger',
+  '  cooldown_ms: 800',
+  '- name: say "slower" only while left fist is held',
+  '  mode: play',
+  '  when: audio.keyword.slower',
+  '  only_while: vision.hand.left.fist',
+  '  do: playback.tempo',
+  '  how: nudge',
+  '  step: -0.1',
+  '- name: hand height controls tempo',
+  '  mode: play',
+  '  when: vision.hand.right.height',
+  '  do: playback.tempo',
+  '  how: follow',
+  '  range: [0.5, 1.5]',
+  '  smoothing: 0.3',
+  '  min_confidence: 0.6',
+  '',
+].join('\n');
+const useTestRules = () => setMappingsText(TEST_RULES);
+
 const clap = () => sendSignal({ id: 'audio.clap', kind: 'moment', state: 'start', confidence: 0.9 });
 const doubleClap = () => sendSignal({ id: 'audio.clap.double', kind: 'moment', state: 'start', confidence: 0.9 });
 
@@ -40,12 +70,14 @@ describe('commands module on the bus', () => {
   });
 
   it('a single clap does nothing in play mode (play/pause needs a double clap)', () => {
+    useTestRules();
     clap();
     clap();
     expect(commands).toEqual([]);
   });
 
   it('a double clap becomes a command plus a "fired" event, and a second one inside the cooldown does not', () => {
+    useTestRules();
     doubleClap();
     doubleClap();
     expect(commands).toHaveLength(1);
@@ -57,12 +89,14 @@ describe('commands module on the bus', () => {
   });
 
   it('follows the mode topic', () => {
+    useTestRules();
     bus.emit('mode', 'create');
     doubleClap();
     expect(commands).toEqual([]);
   });
 
   it('a spoken word armed by the left fist changes the tempo control through the bus', () => {
+    useTestRules();
     sendSignal({ id: 'audio.keyword.slower', kind: 'moment', state: 'start' });
     expect(commands).toEqual([]); // fist not closed yet
     sendSignal({ id: 'vision.hand.left.fist', kind: 'moment', state: 'start' });
@@ -90,6 +124,7 @@ describe('commands module on the bus', () => {
   });
 
   it('broken YAML keeps the last good rules', () => {
+    useTestRules();
     setMappingsText('- name: x\n  when: [audio.clap\n');
     expect(issueUpdates[issueUpdates.length - 1]).toHaveLength(1);
     doubleClap();
@@ -97,6 +132,7 @@ describe('commands module on the bus', () => {
   });
 
   it('stopping lets go of everything', () => {
+    useTestRules();
     stop();
     doubleClap();
     expect(commands).toEqual([]);
@@ -105,6 +141,7 @@ describe('commands module on the bus', () => {
   it('the right hand moves the tempo smoothly from where it is, but not while a practice run listens', () => {
     const hand = (value: number) => sendSignal({ id: 'vision.hand.right.height', kind: 'slider', value, confidence: 0.9 });
     const tempo = () => bus.last('controls')?.['playback.tempo'];
+    useTestRules();
     try {
       bus.emit('practice', { state: 'listening' });
       for (let i = 0; i < 10; i++) hand(1);

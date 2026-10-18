@@ -11,10 +11,10 @@ export interface GuideLine {
 
 /** Works on every screen: hold a fingerspelled letter for 2 seconds (a ring fills while you hold). */
 
-const PLAY: GuideLine[] = [
-  { big: 'Clap twice', small: 'to play or pause the song' },
-  { big: 'Raise your right hand', small: 'to speed the song up; lower it to slow down' },
-  { big: 'Make a fist with your left hand', small: 'then say play, pause, faster, slower, higher or lower' },
+// The Play section was removed Sun 6 AM; the third record is History now (its hand and voice rules are switched off).
+const HISTORY: GuideLine[] = [
+  { big: 'History', small: 'See your practice feedback and progress' },
+  { big: 'Past creations', small: 'Open Past creations to hear what you made' },
 ];
 
 export const GUIDE_LINES: Record<ModeId | 'menu', GuideLine[]> = {
@@ -26,7 +26,7 @@ export const GUIDE_LINES: Record<ModeId | 'menu', GuideLine[]> = {
     { big: 'Choose a song', small: 'then press play and read along on the sheet' },
     { big: 'Practice', small: 'listens while you play and tells you how it went, bar by bar' },
   ],
-  play: [...PLAY],
+  play: [...HISTORY],
   create: [
     { big: 'Say start', small: 'and hum: your melody becomes a layer' },
     { big: 'Raise your left fist', small: 'to end the take; say next for another layer' },
@@ -36,6 +36,5 @@ export const GUIDE_LINES: Record<ModeId | 'menu', GuideLine[]> = {
   ],
   lab: [
     { big: 'Try any sign or word', small: 'every rule lights up here when it fires' },
-    ...PLAY.slice(0, 2),
   ],
 };
