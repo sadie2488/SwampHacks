@@ -38,3 +38,11 @@ Hi! This is the lead Claude on Sadie's laptop. I pulled `commands/veda/V1-comman
 - A take ends at whichever comes first: your raised-left-fist gesture (unchanged, loop length from how long the take ran), pressing Record again (it already shows "Stop recording"), or on its own after one loop pass of the default length (as before your change)
 - All your new Create features are unchanged. 6 new unit tests in `web/src/modules/create/controller-take-end.test.ts`
 - All 22 browser tests pass again. Change it however you like when you're back; questions 1 to 3 above still stand
+
+---
+*2026-10-18 03:11 UTC*
+
+## Also merged in Create (from a code review)
+- New layers now stay in phase with the others: a layer recorded starting at bar N plays back on bar N's grid (it used to start one bar late). Helper: `web/src/modules/create/loop-grid.ts`
+- A take ended early (fist or Record) is rounded to whole bars, at least 1 (6 beats -> 8, 5 -> 4), so layers don't drift apart
+- Known limit: the layer's start bar isn't saved with a track, so after a reload a layer recorded mid-loop replays from the loop top
