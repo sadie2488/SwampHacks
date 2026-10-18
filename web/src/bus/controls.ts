@@ -7,6 +7,18 @@ export type ControlState = Record<string, ControlValue>;
 
 export const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
+/** Drops floating-point noise (0.30000000000000004 -> 0.3) so values like tempo 1 come back exactly. */
+export const trimFloat = (n: number) => Number(n.toFixed(6));
+
+/**
+ * Rounds to the nearest multiple of `step` (and drops float noise). Without this, 5 taps of "faster" then 5 of
+ * "slower" ends at 0.9999999999999997, and the playback engine never returns to its clean path at exactly 1.
+ */
+export function snapToStep(n: number, step: number): number {
+  const size = Math.abs(step);
+  return trimFloat(size > 0 && Number.isFinite(size) ? Math.round(n / size) * size : n);
+}
+
 /** Starting values: every control that has a default in contracts/control-catalog.json. */
 export function defaultControls(controls: ControlInfo[]): ControlState {
   const out: ControlState = {};
@@ -30,9 +42,10 @@ export function nextControlValue(current: ControlValue | undefined, cmd: Command
     const [lo, hi] = info.range ?? [-Infinity, Infinity];
     if (cmd.how === 'nudge') {
       const step = typeof cmd.value === 'number' ? cmd.value : info.step ?? 0;
-      return typeof cur === 'number' ? clamp(cur + step, lo, hi) : undefined;
+      return typeof cur === 'number' ? clamp(snapToStep(cur + step, step), lo, hi) : undefined;
     }
-    return typeof cmd.value === 'number' && Number.isFinite(cmd.value) ? clamp(cmd.value, lo, hi) : undefined;
+    // Set and follow values are not snapped to the step: sliders and hand movement need finer values than the step.
+    return typeof cmd.value === 'number' && Number.isFinite(cmd.value) ? clamp(trimFloat(cmd.value), lo, hi) : undefined;
   }
   if (type === 'string') {
     if (typeof cmd.value !== 'string') return undefined;
