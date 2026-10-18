@@ -64,6 +64,21 @@
   color: var(--night);
 }
 
+/* Learn: the toggles make one row along the bottom. Feedback, Sheet, Player, Devices start at the left gutter;
+   Practice and Song are pushed to the row's right end, which stops --learn-tools-w before the right gutter so the
+   Learn pills (Restart, Show letters; see ui/overture/learn-stage.css) follow them on the same baseline. */
+.stage-learn .panel-toggles {
+  --learn-tools-w: 215px;
+  right: calc(var(--gut, 28px) + var(--learn-tools-w));
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.stage-learn .panel-toggles [data-testid='toggle-practice'] {
+  margin-left: auto;
+}
+
 /* closed panels: still there (their state survives) but invisible and unclickable; open: a short fade and rise */
 .float-panel,
 .panel-slot > .player-bar {

@@ -3,19 +3,22 @@
   z-index: 1;
 }
 
-/* The Learn pills sit in the bottom-left gutter column, right above the panel toggles (see .panel-toggles in
-   styles/stage-fit.css: left gutter, bottom 20px, one pill per Learn panel, 6px apart), so they read as one column.
-   --learn-toggles is how many toggles Learn has; a toggle is 12px/1.2 text + 5px padding + 1.5px border each way. */
+/* The Learn pills (Restart, Show letters) end the bottom row: same baseline and size as the panel toggles (see
+   .stage-learn .panel-toggles in styles/stage-fit.css), anchored at the right gutter; the toggles stop
+   --learn-tools-w short of it so Song sits right before Restart and nothing overlaps. */
 .learn-tools {
-  --toggle-h: calc(12px * 1.2 + 10px + 3px);
   position: fixed;
   z-index: 20;
-  left: var(--gut, 28px);
-  bottom: calc(20px + var(--learn-toggles, 6) * (var(--toggle-h) + 6px));
+  right: var(--gut, 28px);
+  bottom: 20px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   gap: 6px;
+}
+
+.learn-tools [data-testid='btn-restart'] {
+  order: -1;
 }
 
 .learn-tools .pill {

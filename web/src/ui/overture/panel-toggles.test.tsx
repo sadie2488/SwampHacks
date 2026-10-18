@@ -62,7 +62,7 @@ describe('usePanels reset', () => {
 
 describe('PANELS_FOR', () => {
   it('gives Learn its panels and Play none at all (hands and voice only)', () => {
-    expect(PANELS_FOR.learn).toEqual(['song', 'practice', 'feedback', 'sheet', 'player', 'devices']);
+    expect(PANELS_FOR.learn).toEqual(['feedback', 'sheet', 'player', 'devices', 'practice', 'song']);
     expect(PANELS_FOR.play).toEqual([]);
   });
 });
