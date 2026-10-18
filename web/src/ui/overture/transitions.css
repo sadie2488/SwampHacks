@@ -123,6 +123,15 @@
   }
 }
 
+/* the flower centre fades only as it lands in the record's hole */
+::view-transition-old(journey) {
+  animation: 0.7s cubic-bezier(0.7, 0, 0.9, 0.5) both vt-fade-out;
+}
+
+::view-transition-new(journey) {
+  animation: 0.3s ease-out 0.4s both vt-fade-in;
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
