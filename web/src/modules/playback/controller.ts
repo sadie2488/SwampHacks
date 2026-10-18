@@ -109,11 +109,12 @@ export class PlaybackController {
     this.emit();
   }
 
-  /** A trigger command (play, pause, toggle). Other commands are ignored. */
-  command(name: string): void {
+  /** A trigger command (play, pause, toggle) or a seek (`playback.seek` with the song seconds). Other commands are ignored. */
+  command(name: string, value?: unknown): void {
     if (name === 'playback.play') this.play();
     else if (name === 'playback.pause') this.pause();
     else if (name === 'playback.toggle') this.toggle();
+    else if (name === 'playback.seek' && typeof value === 'number') this.seek(value);
   }
 
   // ---- transport ----

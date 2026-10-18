@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { bus, type PitchFrame, type TransportState } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { keyWords, noteName, placeNotes, PLAY_READOUT_LABELS, signedSemitones, staffGeometry, staffNotes } from './mode-visual';
+import { LearnStage } from './LearnStage';
 import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
@@ -149,6 +150,7 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
   return (
     <>
       <canvas ref={ref} className="mode-visual" aria-hidden="true" />
+      {mode === 'learn' && <LearnStage ink={modeLook('learn').a} />}
       {readout && (
         <div className="mode-readout" data-testid="mode-readout" aria-live="off">
           {[readout.a, readout.b].map(([k, v]) => (
