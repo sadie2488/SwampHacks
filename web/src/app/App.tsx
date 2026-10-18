@@ -10,6 +10,7 @@ import { Backdrop } from '@/ui/backdrop/Backdrop';
 import { bigWordPlaces } from '@/ui/overture/carousel';
 import { Entrance } from '@/ui/overture/Entrance';
 import { GuideLayer } from '@/ui/overture/GuideLayer';
+import { HandPointer } from '@/ui/overture/HandPointer';
 import { HoldRing } from '@/ui/overture/HoldRing';
 import { InstructionsOverlay } from '@/ui/overture/InstructionsOverlay';
 import { MODES, modeLook, type ModeId, type Screen } from '@/ui/overture/modes';
@@ -118,6 +119,7 @@ export function App() {
       <Backdrop screen={screen} mode={shownMode} menuIndex={menuSel} />
       <GuideLayer screen={screen} mode={tab} />
       <HoldRing />
+      <HandPointer screen={screen} mode={shownMode} />
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
       <header className="app-header" {...inert(screen === 'entrance')}>

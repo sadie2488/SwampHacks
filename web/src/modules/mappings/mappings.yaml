@@ -274,17 +274,4 @@
   value: lab
   hold_ms: 2000
 
-# Lalitha's menu gesture: on the four records, open your hand and then close it (a grab) to enter the record in front.
-# Either hand works. app.enter only does something on the menu; inside Learn, Play or Create it is ignored,
-# so the fist rules above still work as before.
-- name: grab with the right hand to enter the chosen record
-  mode: any
-  when: vision.hand.right.grab
-  do: app.enter
-  how: trigger
-
-- name: grab with the left hand to enter the chosen record
-  mode: any
-  when: vision.hand.left.grab
-  do: app.enter
-  how: trigger
+# The two "grab to enter the chosen record" rules were removed: the hand cursor's hold-to-click on a record replaces them.

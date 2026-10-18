@@ -4,6 +4,8 @@
 //   publishes: command (what the rules decided), fired (so the Command Lab lights the rule up),
 //              issues (friendly errors and warnings about mappings.yaml; sent again whenever they change),
 //              holdProgress (a "hold_ms" rule filling up while its gesture is held; progress 0 when let go or fired)
+//   also listens: handPointer (published by the hand cursor in ui/overture: while active, a fist clicks buttons, so
+//              hand rules that are not "mode: any" are skipped)
 // It never opens a camera or mic. Rules come from mappings/mappings.yaml and reload live when you save the file.
 import { bus, type EngineIssue, type Stop } from '@/bus';
 import { getMappingsText, onMappingsText } from '../mappings';
@@ -15,6 +17,8 @@ export type { HoldProgress } from './engine';
 declare module '@/bus' {
   interface Topics {
     holdProgress: HoldProgress;
+    /** The hand cursor is using fists to click and scroll right now (entrance, menu, or a panel open). */
+    handPointer: { active: boolean };
   }
 }
 
@@ -65,6 +69,7 @@ export function start(): Stop {
   const stops: Stop[] = [
     onMappingsText((text) => loadRules(text)),
     bus.on('mode', (mode) => engine.setMode(mode), { replay: true }),
+    bus.on('handPointer', (p) => engine.setPointerActive(p.active), { replay: true }),
     bus.on('practice', (p) => engine.setPracticeRun(p.state === 'listening'), { replay: true }),
     bus.on('signal', (signal) => {
       send(engine.handleSignal(signal));
