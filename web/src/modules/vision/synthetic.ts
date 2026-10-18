@@ -207,5 +207,10 @@ export function countPose(n: number): PoseSpec {
   return { flex, spread: [-10, 0, 8, 16], thumb: n === 5 ? THUMB_OUT : n === 4 ? [0.1, 0.5, 0.15] : THUMB_FRONT };
 }
 
+/** Two fingers up (peace sign): index and middle straight, ring and little finger curled, thumb across the ring finger. */
+export const PEACE_POSE: PoseSpec = { flex: f4(STRAIGHT, STRAIGHT, FIST, FIST), spread: [-12, 8, 0, 0], thumb: THUMB_ON_RING };
+/** The same shape for makeHand: curl [index, middle, ring, little]. */
+export const PEACE_HAND: HandSpec = { curl: [0, 0, 1, 1], thumb: 'tucked' };
+
 /** A relaxed, resting hand: fingers a little curled, thumb loose. Should read as no letter. */
 export const RELAXED_POSE: PoseSpec = { flex: f4([20, 25, 10], [22, 28, 12], [25, 30, 12], [28, 30, 12]), spread: [-6, 0, 5, 10], thumb: [-0.6, 0.6, 0.2] };

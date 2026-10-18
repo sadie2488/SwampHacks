@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { signalCatalog } from '@/contracts/catalogs';
 import { GestureTracker, HAND, THRESHOLDS, palmCenter, type HandObs, type Pt, type Side, type SignalOut } from './gestures';
 import { SIGNS_ENABLED } from './signs';
-import { LETTER_POSES, makeFace, makeHand, makePose, type FaceSpec, type HandSpec, type PoseSpec } from './synthetic';
+import { LETTER_POSES, PEACE_HAND, PEACE_POSE, makeFace, makeHand, makePose, type FaceSpec, type HandSpec, type PoseSpec } from './synthetic';
 
 const FRAME = 1000 / 15; // the camera runs at about 15 pictures a second
 
@@ -203,6 +203,42 @@ describe('thumbs-up', () => {
   });
 });
 
+describe('two fingers up (peace)', () => {
+  it('starts after a short hold and ends when the fingers change, on the hand that did it', () => {
+    const rig = new Rig();
+    rig.frames(15, () => right(PEACE_HAND));
+    rig.frames(15, () => right({ curl: 0 }));
+    expect(rig.states('vision.hand.right.peace')).toEqual(['start', 'end']);
+    expect(rig.edges('vision.hand.left.peace')).toEqual([]);
+  });
+
+  it('is not also an open palm, a fist or a pinch, with the thumb tucked or out', () => {
+    for (const thumb of ['tucked', 'out'] as const) {
+      const rig = new Rig();
+      rig.frames(30, () => right({ ...PEACE_HAND, thumb }));
+      expect(rig.states('vision.hand.right.peace')).toEqual(['start']);
+      for (const h of ['open_palm', 'fist', 'pinch']) expect(rig.edges(`vision.hand.right.${h}`), h).toEqual([]);
+    }
+  });
+
+  it('one finger, three fingers, an open palm and a fist are not two fingers up', () => {
+    const rig = new Rig();
+    rig.frames(10, () => right({ curl: [0, 1, 1, 1] }));
+    rig.frames(10, () => right({ curl: [0, 0, 0, 1] }));
+    rig.frames(10, () => right({ curl: 0 }));
+    rig.frames(10, () => right({ curl: 1, thumb: 'tucked' }));
+    expect(rig.edges('vision.hand.right.peace')).toEqual([]);
+  });
+
+  it('the 3D letter-V pose reads as two fingers up on either hand', () => {
+    for (const side of ['left', 'right'] as const) {
+      const rig = new Rig();
+      rig.frames(15, () => ({ hands: [{ side, score: 0.95, points: makePose({ ...PEACE_POSE, side }) }] }));
+      expect(rig.states(`vision.hand.${side}.peace`)).toEqual(['start']);
+    }
+  });
+});
+
 describe('drum hit', () => {
   const wristAt = (y: number): Look => right({ curl: 0.2, wrist: { x: 0.7, y } });
 
@@ -360,6 +396,7 @@ describe('everything in the signal catalog that vision promises', () => {
     // the catalog only has a left thumbs-up; the right hand holds a plain fist meanwhile
     rig.frames(10, () => ({ hands: [hand('right', { curl: 1, thumb: 'tucked' }), hand('left', { curl: 1, thumb: 'up' })], face: face() }));
     rig.frames(10, () => ({ hands: both({ curl: [0.45, 0.1, 0.1, 0.1], thumb: 'pinch' }), face: face() }));
+    rig.frames(10, () => ({ hands: both(PEACE_HAND), face: face() })); // two fingers up on both hands
     rig.frames(10, () => ({ hands: both({ curl: 0, wrist: { x: 0.7, y: 0.3 } }), face: face() }));
     rig.frames(6, () => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.5 } }), face: face() }));
     rig.frames(3, (i) => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.5 + 0.06 * (i + 1) } }), face: face() }));

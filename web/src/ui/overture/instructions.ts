@@ -24,6 +24,7 @@ export const GUIDE_LINES: Record<ModeId | 'menu', GuideLine[]> = {
   ],
   learn: [
     { big: 'Choose a song', small: 'then press play and read along on the sheet' },
+    { big: 'Hold up two fingers', small: 'to pause; show them again to count down 3, 2, 1 and play on' },
     { big: 'Practice', small: 'listens while you play and tells you how it went, bar by bar' },
   ],
   play: [...PLAY],

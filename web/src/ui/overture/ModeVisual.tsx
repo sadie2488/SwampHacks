@@ -15,7 +15,7 @@ import { modeLook, type ModeId } from './modes';
 
 const MAX_DPR = 1.5;
 const FRAME_MS = 1000 / 30 - 2;
-const HAND_WORDS: Record<string, string> = { fist: 'fist', open_palm: 'open hand', raised: 'raised', pinch: 'pinch', thumbs_up: 'thumbs up', drum_hit: 'drum hit' };
+const HAND_WORDS: Record<string, string> = { fist: 'fist', open_palm: 'open hand', raised: 'raised', pinch: 'pinch', thumbs_up: 'thumbs up', peace: 'two fingers', drum_hit: 'drum hit' };
 
 /** What the hands do in Create, always shown under the hum rings; the part in use lights up in the mode colour. */
 const HAND_LEGEND: Array<[string, string]> = [

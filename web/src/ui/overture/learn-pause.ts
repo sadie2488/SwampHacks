@@ -69,7 +69,7 @@ export function createLearnPause(deps: PauseDeps) {
         show({ mark: false, count: null });
       }
     },
-    /** The V sign (or anything else wired to learn.pause). */
+    /** Two fingers up (or anything else wired to learn.pause). */
     toggle() {
       if (!loaded) return;
       if (playing) {
