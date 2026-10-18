@@ -21,6 +21,7 @@
 #   only_while      a held gesture (like a fist) that must be active for the rule to work
 #   step            how far one nudge moves (negative = down)
 #   value           the fixed value a trigger sets
+#   hold_ms         hold the gesture this long (ms) before the rule fires; a ring fills while you hold
 #   enabled         false = switch the rule off without deleting it
 #
 # A typo never breaks the app: that one rule is skipped and the Command Lab explains what to fix.
@@ -236,3 +237,39 @@
   do: create.loop.stop
   how: trigger
 
+
+# --- Any mode: Lalitha's sign shortcuts ----------------------------------------------------------------------------
+# Hold a fingerspelled letter for 2 seconds to jump to a mode. A ring fills around it while you hold; let go early
+# and nothing happens. L = Learn, Y = Play, C = Create, W = Command Lab. Change the letters or hold time freely.
+
+- name: hold L to go to Learn
+  mode: any
+  when: vision.sign.l
+  do: app.mode
+  how: trigger
+  value: learn
+  hold_ms: 2000
+
+- name: hold Y to go to Play
+  mode: any
+  when: vision.sign.y
+  do: app.mode
+  how: trigger
+  value: play
+  hold_ms: 2000
+
+- name: hold C to go to Create
+  mode: any
+  when: vision.sign.c
+  do: app.mode
+  how: trigger
+  value: create
+  hold_ms: 2000
+
+- name: hold W to go to the Command Lab
+  mode: any
+  when: vision.sign.w
+  do: app.mode
+  how: trigger
+  value: lab
+  hold_ms: 2000
