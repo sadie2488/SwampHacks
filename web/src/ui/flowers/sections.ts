@@ -21,11 +21,11 @@ export interface SectionLook {
 
 export const SECTION_LOOKS: Record<SectionId, SectionLook> = {
   menu: { flower: 'chrysanthemum', a: '#ff2d8a', b: '#f4e4a1', bg: '#0b0a0c' },
-  learn: { flower: 'forget-me-not', a: '#1fb3bf', b: '#ff4a3d', bg: '#08161a' },
-  play: { flower: 'bird of paradise', a: '#ff7a00', b: '#ff2d8a', bg: '#170c06' },
-  create: { flower: 'sweet pea', a: '#c9a8ff', b: '#ff4fa3', bg: '#120d1a' },
+  learn: { flower: 'orchid', a: '#1fb3bf', b: '#ff4a3d', bg: '#08161a' },
+  play: { flower: 'hibiscus', a: '#ff7a00', b: '#ff2d8a', bg: '#170c06' },
+  create: { flower: 'lily', a: '#c9a8ff', b: '#ff4fa3', bg: '#120d1a' },
   // cobalt only for the lines; small labels use #4a72ff (tokens.css --a-text)
-  lab: { flower: 'iris', a: '#2f5bff', b: '#ff9a1f', bg: '#070b1c' },
+  lab: { flower: 'tulip', a: '#2f5bff', b: '#ff9a1f', bg: '#070b1c' },
 };
 
 export interface StatePictures {
