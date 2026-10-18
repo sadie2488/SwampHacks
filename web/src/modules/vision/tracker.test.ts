@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { signalCatalog } from '@/contracts/catalogs';
 import { GestureTracker, HAND, THRESHOLDS, palmCenter, type HandObs, type Pt, type Side, type SignalOut } from './gestures';
-import { makeFace, makeHand, type FaceSpec, type HandSpec } from './synthetic';
+import { LETTER_POSES, makeFace, makeHand, makePose, type FaceSpec, type HandSpec, type PoseSpec } from './synthetic';
 
 const FRAME = 1000 / 15; // the camera runs at about 15 pictures a second
 
@@ -360,6 +360,16 @@ describe('everything in the signal catalog that vision promises', () => {
     rig.frames(6, () => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.5 } }), face: face() }));
     rig.frames(3, (i) => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.5 + 0.06 * (i + 1) } }), face: face() }));
     rig.frames(NOD.length, (i) => ({ hands: both({ curl: 0.2, wrist: { x: 0.7, y: 0.68 } }), face: face(0.45 + NOD[i]) }));
+    // fingerspelling: every static letter held for half a second, then J (a hook) and Z (a Z) drawn in the air
+    const sign = (spec: PoseSpec, dx = 0, dy = 0): Look => ({ hands: [{ side: 'right', score: 0.95, points: makePose({ ...spec, wrist: { x: 0.6 + dx * 0.1125, y: 0.6 + dy * 0.15 } }) }] });
+    for (const c of 'abcdefghiklmnopqrstuvwxy') rig.frames(8, () => sign(LETTER_POSES[c]));
+    rig.frames(6, () => sign(LETTER_POSES.j));
+    rig.frames(6, (i) => sign(LETTER_POSES.j, 0, 0.1 * (i + 1)));
+    rig.frames(5, (i) => sign(LETTER_POSES.j, -0.1 * (i + 1), 0.6 - 0.03 * i));
+    rig.frames(4, () => sign(LETTER_POSES.z));
+    rig.frames(5, (i) => sign(LETTER_POSES.z, 0.15 * (i + 1), 0));
+    rig.frames(5, (i) => sign(LETTER_POSES.z, 0.75 - 0.15 * (i + 1), 0.12 * (i + 1)));
+    rig.frames(5, (i) => sign(LETTER_POSES.z, 0.15 * (i + 1), 0.6));
     rig.out.push(...rig.tracker.reset());
 
     // hand x differs per side in the helper; the drum hits above used x = 0.7 for both, which is fine for this check

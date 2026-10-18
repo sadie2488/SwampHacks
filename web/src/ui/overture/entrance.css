@@ -114,3 +114,19 @@
   height: calc(var(--r) * var(--u) * 2);
   transform: rotate(var(--tilt));
 }
+
+/* the heart flower's centre: as you step into the menu it lights up in the main ink and travels to become the
+   chosen record's hole (view transition "journey"; the record side is .record-hole in menu.css) */
+.bloom-heart {
+  position: absolute;
+  left: 43%;
+  top: 43%;
+  width: 14%;
+  height: 14%;
+  border-radius: 50%;
+  view-transition-name: journey;
+}
+
+:root[data-vt='enter'] .bloom-heart {
+  background: var(--a);
+}

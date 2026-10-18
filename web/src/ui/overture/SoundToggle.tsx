@@ -6,7 +6,7 @@ export function SoundToggle() {
   const [muted, setMuted] = useState(soundsMuted);
   useEffect(() => onSoundsMuted(setMuted), []);
   return (
-    <button type="button" className="pill sound-toggle" aria-pressed={!muted} title="Interface sounds (the music is not affected)" onClick={() => setSoundsMuted(!muted)}>
+    <button type="button" className="pill sound-toggle" data-testid="sound-toggle" aria-pressed={!muted} title="Interface sounds (the music is not affected)" onClick={() => setSoundsMuted(!muted)}>
       <span aria-hidden="true" className="sound-icon" data-on={!muted} />
       Sounds {muted ? 'off' : 'on'}
     </button>

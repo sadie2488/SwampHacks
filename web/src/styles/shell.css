@@ -78,6 +78,18 @@
   top: var(--m);
 }
 
+/* the menu covers the page: lift the header above it so the mode pills and the sound switch stay clickable
+   (the header box itself lets clicks through to the records) */
+.app[data-screen='menu'] .app-header {
+  z-index: 25;
+  pointer-events: none;
+}
+
+.app[data-screen='menu'] .tabs,
+.app[data-screen='menu'] .header-end {
+  pointer-events: auto;
+}
+
 /* sound toggle: a speaker made of two small arcs, struck through when off */
 .sound-toggle,
 .sound-toggle[aria-pressed] {

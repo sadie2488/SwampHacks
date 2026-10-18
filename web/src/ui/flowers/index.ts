@@ -29,10 +29,5 @@ export const FLOWERS = {
 
 export type FlowerName = keyof typeof FLOWERS;
 
-/** The flower that opens on the beat in each mode (one per section, so each feels its own). */
-export const SECTION_FLOWER: Record<'learn' | 'play' | 'create' | 'lab', FlowerName> = {
-  learn: 'chrysanthemum-a',
-  play: 'chrysanthemum-b',
-  create: 'chrysanthemum-c',
-  lab: 'chrysanthemum-a',
-};
+// The flower of each section (menu and the four modes) lives in sections.ts (placeholders in sections/, hand-drawn
+// PNGs in drawn/), shown by SectionBloom.tsx.
