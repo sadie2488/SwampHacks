@@ -63,7 +63,7 @@ export function App() {
   const [guide, setGuide] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
-  const { isOpen, toggle: togglePanel } = usePanels();
+  const { isOpen, toggle: togglePanel, reset: resetPanels } = usePanels();
   useModules();
   useDeviceAutostart(screen);
 
@@ -79,8 +79,9 @@ export function App() {
   useEffect(() => {
     const from = lastSection.current;
     lastSection.current = section;
+    if (from !== section) resetPanels();
     for (const command of leaveSectionCommands(from, section)) sendCommand(command, 'button', { how: 'trigger' });
-  }, [section]);
+  }, [section, resetPanels]);
   useEffect(() => unlockOnFirstGesture(), []);
   // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
   usePlayLoop(autoLoops(screen, tab));
@@ -196,7 +197,7 @@ export function App() {
             <Devices fake={isFakeMode()} />
             <CameraPreview />
           </div>
-          {songTab && <SongView open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
+          {songTab && <SongView mode={tab === 'play' ? 'play' : 'learn'} open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
           {tab === 'create' && (
             <div className="stage-main float-panel create-slot" data-layers={isOpen('layers')} data-tracks={isOpen('tracks')} {...panelProps(isOpen('layers') || isOpen('tracks'))}>
               <PanelBoundary name="Create">

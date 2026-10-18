@@ -3,7 +3,7 @@ import twinkle from '@fixtures/song-analysis/twinkle.json';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { bus, resetControls, sendCommand } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
-import { autoLoops, startPlayLoop } from './play-loop';
+import { autoLoops, ensureSongLoaded, startPlayLoop } from './play-loop';
 
 const loop = () => bus.last('controls')?.['playback.loop'];
 
@@ -44,5 +44,31 @@ describe('Play mode loops the song', () => {
     sendCommand('playback.loop', 'button', { how: 'set', value: false });
     bus.emit('analysis', twinkle as unknown as SongAnalysis);
     expect(loop()).toBe(false);
+  });
+});
+
+describe('Play loads the demo song when none is loaded', () => {
+  const song = { analysis: twinkle as unknown as SongAnalysis, offline: true };
+  const transport = { playing: false, positionSec: 0, durationSec: 0, tempo: 1, pitch: 0, volume: 1, loop: false, loopSection: null };
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  it('publishes the demo song when nothing is loaded', async () => {
+    bus.emit('transport', { ...transport, loaded: false });
+    const seen: string[] = [];
+    const off = bus.on('analysis', (a) => void seen.push(a.song_id));
+    ensureSongLoaded(async () => song);
+    await tick();
+    expect(seen).toEqual([song.analysis.song_id]);
+    off();
+  });
+
+  it('leaves a loaded song alone', async () => {
+    bus.emit('transport', { ...transport, loaded: true });
+    const seen: string[] = [];
+    const off = bus.on('analysis', (a) => void seen.push(a.song_id));
+    ensureSongLoaded(async () => song);
+    await tick();
+    expect(seen).toEqual([]);
+    off();
   });
 });
