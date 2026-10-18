@@ -45,6 +45,7 @@
   }
 }
 
+/* the right column's 23.5rem is also in player-bar.css, which keeps the bar out of that column */
 @media (min-width: 1100px) {
   .stage {
     grid-template-columns: 20rem minmax(0, 1fr) 23.5rem;
