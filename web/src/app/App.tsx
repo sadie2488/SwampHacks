@@ -1,7 +1,7 @@
 // The app shell (the Overture look): the entrance, the record menu, and inside a mode the header with the mode pills,
 // the giant mode title, and the working panels. The mode pills (the tab-* buttons) are the same buttons on every
 // screen: in the menu they sit in the bottom-right corner, inside a mode in the header. Clicking one opens that mode.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { bus, isFakeMode, resumeAudio } from '@/bus';
 import type { Mode } from '@/contracts';
 import { CommandLab } from '@/modules/command-lab';
@@ -73,6 +73,17 @@ export function App() {
       changeScreen('portal', update, { ...p.centre, hole: p.hole });
     } else changeScreen(kind, update);
   };
+  // app.mode (a held sign, the Command Lab, an email...) opens a mode just like clicking its tab button (not on the entrance)
+  const openModeRef = useRef(openMode);
+  openModeRef.current = (id: Tab) => screen !== 'entrance' && openMode(id);
+  useEffect(
+    () =>
+      bus.on('command', (c) => {
+        const id = TABS.find((t) => c.command === 'app.mode' && t.id === c.value)?.id;
+        if (id) openModeRef.current(id);
+      }),
+    [],
+  );
   const openMenu = () =>
     changeScreen('back', () => {
       setMenuSel(indexOf(tab));

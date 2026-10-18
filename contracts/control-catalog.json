@@ -21,6 +21,7 @@
     { "id": "create.layer.pitch", "kind": "value", "modes": ["create"], "range": [-6, 6], "default": 0, "step": 0.1, "unit": "semitones", "description": "Pitch shift of the current layer." },
     { "id": "create.instrument.voice", "kind": "toggle", "modes": ["create"], "default": false, "description": "Enable spoken instrument and effect selection for the current layer." },
     { "id": "create.effects", "kind": "value", "value_type": "string", "modes": ["create"], "options": ["none", "reverb", "delay", "filter"], "default": "none", "description": "Effect on the current layer." },
-    { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." }
+    { "id": "visual.intensity", "kind": "value", "modes": ["learn", "play", "create"], "range": [0, 1], "default": 0.5, "step": 0.1, "description": "How strong the TouchDesigner visuals are." },
+    { "id": "app.mode", "kind": "value", "value_type": "string", "modes": ["learn", "play", "create"], "options": ["learn", "play", "create", "lab"], "default": "learn", "description": "Switch the app to Learn, Play, Create or the Command Lab (lab)." }
   ]
 }
