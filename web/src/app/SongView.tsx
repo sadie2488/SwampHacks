@@ -5,12 +5,15 @@ import { History } from './History';
 import { PanelBoundary } from './PanelBoundary';
 import { Practice } from './Practice';
 import { Transport } from './Transport';
+import { panelProps } from '@/ui/overture/PanelToggles';
 
-export function SongView() {
+const ALL_OPEN = { practice: true, player: true, sheet: true };
+
+export function SongView({ open = ALL_OPEN }: { open?: { practice: boolean; player: boolean; sheet: boolean } }) {
   return (
     <>
       <div className="song-controls">
-        <div className="card practice-card">
+        <div className="card practice-card float-panel" {...panelProps(open.practice)}>
           <PanelBoundary name="practice">
             <Practice />
           </PanelBoundary>
@@ -18,10 +21,12 @@ export function SongView() {
             <History />
           </PanelBoundary>
         </div>
-        <Transport />
+        <div className="panel-slot" {...panelProps(open.player)}>
+          <Transport />
+        </div>
       </div>
       {/* the sheet sits on a calm, plain paper band: nothing from the moving background shows through it */}
-      <section className="sheet-strip" aria-labelledby="sheet-heading">
+      <section className="sheet-strip float-panel" aria-labelledby="sheet-heading" {...panelProps(open.sheet)}>
         <div className="sheet-strip-inner">
           <h2 id="sheet-heading" className="kicker">
             Sheet music

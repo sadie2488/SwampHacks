@@ -1,5 +1,5 @@
 // The Overture background picture, as one full-screen shader (one draw call):
-// - the player's own camera picture (mirrored, covering the window), toned by the screen's look
+// - the player's own camera picture (the true way round, not mirrored; covering the window), toned by the screen's look
 // - a two-ink halftone print on top (the mode's ink pair), its dots grow with the music and the two inks slip apart
 //   on the beat and when the section colour changes
 // - without a camera: a slow cloud field stands in for the picture, breathing with the song's low bands
@@ -18,7 +18,7 @@ uniform vec3 uA, uB, uBg, uClick;
 vec2 coverUv(vec2 uv){
   float s=(uRes.x/uRes.y)/uCamAspect;
   if(s>1.) uv.y=(uv.y-.5)/s+.5; else uv.x=(uv.x-.5)*s+.5;
-  return vec2(1.-uv.x, uv.y);
+  return uv;
 }
 float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
 float noise(vec2 p){

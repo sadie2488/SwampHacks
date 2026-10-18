@@ -1,0 +1,133 @@
+/* Laptops and up: every screen is exactly one window tall. Where each floating panel sits (see stage-fit.css). */
+@media (min-width: 701px) {
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  .app {
+    --gut: 28px;
+    --top: 88px;
+    --toggles-w: 8.5rem;
+    --player-h: 88px;
+    --sheet-h: clamp(150px, 26vh, 260px);
+    /* room the panels leave at the bottom for the sheet band and the player */
+    --low: calc(var(--player-h) + var(--sheet-h) + 14px);
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .app-header {
+    width: 100%;
+  }
+
+  .app-main {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .app .stage:not(.stage-lab) {
+    display: block;
+    padding-bottom: 0;
+  }
+
+  .stage:not(.stage-lab) .mode-title {
+    max-width: calc(100vw - 2 * var(--gut) - 12rem);
+  }
+
+  .stage:not(.stage-lab) :is(.side-card, .practice-card, .create-slot) {
+    position: fixed;
+    z-index: 12;
+    top: var(--top);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .stage:not(.stage-lab) .side-card {
+    left: var(--gut);
+    width: 20rem;
+    max-height: calc(100dvh - var(--top) - var(--low));
+  }
+
+  .stage-create .side-card {
+    max-height: calc(100dvh - var(--top) - 9rem);
+  }
+
+  .stage-song .practice-card {
+    right: var(--gut);
+    width: 23.5rem;
+    max-height: calc(100dvh - var(--top) - var(--low));
+  }
+
+  .stage-create .create-slot {
+    right: var(--gut);
+    width: min(46rem, calc(100vw - 20rem - 3 * var(--gut)));
+    max-height: calc(100dvh - var(--top) - 20px);
+  }
+
+  .stage-create .create-slot [data-testid='create-panel'] {
+    padding: 14px 18px;
+  }
+
+  .stage-song .sheet-strip {
+    position: fixed;
+    z-index: 11;
+    left: calc(var(--gut) + var(--toggles-w));
+    right: var(--gut);
+    bottom: calc(var(--player-h) + 6px);
+    height: var(--sheet-h);
+    margin: 0;
+    padding: 10px 18px 0;
+    overflow: hidden;
+  }
+
+  .stage-song .sheet-strip-inner,
+  .stage-song .sheet {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* fixed height: the sheet module scrolls this box itself to the cursor's line, which turns the pages */
+  .stage-song .sheet-host {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .stage-song .player-bar {
+    left: calc(var(--gut) + var(--toggles-w));
+    right: var(--gut);
+    bottom: 12px;
+    width: auto;
+    max-width: 62rem;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  /* the Command Lab stays a working page: side column and lab fill the window, each scrolls inside itself */
+  .stage-lab {
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr);
+    padding-bottom: 12px;
+  }
+
+  .stage-lab :is(.side-card, .stage-main) {
+    min-height: 0;
+    max-height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 1100px) {
+  .stage-lab .side-card {
+    grid-row: 1 / 3;
+  }
+}

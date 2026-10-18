@@ -1,10 +1,10 @@
 /* Mode screens in the mockup's wireframe look: the live camera is the whole background, and each part of the mode
-   sits in a thin outlined box with an almost clear fill, so the camera shows through. Text keeps its contrast with
-   a soft dark halo drawn round the letters (a scrim only where there is text), not with dark filled panels.
+   sits in a thin outlined box with a light scrim (the panels open over the title and the camera). Text keeps its contrast with
+   a soft dark halo drawn round the letters, so the boxes stay light.
    The sheet music keeps its solid paper band, for reading. The menu is untouched. */
 .app[data-screen='mode'] {
   --wire: color-mix(in srgb, var(--a) 70%, var(--paper-white));
-  --wire-fill: color-mix(in srgb, var(--bg) 26%, transparent);
+  --wire-fill: color-mix(in srgb, var(--bg) 78%, transparent);
   --halo: 0 0 2px rgba(5, 5, 6, 0.9), 0 1px 3px rgba(5, 5, 6, 0.75), 0 0 14px rgba(5, 5, 6, 0.55);
 }
 
@@ -21,7 +21,7 @@
 
 /* the player floats over the camera too: an outline, not a dark slab */
 .app[data-screen='mode'] .player-bar {
-  background: color-mix(in srgb, var(--bg) 34%, transparent);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
   border-color: var(--wire);
   box-shadow: none;
 }

@@ -15,6 +15,8 @@ import { InstructionsOverlay } from '@/ui/overture/InstructionsOverlay';
 import { MODES, modeLook, type ModeId, type Screen } from '@/ui/overture/modes';
 import { RecordMenu } from '@/ui/overture/RecordMenu';
 import { ModeTitle } from '@/ui/overture/ModeTitle';
+import { ModeVisual } from '@/ui/overture/ModeVisual';
+import { panelProps, PanelToggles, usePanels } from '@/ui/overture/PanelToggles';
 import { initialScreen, readScreenHints, rememberEntered } from '@/ui/overture/screen';
 import { SoundToggle } from '@/ui/overture/SoundToggle';
 import { needleDrop, swell, unlockOnFirstGesture, unlockSounds } from '@/ui/overture/sounds';
@@ -58,6 +60,7 @@ export function App() {
   const [hands, setHands] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
+  const { isOpen, toggle: togglePanel } = usePanels();
   useModules();
   useDeviceAutostart(screen);
 
@@ -161,8 +164,10 @@ export function App() {
       <main className="app-main" {...inert(screen !== 'mode')}>
         <div role="tabpanel" id="mode-panel" className={`mode-panel stage stage-${tab}${songTab ? ' stage-song' : ''}`} aria-labelledby={`tab-${tab}`}>
           <ModeTitle look={modeLook(tab)} guides={screen === 'mode'} />
+          {/* the mode's own picture over the camera (staff and notes, hum rings, hand readout), driven by real data */}
+          {screen === 'mode' && <ModeVisual mode={tab} />}
           {/* the left panel: the song picker (Learn and Play), the devices, and the camera picture right under them */}
-          <div className="card side-card">
+          <div className="card side-card float-panel" {...panelProps(tab === 'lab' || isOpen(songTab ? 'song' : 'devices'))}>
             {songTab && (
               <>
                 <SongLoader state={loader} setState={setLoader} />
@@ -172,9 +177,9 @@ export function App() {
             <Devices fake={isFakeMode()} />
             <CameraPreview />
           </div>
-          {songTab && <SongView />}
+          {songTab && <SongView open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
           {tab === 'create' && (
-            <div className="stage-main">
+            <div className="stage-main float-panel create-slot" data-layers={isOpen('layers')} data-tracks={isOpen('tracks')} {...panelProps(isOpen('layers') || isOpen('tracks'))}>
               <PanelBoundary name="Create">
                 <CreatePanel fetchFn={apiFetch} />
               </PanelBoundary>
@@ -187,6 +192,7 @@ export function App() {
               </PanelBoundary>
             </div>
           )}
+          {screen === 'mode' && <PanelToggles mode={tab} isOpen={isOpen} toggle={togglePanel} />}
         </div>
       </main>
     </div>
