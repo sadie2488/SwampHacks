@@ -2,7 +2,7 @@
 // It only finds points. What they mean (fist, tilt, ...) is worked out in gestures.ts on the page side.
 import { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision';
 import { MODEL_DOWNLOAD_MESSAGE, type FromWorker, type ToWorker } from './protocol';
-import { LOCAL_FACE_MODEL_URL, LOCAL_HAND_MODEL_URL, pick, pickWasm, type Fileset } from './sources';
+import { LOCAL_FACE_MODEL_URL, LOCAL_HAND_MODEL_URL, localWasm, readLocal, remoteWasm, type Fileset } from './sources';
 import type { RawHand } from './gestures';
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
@@ -37,15 +37,8 @@ async function download(url: string): Promise<Uint8Array> {
 
 /** The copy on this computer when there is one (see sources.ts), else the internet copy. */
 async function localFirst(local: string, remote: string): Promise<{ bytes: Uint8Array; local: boolean }> {
-  const url = await pick(local, remote);
-  if (url === local) {
-    try {
-      return { bytes: await download(local), local: true };
-    } catch {
-      // the local copy vanished or broke: use the internet one
-    }
-  }
-  return { bytes: await download(remote), local: false };
+  const bytes = await readLocal(local);
+  return bytes ? { bytes, local: true } : { bytes: await download(remote), local: false };
 }
 
 let hands: HandLandmarker | null = null;
@@ -77,29 +70,40 @@ async function build(d: 'GPU' | 'CPU'): Promise<void> {
   delegate = d;
 }
 
+/** Tries each processor in turn; returns what went wrong, or undefined once one works. */
+async function buildFirstWorking(order: Array<'GPU' | 'CPU'>): Promise<unknown> {
+  let problem: unknown;
+  for (const d of order) {
+    try {
+      await build(d);
+      return undefined;
+    } catch (e) {
+      problem = e;
+      console.warn(`[vision worker] ${d} tracking did not start`, e);
+    }
+  }
+  return problem;
+}
+
 async function init(m: Extract<ToWorker, { type: 'init' }>): Promise<void> {
   try {
-    const [handModel, faceModel, wasm] = await Promise.all([
+    const [handModel, faceModel, local] = await Promise.all([
       localFirst(LOCAL_HAND_MODEL_URL, m.handModelUrl),
       localFirst(LOCAL_FACE_MODEL_URL, m.faceModelUrl),
-      pickWasm(m.wasmUrl),
+      localWasm(),
     ]);
-    console.info(`[vision worker] files: models ${handModel.local && faceModel.local ? 'from this computer' : 'from the internet'}, engine ${wasm.local ? 'from this computer' : 'from the internet'}`);
-    files = { handModel: handModel.bytes, faceModel: faceModel.bytes, fileset: wasm.fileset };
+    files = { handModel: handModel.bytes, faceModel: faceModel.bytes, fileset: local ?? (await remoteWasm(m.wasmUrl)) };
     // The graphics card is much faster when it works; if it doesn't on this computer, fall back to the processor.
     const order: Array<'GPU' | 'CPU'> = m.delegate === 'CPU' ? ['CPU'] : m.delegate === 'GPU' ? ['GPU'] : ['GPU', 'CPU'];
-    let problem: unknown;
-    for (const d of order) {
-      try {
-        await build(d);
-        problem = undefined;
-        break;
-      } catch (e) {
-        problem = e;
-        console.warn(`[vision worker] ${d} tracking did not start`, e);
-      }
+    let problem = await buildFirstWorking(order);
+    if (local && problem instanceof DownloadError) {
+      // The website's own copy of the engine didn't load: try the internet one.
+      files.fileset = await remoteWasm(m.wasmUrl);
+      problem = await buildFirstWorking(order);
     }
     if (problem) throw problem;
+    const from = (here: boolean): string => (here ? 'this computer' : 'the internet');
+    console.info(`[vision worker] models from ${from(handModel.local && faceModel.local)}, engine from ${from(files.fileset === local)}`);
     post({ type: 'ready', delegate });
   } catch (e) {
     console.error('[vision worker] could not start', e);

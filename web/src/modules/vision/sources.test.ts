@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { FACE_MODEL_URL, HAND_MODEL_URL } from './protocol';
-import { LOCAL_FACE_MODEL_URL, LOCAL_HAND_MODEL_URL, LOCAL_WASM, isThere, pick } from './sources';
+import { LOCAL_FACE_MODEL_URL, LOCAL_HAND_MODEL_URL, LOCAL_WASM, readLocal } from './sources';
 
 const answer = (status: number, type: string) => vi.fn(async () => new Response(null, { status, headers: { 'content-type': type } }));
 
@@ -14,18 +14,17 @@ describe('local-first tracking files', () => {
     expect(LOCAL_WASM.wasmLoaderPath.startsWith('http')).toBe(false);
   });
 
-  it('uses a local file that is really there, asking with HEAD only', async () => {
-    const f = answer(200, 'application/octet-stream');
-    expect(await pick(LOCAL_HAND_MODEL_URL, HAND_MODEL_URL, f)).toBe(LOCAL_HAND_MODEL_URL);
-    expect(f).toHaveBeenCalledWith(LOCAL_HAND_MODEL_URL, expect.objectContaining({ method: 'HEAD' }));
+  it('reads a local file that is really there, in one request', async () => {
+    const f = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { 'content-type': 'application/octet-stream' } }));
+    expect(Array.from((await readLocal(LOCAL_HAND_MODEL_URL, f))!)).toEqual([1, 2, 3]);
+    expect(f).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the internet when the local file is missing, answered by the page, or the request fails', async () => {
-    expect(await pick(LOCAL_FACE_MODEL_URL, FACE_MODEL_URL, answer(404, 'text/plain'))).toBe(FACE_MODEL_URL);
+  it('says "missing" when the file is not there, the page answers instead, or the request fails', async () => {
+    expect(await readLocal(LOCAL_FACE_MODEL_URL, answer(404, 'text/plain'))).toBeNull();
     // the dev server answers a missing file with index.html and status 200
-    expect(await pick(LOCAL_FACE_MODEL_URL, FACE_MODEL_URL, answer(200, 'text/html'))).toBe(FACE_MODEL_URL);
-    const offline = vi.fn(async () => Promise.reject(new TypeError('Failed to fetch')));
-    expect(await isThere(LOCAL_FACE_MODEL_URL, offline)).toBe(false);
+    expect(await readLocal(LOCAL_FACE_MODEL_URL, answer(200, 'text/html'))).toBeNull();
+    expect(await readLocal(LOCAL_FACE_MODEL_URL, vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))).toBeNull();
   });
 
   it('the download script fetches the same model addresses the app falls back to', () => {

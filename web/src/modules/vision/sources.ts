@@ -13,28 +13,24 @@ export const LOCAL_FACE_MODEL_URL = `${base}models/face_landmarker.task`;
 export const LOCAL_WASM: Fileset = { wasmLoaderPath: wasmLoaderUrl, wasmBinaryPath: wasmBinaryUrl };
 
 /**
- * True when `url` really holds a file. Asks with HEAD, so nothing big is downloaded twice. The dev server answers a
- * missing file with the page itself (200, text/html) instead of a 404, which keeps the console free of red lines;
- * that answer counts as missing too.
+ * The bytes of a file on this computer, or null when it isn't there. The dev server answers a missing file with the
+ * page itself (200, text/html) instead of a 404, so the console stays free of red lines; that answer counts as missing.
+ * One plain GET: a HEAD check first showed up in Chrome as an aborted request.
  */
-export async function isThere(url: string, fetcher: typeof fetch = fetch): Promise<boolean> {
+export async function readLocal(url: string, fetcher: typeof fetch = fetch): Promise<Uint8Array | null> {
   try {
-    const res = await fetcher(url, { method: 'HEAD', cache: 'no-store' });
-    return res.ok && !(res.headers.get('content-type') ?? '').includes('text/html');
+    const res = await fetcher(url);
+    if (!res.ok || (res.headers.get('content-type') ?? '').includes('text/html')) return null;
+    return new Uint8Array(await res.arrayBuffer());
   } catch {
-    return false;
+    return null;
   }
 }
 
-/** The local copy if it is there, otherwise the internet address. */
-export async function pick(local: string, remote: string, fetcher: typeof fetch = fetch): Promise<string> {
-  return (await isThere(local, fetcher)) ? local : remote;
+/** The wasm inside the website, unless this computer lacks SIMD (then only the internet has the right version). */
+export async function localWasm(): Promise<Fileset | null> {
+  return (await FilesetResolver.isSimdSupported()) ? LOCAL_WASM : null;
 }
 
-/** The wasm fileset: the copy inside the website, or the internet one if that copy can't be reached or SIMD is missing. */
-export async function pickWasm(remoteBase: string, fetcher: typeof fetch = fetch): Promise<{ fileset: Fileset; local: boolean }> {
-  if ((await FilesetResolver.isSimdSupported()) && (await isThere(LOCAL_WASM.wasmLoaderPath, fetcher))) {
-    return { fileset: LOCAL_WASM, local: true };
-  }
-  return { fileset: await FilesetResolver.forVisionTasks(remoteBase), local: false };
-}
+/** The internet copy of the wasm. */
+export const remoteWasm = (remoteBase: string): Promise<Fileset> => FilesetResolver.forVisionTasks(remoteBase);
