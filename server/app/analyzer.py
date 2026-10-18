@@ -67,7 +67,7 @@ WARNING_NO_BAND_MELODY = (
     "I couldn't pick out the melody in this song, so there is no Melody part, but the bass and chords are there."
 )
 WARNING_PARTS_FAILED = "I could only work out the melody of this song this time, not its bass or chords."
-WARNING_BAND_EXCERPT = "Only the first 4 minutes of this song were split into melody, bass and chords."
+WARNING_BAND_EXCERPT = "Only the first 3 minutes of this song were split into melody, bass and chords."
 ERROR_NO_MUSIC = (
     "I couldn't find a steady beat or a melody in this recording, so there is nothing to show. "
     "Please try a recording of a song or a tune."
@@ -119,7 +119,8 @@ NO_MELODY_RETRY_MIN_SOUND_SHARE = 0.25  # the notes must cover this share of the
 # notes the basic-pitch model finds once the drums are out. With this many cores that starts right away, next
 # to the melody step (about 5 s for a 3 minute song on 12 cores); with fewer, only once a song needs it.
 BAND_EARLY_MIN_CORES = 4
-BAND_MAX_SECONDS = 240.0  # the band split looks at most at the first 4 minutes (time: about 1 s per 10 s of song)
+BAND_BASS_MIN_SHARE = 0.45  # measured: real bass 0.65 to 0.78 of the time (4 band songs); drum leftovers 0.28 or less
+BAND_MAX_SECONDS = 180.0  # the band split looks at most at the first 3 minutes (time: about 1 s per 10 s of song)
 
 
 class AnalysisFailed(Exception):
@@ -204,18 +205,26 @@ def _extract(melody, y, sr: int, result: dict) -> list[dict]:
     return melody.extract_melody(y, sr, result["tempo_bpm"], result["beats"], **extra)
 
 
-def _melody_part(melody, y, sr: int, result: dict, drums_out=None) -> tuple[list[dict], list[str]]:
+def _first_try(melody, y, sr: int, result: dict) -> list[dict] | None:
+    """The melody step's notes on the sound as it is: [] when there is no melody, None when the step crashed."""
+    try:
+        return _extract(melody, y, sr, result)
+    except melody.AnalysisError as err:
+        log.info("No melody found: %s", err)
+        return []
+    except Exception:
+        log.exception("Melody extraction failed")
+        return None
+
+
+def _melody_part(melody, y, sr: int, result: dict, drums_out=None, first=None) -> tuple[list[dict], list[str]]:
     """The `parts` list and any warnings from the melody step. This step never fails the upload.
 
     `drums_out`: the sound with the drums taken out, already being made in the background (a future), or None.
+    `first`: the result of `_first_try` when it already ran.
     """
-    try:
-        notes = _extract(melody, y, sr, result)
-    except melody.AnalysisError as err:
-        log.info("No melody found: %s", err)
-        notes = []
-    except Exception:
-        log.exception("Melody extraction failed")
+    notes = _first_try(melody, y, sr, result) if first is None else first
+    if notes is None:
         return [], [WARNING_NO_MELODY]
     if notes:
         mixed = looks_like_full_mix(notes)
@@ -396,10 +405,38 @@ def _band_parts(melody, y, sr: int, result: dict, melody_part: dict | None, band
     return parts, warnings
 
 
+def _has_bass_line(parts: list[dict], analyzed_sec: float) -> bool:
+    """A bass part that sounds through most of the song (BAND_BASS_MIN_SHARE), not a few low leftovers of drums."""
+    bass = next((p for p in parts if p["kind"] == "bass"), None)
+    return bass is not None and sum(n["duration_sec"] for n in bass["notes"]) >= BAND_BASS_MIN_SHARE * analyzed_sec
+
+
+class _LazyBand:
+    """`_band_notes` worked out on first use and kept (stands in for the background future on small machines)."""
+
+    def __init__(self, y, sr: int):
+        self.y, self.sr, self.notes = y, sr, None
+
+    def result(self):
+        if self.notes is None:
+            self.notes = _band_notes(self.y, self.sr)
+        return self.notes
+
+
 def _all_parts(melody, y, sr: int, result: dict, drums_out=None, band=None) -> tuple[list[dict], list[str]]:
     """The melody step, then the band split when the song sounds like several instruments or the melody step
-    found no real line (fewer than FULL_MIX_MIN_NOTES notes, which is left out with a warning)."""
-    parts, warnings = _melody_part(melody, y, sr, result, drums_out)
+    found no real line (fewer than FULL_MIX_MIN_NOTES notes, which is left out with a warning).
+
+    A band with a bass line skips the melody step's second try without drums: the split replaces its result
+    anyway, and the second try costs as much as the first (about 10 s on a 5 minute song).
+    """
+    band = band or _LazyBand(y, sr)
+    first = _first_try(melody, y, sr, result)
+    if first is not None and (len(first) < FULL_MIX_MIN_NOTES or looks_like_full_mix(first)):
+        early, early_warnings = _band_parts(melody, y, sr, result, None, band)
+        if early and early[0]["kind"] == "melody" and _has_bass_line(early, min(len(y) / sr, BAND_MAX_SECONDS)):
+            return early, [WARNING_FULL_MIX, *early_warnings]
+    parts, warnings = _melody_part(melody, y, sr, result, drums_out, first)
     line = parts[0] if parts and len(parts[0]["notes"]) >= FULL_MIX_MIN_NOTES else None
     if line is not None and WARNING_FULL_MIX not in warnings:
         return parts, warnings  # one clear line: a solo recording

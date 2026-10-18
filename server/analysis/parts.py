@@ -29,6 +29,7 @@ HOLD_LEFT_SEC = 0.15  # a voice keeps its note while this much of it is left, un
 BASS_MAX_PITCH = 52  # E3, about 165 Hz: the top of most bass lines
 MELODY_MIN_PITCH = 53  # F3, just above the bass: low male verses (Smells Like Teen Spirit) sit around F3-G3
 MELODY_MAX_PITCH = 90  # F#6: higher is cymbal and synth sparkle the model reads as notes
+CHORD_MIN_PITCH = 40  # E2: lower notes left over after the bass line are its echoes, not chord notes
 CHORD_MAX_PITCH = 84  # C6
 JUMP_MAX = 12  # a melody note more than an octave from both neighbours is an outlier
 CHORD_MAX_NOTES = 4
@@ -235,7 +236,7 @@ def split_parts(
     used = {n["_i"] for n in bass}
     tune = drop_jumps(voice([n for n in clean if n["_i"] not in used and MELODY_MIN_PITCH <= n["pitch"] <= MELODY_MAX_PITCH], top=True))
     used |= {n["_i"] for n in tune}
-    rest = [n for n in clean if n["_i"] not in used and n["pitch"] <= CHORD_MAX_PITCH]
+    rest = [n for n in clean if n["_i"] not in used and CHORD_MIN_PITCH <= n["pitch"] <= CHORD_MAX_PITCH]
     origin = _origin(bass + tune + rest, tempo_bpm, beats)
     held = chords(rest, tempo_bpm, origin)
     found: dict[str, dict] = {}
