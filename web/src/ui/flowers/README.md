@@ -10,7 +10,7 @@ flowers. No outside artwork is used here.
 | `bud/` | The entrance spray (small buds) |
 | `orchid-stipple.svg` | Not shown any more (the records carry only hand-drawn flowers, see below) |
 | `sections/<section>/` | One flower per section (placeholders by `make-sections.mjs`): menu chrysanthemum, learn forget-me-not, play bird of paradise, create sweet pea, lab iris |
-| `drawn/` | Lalitha's hand-drawn section flowers (PNG). Anything here wins over `sections/` |
+| `drawn/` | Lalitha's hand-drawn section flowers (PNG), made by `make-drawn.mjs` from her drawings: menu chrysanthemum, learn orchids, play hibiscus (buds when closed), create lily, lab tulips. Her lines are kept as drawn; the stipple dots and light wash are added (rebuild: `node web/src/ui/flowers/make-drawn.mjs "<folder with her IMG_05xx.png files>"`). Anything here wins over `sections/` |
 
 `index.ts` lists the entrance flowers, `sections.ts` the section flowers and their inks. `web/src/ui/overture/spray.ts`
 lists where each entrance flower sits and how big it is.
