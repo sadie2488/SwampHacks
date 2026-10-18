@@ -1,5 +1,6 @@
 // Messages between the page (index.ts) and the tracking worker (worker.ts), plus the places the models come from.
-// Nothing is vendored into git: the wasm and the model files are fetched from public CDNs the first time the camera starts.
+// Nothing is vendored into git. The worker first uses copies on this computer (see sources.ts: the wasm ships inside the
+// website, the models are saved by fetch-models.mjs); these internet addresses are the fallback when a copy is missing.
 import type { Pt, RawHand } from './gestures';
 
 /** Must match the installed @mediapipe/tasks-vision (a test checks this against node_modules). */
