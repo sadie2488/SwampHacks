@@ -4,10 +4,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ModeId } from './modes';
 
-export type PanelName = 'song' | 'devices' | 'practice' | 'player' | 'sheet' | 'layers' | 'tracks';
+export type PanelName = 'song' | 'devices' | 'practice' | 'feedback' | 'player' | 'sheet' | 'layers' | 'tracks';
 
 export const PANELS_FOR: Record<ModeId, PanelName[]> = {
-  learn: ['song', 'practice', 'sheet', 'player'],
+  learn: ['song', 'practice', 'feedback', 'sheet', 'player', 'devices'],
   // Play has no panels at all: it is used purely by hands and voice (the demo song loads itself when none is loaded)
   play: [],
   create: ['devices', 'layers', 'tracks'],
@@ -15,16 +15,17 @@ export const PANELS_FOR: Record<ModeId, PanelName[]> = {
 };
 
 const LABELS: Record<PanelName, { label: string; title: string }> = {
-  song: { label: 'Song', title: 'Pick a song, and the camera and microphone switches' },
-  devices: { label: 'Devices', title: 'The camera and microphone switches' },
+  song: { label: 'Song', title: 'Upload a song or use the demo song' },
+  devices: { label: 'Devices', title: 'The camera and microphone switches, and your camera picture' },
   practice: { label: 'Practice', title: 'Practice along: steps, calibrate, start and stop, your history' },
+  feedback: { label: 'Feedback', title: 'Your feedback after a practice run' },
   player: { label: 'Player', title: 'Play, pause, loop, speed, pitch and volume' },
   sheet: { label: 'Sheet', title: 'The sheet music (it turns its own pages as the song plays)' },
   layers: { label: 'Layers', title: 'Record, layers, instruments and the loop' },
   tracks: { label: 'Tracks', title: 'Save and open your tracks' },
 };
 
-const ALL: PanelName[] = ['song', 'devices', 'practice', 'player', 'sheet', 'layers', 'tracks'];
+const ALL: PanelName[] = ['song', 'devices', 'practice', 'feedback', 'player', 'sheet', 'layers', 'tracks'];
 
 /**
  * Which panels are open. For people they all start closed (the blank screen).

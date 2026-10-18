@@ -131,3 +131,43 @@
     grid-row: 1 / 3;
   }
 }
+
+/* Learn: two panels share each side column (Song over Devices on the left, Practice over Feedback on the right).
+   The column is the fixed box; the cards inside it stack, and a closed card gives its room to the other. */
+@media (min-width: 701px) {
+  .stage-learn .side-column,
+  .stage-learn .right-column {
+    position: fixed;
+    z-index: 12;
+    top: var(--top);
+    max-height: calc(100dvh - var(--top) - var(--low));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .stage-learn .side-column {
+    left: var(--gut);
+    width: 20rem;
+  }
+
+  .stage-learn .right-column {
+    right: var(--gut);
+    width: 23.5rem;
+  }
+
+  .stage-learn .side-column > .side-card,
+  .stage-learn .right-column > .practice-card,
+  .stage-learn .right-column > .feedback-card-panel {
+    position: static;
+    width: auto;
+    max-height: none;
+    flex: 0 0 auto;
+  }
+
+  .stage-learn :is(.side-column, .right-column) > .float-panel[data-open='false'] {
+    display: none;
+  }
+}
