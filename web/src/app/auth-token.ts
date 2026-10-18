@@ -21,14 +21,15 @@ export type TokenSources = {
   accessToken: () => Promise<unknown>;
   /** The login's ID token details, if any (`__raw` is the signed token). */
   idToken: () => Promise<{ __raw?: unknown } | undefined | null>;
+  /**
+   * Ask Auth0 for new tokens because the stored ones are missing or out of date (stored tokens are never renewed by
+   * themselves). Returns the new access token and updates the stored ID token. Throws when the login has ended.
+   */
+  refresh?: () => Promise<unknown>;
 };
 
-/**
- * The access token if it is a signed one, otherwise the ID token. Without an "audience" Auth0 hands out an
- * opaque access token that only its own /userinfo address understands, so the ID token is what normally gets used.
- * Returns null when there is nothing the server could accept; the request then goes out anonymously.
- */
-export async function pickToken(sources: TokenSources, now: number = Date.now()): Promise<string | null> {
+/** The stored token the server can check, if one is still good. Never throws. */
+async function storedToken(sources: TokenSources, now: number): Promise<string | null> {
   try {
     const access = await sources.accessToken();
     if (looksSigned(access) && !hasExpired(access, now)) return access;
@@ -42,4 +43,19 @@ export async function pickToken(sources: TokenSources, now: number = Date.now())
     // nothing usable
   }
   return null;
+}
+
+/**
+ * The access token if it is a signed one, otherwise the ID token. Without an "audience" Auth0 hands out an
+ * opaque access token that only its own /userinfo address understands, so the ID token is what normally gets used.
+ * When neither stored token is still good, asks Auth0 for new ones once (if `refresh` is given).
+ * Returns null when there is nothing the server could accept; the request then goes out anonymously.
+ * Throws only when that refresh fails, which means the login has ended and the person must log in again.
+ */
+export async function pickToken(sources: TokenSources, now: number = Date.now()): Promise<string | null> {
+  const stored = await storedToken(sources, now);
+  if (stored || !sources.refresh) return stored;
+  const fresh = await sources.refresh();
+  if (looksSigned(fresh) && !hasExpired(fresh, now)) return fresh;
+  return storedToken(sources, now); // the refresh also renewed the stored ID token
 }
