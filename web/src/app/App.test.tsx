@@ -99,7 +99,7 @@ afterEach(async () => {
 
 describe('layout', () => {
   it('shows the title, four tabs, the song loader and an empty sheet', () => {
-    expect(container.querySelector('h1')?.textContent).toBe('SwampHacks Music');
+    expect(container.querySelector('h1')?.textContent).toBe('Overture');
     for (const t of ['tab-learn', 'tab-play', 'tab-create', 'tab-lab']) expect($(t)).not.toBeNull();
     expect($('song-file')?.getAttribute('accept')).toBe('audio/*');
     expect($('use-demo')).not.toBeNull();

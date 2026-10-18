@@ -7,7 +7,7 @@ import './backdrop.css';
 
 type SceneState = 'loading' | 'on' | 'off';
 
-export function Backdrop() {
+export function Backdrop(_props: { screen?: string; mode?: string } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [state, setState] = useState<SceneState>(() =>
     typeof window !== 'undefined' && sceneWanted(window.location.search, navigator.userAgent) ? 'loading' : 'off',

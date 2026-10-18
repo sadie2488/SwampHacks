@@ -1,0 +1,113 @@
+/* A flower is its three state pictures stacked (closed, half, open); only their opacity changes.
+   Entrance: data-stage 0 / 1 / 2 as the pointer nears the Enter button, one flower after another.
+   In a mode: .beat restarts a short "flick open, settle back" on a strong beat (about 0.12 s open, 0.6 s settle). */
+.bloom-state {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  transition: opacity 0.7s cubic-bezier(0.3, 0.7, 0.2, 1) calc(var(--i, 0) * 45ms);
+}
+
+.bloom[data-stage='0'] .bloom-closed,
+.bloom[data-stage='1'] .bloom-half,
+.bloom[data-stage='2'] .bloom-open {
+  opacity: 1;
+}
+
+/* beat bloom: the flower rests closed; .beat plays once (the element is re-made for every beat) */
+.bloom.beat .bloom-state {
+  transition: none;
+}
+
+.bloom.beat .bloom-open {
+  animation: beat-open 0.72s linear both;
+}
+
+.bloom.beat .bloom-half {
+  animation: beat-half 0.72s linear both;
+}
+
+.bloom.beat .bloom-closed {
+  animation: beat-closed 0.72s linear both;
+}
+
+@keyframes beat-open {
+  0% {
+    opacity: 0;
+  }
+  16% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.3, 0.7, 0.3, 1);
+  }
+  60% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beat-half {
+  0%,
+  16% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beat-closed {
+  0% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0;
+  }
+  55% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .spray {
+    --u: 9.8vh;
+    left: 62vw;
+    top: 34vh;
+  }
+
+  .entrance-gate {
+    top: auto;
+    bottom: 64px;
+    transform: none;
+    left: 16px;
+  }
+
+  .entrance-logo {
+    font-size: clamp(64px, 22vw, 110px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spray-sway {
+    animation: none;
+  }
+
+  .bloom-state {
+    transition: none;
+  }
+
+  .bloom.beat .bloom-state {
+    animation: none;
+  }
+}

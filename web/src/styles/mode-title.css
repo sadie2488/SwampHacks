@@ -1,0 +1,100 @@
+/* Inside a mode: the giant serif title (the one bold statement), a tiny line under it, the section's flower.
+   On every bar start a copy of the title in the second ink slips a few pixels and settles. */
+.mode-title {
+  position: relative;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.mode-title .guide-pill {
+  pointer-events: auto;
+}
+
+.mode-word {
+  position: relative;
+  margin: 0;
+  font: 400 clamp(72px, 10.5vw, 176px) / 0.84 var(--serif);
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  white-space: nowrap;
+}
+
+.mode-word-clip {
+  display: inline-block;
+  overflow: hidden;
+  padding-top: 0.06em;
+  vertical-align: top;
+}
+
+.mode-word-line {
+  display: inline-block;
+  animation: line-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* the downbeat slip: a duplicate in the second ink, behind the title, nudged and settling */
+.mode-word-slip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding-top: 0.06em;
+  color: var(--b);
+  z-index: -1;
+  opacity: 0;
+  animation: type-slip 0.3s ease-out both;
+}
+
+@keyframes type-slip {
+  from {
+    opacity: 0.9;
+    transform: translate3d(4px, -3px, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mode-sub {
+  margin: 10px 0 0;
+  max-width: 26ch;
+  font: 900 clamp(15px, 1.5vw, 20px) / 1 var(--sans);
+  font-stretch: 62%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+}
+
+/* the section's flower sits behind the title, top right of it; it opens on strong bar starts */
+.mode-flower {
+  position: absolute;
+  width: clamp(110px, 12vw, 190px);
+  aspect-ratio: 1;
+  right: 4%;
+  top: -14%;
+  z-index: -1;
+  opacity: 0.85;
+}
+
+@media (max-width: 759px) {
+  .mode-word {
+    font-size: clamp(56px, 18vw, 96px);
+  }
+
+  .mode-flower {
+    width: 96px;
+    right: 0;
+    top: -8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-word-line,
+  .mode-word-slip {
+    animation: none;
+  }
+
+  .mode-word-slip {
+    display: none;
+  }
+}

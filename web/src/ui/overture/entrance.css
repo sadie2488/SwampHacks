@@ -1,0 +1,116 @@
+/* Screen 1, the entrance. Dark, the script logo and one button on the left, the flower spray on the right. */
+.entrance {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  color: var(--paper-white);
+  background: radial-gradient(120% 90% at 70% 50%, rgba(255, 45, 138, 0.07), transparent 60%), var(--night);
+}
+
+.entrance-gate {
+  position: absolute;
+  left: 6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: calc(100% - 32px);
+  z-index: 2;
+}
+
+.entrance-logo {
+  margin: 0 0 18px;
+  font: 400 clamp(76px, 11vw, 168px) / 0.8 var(--script);
+  color: var(--paper-white);
+  letter-spacing: 0;
+}
+
+.entrance-quiet {
+  font: 600 11px / 1.4 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  padding: 6px 2px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  box-shadow: none;
+}
+
+.entrance-quiet:hover {
+  color: var(--paper-white);
+}
+
+/* specimen label, top right */
+.entrance-plate {
+  position: absolute;
+  right: var(--m);
+  top: var(--m);
+  margin: 0;
+  text-align: right;
+  font: 700 10px / 1.7 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-white);
+  z-index: 2;
+}
+
+.entrance-plate i {
+  display: block;
+  font: italic 400 22px / 1 var(--serif);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------- the spray: positioned from the middle of the spray, in spray units (--u) ---------- */
+.spray {
+  --u: 13.2vh;
+  position: absolute;
+  left: 64.6vw;
+  top: 53.2vh;
+  width: 0;
+  height: 0;
+  transform: rotate(-35deg);
+}
+
+.spray-sway {
+  position: absolute;
+  inset: 0;
+  animation: spray-sway 11s ease-in-out infinite alternate;
+}
+
+@keyframes spray-sway {
+  from {
+    transform: rotate(-1.1deg);
+  }
+  to {
+    transform: rotate(1.1deg);
+  }
+}
+
+.spray-stems {
+  position: absolute;
+  left: calc(-4 * var(--u));
+  top: calc(-4 * var(--u));
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+  overflow: visible;
+  fill: none;
+  stroke: #f6f2ea;
+  stroke-width: 0.03;
+  stroke-dasharray: 0.08 0.05;
+  opacity: 0.75;
+}
+
+.bloom {
+  position: absolute;
+  left: calc(var(--x) * var(--u) - var(--r) * var(--u));
+  top: calc(var(--y) * var(--u) * -1 - var(--r) * var(--u));
+  width: calc(var(--r) * var(--u) * 2);
+  height: calc(var(--r) * var(--u) * 2);
+  transform: rotate(var(--tilt));
+}

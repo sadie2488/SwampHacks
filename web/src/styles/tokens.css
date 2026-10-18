@@ -8,6 +8,12 @@
   initial-value: #ff2d8a;
 }
 
+@property --bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0b0a0c;
+}
+
 @property --b {
   syntax: '<color>';
   inherits: true;
@@ -51,30 +57,36 @@
   --m: 28px;
   --a: var(--intro-a);
   --b: var(--intro-b);
-  /* ink a as readable text: Cobalt is too dark for small text on Night, so the Lab uses cream there */
+  /* each section's own dark background tint (entrance and menu: Night) */
+  --bg: var(--night);
+  /* ink a as small readable text: Cobalt is too dark on Night, so the Lab lifts it to a lighter blue */
   --a-text: var(--a);
   color-scheme: dark;
 }
 
 .app[data-mode='learn'] {
+  --bg: #08161a;
   --a: var(--learn-a);
   --b: var(--learn-b);
 }
 
 .app[data-mode='play'] {
+  --bg: #170c06;
   --a: var(--play-a);
   --b: var(--play-b);
 }
 
 .app[data-mode='create'] {
+  --bg: #120d1a;
   --a: var(--create-a);
   --b: var(--create-b);
 }
 
 .app[data-mode='lab'] {
+  --bg: #070b1c;
   --a: var(--lab-a);
   --b: var(--lab-b);
-  --a-text: var(--cream);
+  --a-text: #4a72ff;
 }
 
 .app[data-screen='entrance'] {
@@ -82,10 +94,16 @@
   --b: var(--intro-b);
 }
 
+.app[data-screen='entrance'],
+.app[data-screen='menu'] {
+  --bg: var(--night);
+}
+
 .app {
   transition:
     --a 0.5s ease-out,
-    --b 0.5s ease-out;
+    --b 0.5s ease-out,
+    --bg 0.5s ease-out;
 }
 
 @media (max-width: 640px) {
