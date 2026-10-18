@@ -369,10 +369,27 @@ def warm_up() -> bool:
         return False
 
 
+def _start_pitch_workers() -> None:
+    """Launch the pitch-tracking worker processes (`analysis/pitch_pool.py`) so long songs are quick. Never raises."""
+    with suppress(Exception):
+        importlib.import_module("analysis.pitch_pool").start()
+
+
+def stop_pitch_workers() -> None:
+    """Let the pitch-tracking workers go (server shutdown). Never raises."""
+    with suppress(Exception):
+        importlib.import_module("analysis.pitch_pool").stop()
+
+
+def _warm_up_everything() -> None:
+    _start_pitch_workers()  # they load their libraries in their own processes while this one warms up
+    warm_up()
+
+
 def start_warm_up() -> threading.Thread | None:
-    """Start `warm_up` in a background thread that does not keep the server alive. Never blocks or raises."""
+    """Start the warm-up in a background thread that does not keep the server alive. Never blocks or raises."""
     try:
-        thread = threading.Thread(target=warm_up, name="analysis-warm-up", daemon=True)
+        thread = threading.Thread(target=_warm_up_everything, name="analysis-warm-up", daemon=True)
         thread.start()
         return thread
     except Exception:

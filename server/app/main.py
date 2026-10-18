@@ -22,6 +22,7 @@ log = logging.getLogger("music.server")
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     analyzer.start_warm_up()  # compiles the analysis code in the background; the server does not wait for it
     yield
+    analyzer.stop_pitch_workers()
 
 
 app = FastAPI(title="SwampHacks Music", lifespan=lifespan)
