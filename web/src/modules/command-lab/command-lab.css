@@ -24,3 +24,119 @@
 [data-testid="lab-issues"] li[data-level="error"] { border-color: #d33; }
 [data-testid="lab-issues"] li[data-level="warning"] { border-color: #e8a317; }
 .lab-log { margin: 0; padding-left: 1.25rem; font-size: 0.9em; }
+
+/* ---- the rules, as a grid of cards ----
+   Each card names its rule, shows its trigger and action, and wears its section's colour on a small tag.
+   When a rule fires the card glows briefly: only transform and opacity move (a ring drawn on a pseudo-element
+   fades in), so the camera behind keeps its frame rate. The grid scrolls inside its own box; the page never does. */
+.command-lab .lab-rule-grid {
+  --rule-gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--rule-gap);
+  max-height: min(52vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong, #8888) transparent;
+}
+
+.command-lab .lab-rule-grid > .lab-rule-card {
+  position: relative;
+  min-height: 132px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--rule, #8884);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--night, #0b0a0c) 55%, transparent);
+  transition: transform 180ms ease-out;
+}
+
+.lab-rule-card { --tag: var(--paper-white, #f2eee6); }
+.lab-rule-card[data-section='learn'] { --tag: var(--learn-a, #1fb3bf); }
+.lab-rule-card[data-section='play'] { --tag: var(--play-a, #ff7a00); }
+.lab-rule-card[data-section='create'] { --tag: var(--create-a, #c9a8ff); }
+.lab-rule-card[data-section='lab'] { --tag: var(--lab-a, #2f5bff); }
+
+/* the glow ring: always there, invisible until the rule fires */
+.lab-rule-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1.5px solid var(--tag);
+  border-radius: 2px;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tag) 45%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease-out;
+}
+
+/* beats the plain and Overture "fired" backgrounds: the card itself only scales */
+.command-lab .lab-rule-grid > .lab-rule-card[data-fired='true'] {
+  background: color-mix(in srgb, var(--night, #0b0a0c) 55%, transparent);
+  border-color: var(--rule, #8884);
+  transform: scale(1.025);
+  transition-duration: 90ms;
+}
+
+.lab-rule-card[data-fired='true']::after {
+  opacity: 1;
+  transition-duration: 60ms;
+}
+
+.lab-rule-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--label-weight, 500) 12px/1.2 var(--sans, sans-serif);
+  letter-spacing: var(--label-track, 0);
+  color: var(--muted, #888);
+}
+
+.lab-rule-number { flex: 1; }
+
+.lab-rule-tag {
+  padding: 3px 9px;
+  border: 1px solid var(--tag);
+  border-radius: 999px;
+  color: var(--tag);
+  font: var(--label-weight, 500) 12px/1.2 var(--sans, sans-serif);
+  letter-spacing: var(--label-track, 0);
+}
+
+.lab-rule-name {
+  font: 400 24px/1.1 var(--serif, Georgia, serif);
+  overflow-wrap: anywhere;
+}
+
+.lab-rule-off {
+  align-self: flex-start;
+  font: var(--label-weight, 500) 12px/1.2 var(--sans, sans-serif);
+  color: var(--muted, #888);
+  border: 1px dashed var(--rule-strong, #8888);
+  padding: 2px 8px;
+}
+
+.lab-rule-facts {
+  margin: auto 0 0;
+  display: grid;
+  gap: 6px;
+  font: var(--label-weight, 500) 13px/1.35 var(--sans, sans-serif);
+  letter-spacing: var(--label-track, 0);
+}
+
+.lab-rule-facts > div { display: grid; grid-template-columns: 3.2em 1fr; gap: 6px; align-items: baseline; }
+.lab-rule-facts dt { color: var(--muted, #888); }
+.lab-rule-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .command-lab .lab-rule-grid > .lab-rule-card,
+  .command-lab .lab-rule-grid > .lab-rule-card[data-fired='true'] { transform: none; transition: none; }
+  .lab-rule-card::after { transition: none; }
+}
