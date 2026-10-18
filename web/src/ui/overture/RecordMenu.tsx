@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { bus } from '@/bus';
 import { BigWords } from './BigWords';
+import { createDragStepper, HAND_DRAG_EVENT, type HandDragDetail } from './hand-drag';
 import { recordPlace } from './carousel';
 import { MenuFrame } from './MenuFrame';
 import { MODES } from './modes';
@@ -26,6 +27,7 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
   const latest = useRef({ sel, onSelect, onChoose });
   latest.current = { sel, onSelect, onChoose };
   const dragged = useRef(false);
+  const recordsEl = useRef<HTMLDivElement>(null);
   const [grabbed, setGrabbed] = useState(false);
 
   // app.enter only exists while the menu is on screen (this component is the menu), so other screens ignore it
@@ -51,6 +53,7 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
       const next = Math.max(0, Math.min(MODES.length - 1, s + dir));
       if (next === s) return;
       tick();
+      latest.current.sel = next; // so several steps in one go (a long hand drag) add up before the next render
       pick(next);
     };
     const onWheel = (e: WheelEvent) => {
@@ -85,6 +88,20 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
       }
     };
     const onUp = () => (drag = null);
+    // the hand's grab-and-drag (from the hand cursor): one record per HAND_STEP_PX of sideways travel, leaning toward it
+    const hand = createDragStepper();
+    const onHandDrag = (e: Event) => {
+      const d = (e as CustomEvent<HandDragDetail>).detail;
+      if (!d) return;
+      const n = hand.feed(d);
+      for (let k = 0; k < Math.abs(n); k++) step(Math.sign(n));
+      const el = recordsEl.current;
+      if (el) {
+        el.style.transition = d.phase === 'end' ? 'transform 320ms cubic-bezier(0.3, 1.5, 0.5, 1)' : 'none';
+        el.style.transform = hand.nudge ? `translate3d(${hand.nudge.toFixed(1)}px, 0, 0)` : '';
+      }
+    };
+    window.addEventListener(HAND_DRAG_EVENT, onHandDrag);
     window.addEventListener('wheel', onWheel, { passive: true });
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onDown, { passive: true });
@@ -96,14 +113,15 @@ export function RecordMenu({ sel, onSelect, onChoose }: RecordMenuProps) {
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
+      window.removeEventListener(HAND_DRAG_EVENT, onHandDrag);
     };
   }, []);
 
   const px = Math.round(recordPlace(0, w, h).size * 1.25 * Math.min(1.25, window.devicePixelRatio || 1));
   return (
-    <section className="menu" aria-label="Choose a mode" data-testid="overture-menu">
+    <section className="menu" aria-label="Choose a mode" data-testid="overture-menu" data-hand-drag="">
       <BigWords index={sel} w={w} h={h} layer="back" />
-      <div className="records">
+      <div className="records" ref={recordsEl}>
         {MODES.map((mode, i) => {
           const p = recordPlace(i - sel, w, h);
           const style = {

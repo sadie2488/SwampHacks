@@ -10,7 +10,8 @@ import { useEffect, useRef } from 'react';
 import { bus, type Landmarks } from '@/bus';
 import '@/modules/commands'; // the handPointer topic type
 import { toScreen } from './guide';
-import { CLICKABLE, createHoldMachine, createInkLatch, hitBox, nearest, PAPER, pickHand, pickHandColor, smoothPoint, type Box, type Point, type Side } from './hand-pointer';
+import { emitHandDrag } from './hand-drag';
+import { CLICKABLE, createHandPicker, createHoldMachine, createInkLatch, createShapeTracker, handsOf, hitBox, nearest, PAPER, pickHandColor, smoothPoint, type Box, type Point, type Side } from './hand-pointer';
 import { modeLook, type ModeId, type Screen } from './modes';
 import './hand-pointer.css';
 
@@ -66,6 +67,13 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     let targets: Array<{ item: Element; box: Box }> = [];
     const sides: Record<Side, { fist: boolean; open: boolean }> = { left: { fist: false, open: false }, right: { fist: false, open: false } };
     const machine = createHoldMachine<Element>();
+    const picker = createHandPicker();
+    const shapes = createShapeTracker();
+    let dragging = false;
+    const endDrag = () => {
+      if (dragging) emitHandDrag({ phase: 'end', dx: 0 });
+      dragging = false;
+    };
     const latch = createInkLatch();
     let hoverInk: string | null = null;
     let shownInk = '';
@@ -111,7 +119,9 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     const hide = () => {
       el.style.opacity = '0';
       setHover(null);
+      endDrag();
       machine.reset();
+      picker.reset();
       paint(false, null);
       pos = null;
       if (arc.current) arc.current.style.strokeDashoffset = String(RING_LEN);
@@ -125,20 +135,35 @@ export function HandPointer({ screen, mode }: { screen: Screen; mode: ModeId }) 
     const frame = () => {
       raf = 0;
       const lm = latest;
-      const hand = pickHand(lm);
-      if (!lm || !hand || performance.now() - lastAt > STALE_MS) return hide();
+      if (!lm || performance.now() - lastAt > STALE_MS) return hide();
+      // the cursor follows the active hand (either side), and grabs with that same hand's fist
+      const picked = picker.pick(handsOf(lm));
+      if (!picked) return hide();
+      const { hand, switched } = picked;
+      if (switched) {
+        endDrag();
+        machine.reset(); // a grab never carries over to the other hand
+      }
       const aspect = lm.width > 0 && lm.height > 0 ? lm.width / lm.height : 16 / 9;
       const [sx, sy] = toScreen(hand.x, hand.y, aspect, window.innerWidth, window.innerHeight);
       pos = smoothPoint(pos, { x: sx, y: sy });
       const target = findTarget(pos);
       setHover(target);
-      const s = sides[hand.side];
-      const out = machine.update({ t: performance.now(), x: pos.x, y: pos.y, fist: s.fist, open: s.open, target, enabled: active });
+      const sig = sides[hand.side];
+      const shape = shapes.update(hand.side, hand.points, aspect);
+      const fist = shape.fist || sig.fist;
+      const out = machine.update({ t: performance.now(), x: pos.x, y: pos.y, fist, open: !fist && (shape.open || sig.open), target, enabled: active });
       if (out.click) {
         click(out.click);
         window.setTimeout(refresh, 50);
       }
-      if (out.wheel) {
+      const nowDragging = machine.phase === 'dragging';
+      if (nowDragging && !dragging) emitHandDrag({ phase: 'start', dx: 0 });
+      else if (!nowDragging) endDrag();
+      dragging = nowDragging;
+      if (out.move?.dx) emitHandDrag({ phase: 'move', dx: out.move.dx });
+      const overMenu = !!document.elementFromPoint(pos.x, pos.y)?.closest('[data-hand-drag]');
+      if (out.wheel && !overMenu) {
         const under = scrollable(document.elementFromPoint(pos.x, pos.y));
         under.dispatchEvent(new WheelEvent('wheel', { deltaX: out.wheel.dx, deltaY: out.wheel.dy, clientX: pos.x, clientY: pos.y, bubbles: true, cancelable: true }));
         if (under !== document.body) under.scrollBy(out.wheel.dx, out.wheel.dy);
