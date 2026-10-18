@@ -29,9 +29,8 @@
 }
 
 .entrance-quiet {
-  font: 600 11px / 1.4 var(--sans);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: var(--label-weight) 12px / 1.4 var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--muted);
   background: none;
   border: 0;
@@ -52,9 +51,8 @@
   top: var(--m);
   margin: 0;
   text-align: right;
-  font: 700 10px / 1.7 var(--sans);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: var(--label-weight) 11px / 1.6 var(--sans);
+  letter-spacing: var(--label-track);
   color: var(--paper-white);
   z-index: 2;
 }

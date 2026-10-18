@@ -1,5 +1,5 @@
 /* Overture base: bright inks on near-black. Text is paper white; the mode's main colour (--a) marks only things you
-   can act on (buttons, active controls), so colour shows the way. Labels are small heavy Archivo capitals, numbers
+   can act on (buttons, active controls), so colour shows the way. Labels are small Instrument Sans in sentence case, numbers
    and titles are Instrument Serif. The look's colours and fonts live in web/src/styles/tokens.css. */
 :root {
   font-family: var(--sans);
