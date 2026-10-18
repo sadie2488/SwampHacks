@@ -107,8 +107,8 @@ export type Heard = string | readonly string[];
 export class KeywordGate {
   private isArmed = false;
   private disarmedAt = -Infinity;
-  /** Per speech result: how many times each word has already been accepted (interim results repeat the same words). */
-  private seen = new Map<number, Map<string, number>>();
+  /** The speech results (by index) that already fired their one command (interim results repeat the same words). */
+  private firedFor = new Set<number>();
   private lastFired = new Map<string, number>();
   private readonly playList: readonly string[];
   private readonly createList: readonly string[];
@@ -145,7 +145,7 @@ export class KeywordGate {
 
   /** A fresh speech recognition run starts numbering its results from 0 again. */
   newSession(): void {
-    this.seen.clear();
+    this.firedFor.clear();
   }
 
   /**
@@ -154,7 +154,8 @@ export class KeywordGate {
    * of an unfinished (interim) one only the best guess, so a clear word fires fast and odd early guesses do not.
    * Only the current mode's words count (`createMode` false = Play). Nothing is accepted while disarmed, except in
    * Create, where a finished phrase that is the word alone fires without the fist.
-   * A word is only accepted once per result, and not again within the cooldown. `finals[k]` false = result k is interim.
+   * Each result fires at most one word (the first command word of the first guess that has one), and a word does not
+   * fire again within the cooldown. `finals[k]` false = result k is interim.
    */
   accept(results: readonly Heard[], firstIndex = 0, createMode = false, finals: readonly boolean[] = []): string[] {
     const t = this.now();
@@ -171,33 +172,33 @@ export class KeywordGate {
       };
       if (!open && !createMode) return note(null, 'fist not held');
       const idx = firstIndex + k;
-      let done = this.seen.get(idx);
-      if (!done) this.seen.set(idx, (done = new Map()));
-      const checked = final ? guesses : guesses.slice(0, 1);
-      // How many times each word was heard in this result: the most that any one guess has.
-      const counts = new Map<string, number>();
+      // One phrase = one command: once a word fired for this phrase (often already from an interim guess), the rest of
+      // it, and every other guess of it, fire nothing ("slower" must not also fire "lower" from another guess).
+      if (this.firedFor.has(idx)) return note(null, 'this phrase already fired');
+      let word: string | null = null;
       if (!open) {
         // Sat-night fix: in Create without the fist, narration like "let's start" or "next I'll add drums" used to fire
         // commands. Unarmed, only a finished phrase that is the keyword alone (in any guess) counts.
         if (!final) return;
-        const lone = checked.map((g) => loneKeyword(g, words)).find((w) => w !== null);
-        if (!lone) return note(null, matchKeywords(checked.join(' . '), words).length ? 'not said alone; hold the fist for phrases' : 'no command word');
-        counts.set(lone, 1);
+        word = guesses.map((g) => loneKeyword(g, words)).find((w) => w !== null) ?? null;
+        if (!word) return note(null, matchKeywords(guesses.join(' . '), words).length ? 'not said alone; hold the fist for phrases' : 'no command word');
       } else {
-        for (const g of checked) for (const [w, n] of countKeywords(g, words)) counts.set(w, Math.max(n, counts.get(w) ?? 0));
-        if (!counts.size) return note(null, 'no command word');
+        // The first guess (in the browser's order) with a command word decides; its first command word wins.
+        const checked = final ? guesses : guesses.slice(0, 1);
+        for (const g of checked) {
+          const found = scan(tokens(g), words);
+          if (found.length) {
+            word = found[0];
+            break;
+          }
+        }
+        if (!word) return note(null, 'no command word');
       }
-      const fired: string[] = [];
-      for (const [word, count] of counts) {
-        const already = done.get(word) ?? 0;
-        if (count <= already) continue;
-        done.set(word, count);
-        if (t - (this.lastFired.get(word) ?? -Infinity) < this.cfg.cooldownMs) continue;
-        this.lastFired.set(word, t);
-        fired.push(word);
-      }
-      fire.push(...fired);
-      note(fired.length ? fired.join(', ') : null, fired.length ? (open ? 'fist held' : 'said alone') : 'already fired or cooling down');
+      this.firedFor.add(idx);
+      if (t - (this.lastFired.get(word) ?? -Infinity) < this.cfg.cooldownMs) return note(null, 'cooling down');
+      this.lastFired.set(word, t);
+      fire.push(word);
+      note(word, open ? 'fist held' : 'said alone');
     });
     return fire;
   }

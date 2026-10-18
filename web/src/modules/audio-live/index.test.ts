@@ -418,7 +418,7 @@ describe('spoken keywords (stand-in speech recogniser)', () => {
     expect(rec.start).toHaveBeenCalledTimes(2);
   });
 
-  it('in Create, without the fist, only a word said on its own counts; with the fist any phrase does', async () => {
+  it('in Create, without the fist, only a word said on its own counts; with the fist any phrase does (its first word)', async () => {
     const m = await ready();
     m.bus.emit('mode', 'create');
     const rec = FakeRecognizer.instances[0];
@@ -433,7 +433,7 @@ describe('spoken keywords (stand-in speech recogniser)', () => {
     await pass(1);
     m.fist('start');
     rec.say("next I'll add drums", 4);
-    expect(heard()).toEqual(['audio.keyword.start', 'audio.keyword.next', 'audio.keyword.drums']);
+    expect(heard()).toEqual(['audio.keyword.start', 'audio.keyword.next']); // one phrase = one command
   });
 
   it('keeps retrying after a network error and says when it is listening again', async () => {

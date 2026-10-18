@@ -72,10 +72,10 @@ describe('arming', () => {
     expect(gate.accept(['slower'], 2)).toEqual(['slower']);
   });
 
-  it('lets different words through at once', () => {
+  it('one phrase fires one command: the first word said', () => {
     const { gate } = make();
     gate.arm();
-    expect(gate.accept(['higher and lower'], 0)).toEqual(['higher', 'lower']);
+    expect(gate.accept(['higher and lower'], 0)).toEqual(['higher']);
   });
 
   it('forgets earlier results when a new listening session starts (numbering restarts from 0)', () => {
@@ -153,7 +153,7 @@ describe('Create mode without the fist', () => {
     const { gate, tick } = make();
     gate.arm();
     expect(gate.accept(["let's start"], 0, true)).toEqual(['start']);
-    expect(gate.accept(["next I'll add drums"], 1, true, [false])).toEqual(['next', 'drums']);
+    expect(gate.accept(["next I'll add drums"], 1, true, [false])).toEqual(['next']);
     tick(1000);
     gate.disarm();
     expect(gate.accept(["let's start"], 2, true)).toEqual([]);
@@ -242,7 +242,42 @@ describe('sound-alikes, guesses and modes', () => {
     expect(gate.accept(['now star please'], 2, true)).toEqual(['start']); // lead-in, sound-alike and "please"
     tick(1000);
     gate.arm();
-    expect(gate.accept(["let's start the drums"], 3, true)).toEqual(['start', 'drums']);
+    expect(gate.accept(["let's start the drums"], 3, true)).toEqual(['start']);
+  });
+
+  it('"slower" as the top guess fires only slower, even with "lower" in guess 2', () => {
+    const { gate } = make();
+    gate.arm();
+    expect(gate.accept([['slower', 'lower', 'slow her']], 0, false, [true])).toEqual(['slower']);
+  });
+
+  it('"pause" with "plays" in another guess fires only pause', () => {
+    const { gate } = make();
+    gate.arm();
+    expect(gate.accept([['pause', 'plays', 'pose']], 0, false, [true])).toEqual(['pause']);
+  });
+
+  it('a word only in guess 3 fires exactly once (also when the final result repeats)', () => {
+    const { gate, tick } = make();
+    gate.arm();
+    expect(gate.accept([['nice', 'mice', 'faster']], 0, false, [true])).toEqual(['faster']);
+    tick(1000);
+    expect(gate.accept([['nice', 'mice', 'faster']], 0, false, [true])).toEqual([]);
+  });
+
+  it('when the interim fired the top guess, the final result fires nothing more (not even another guess)', () => {
+    const { gate, tick } = make();
+    gate.arm();
+    expect(gate.accept(['slower'], 0, false, [false])).toEqual(['slower']);
+    tick(1000);
+    expect(gate.accept([['lower', 'slower']], 0, false, [true])).toEqual([]);
+  });
+
+  it('when the interim fired nothing, the final result still fires one word', () => {
+    const { gate } = make();
+    gate.arm();
+    expect(gate.accept(['nice'], 0, false, [false])).toEqual([]);
+    expect(gate.accept([['nice play', 'nice pause']], 0, false, [true])).toEqual(['play']);
   });
 
   it('an interim then final result of one phrase fires once', () => {
