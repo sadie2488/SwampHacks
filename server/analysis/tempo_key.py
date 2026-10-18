@@ -15,7 +15,7 @@ How it works:
   three-way split of every beat; otherwise 4/4. For 6/8 the beats are the two dotted-quarter pulses of
   each bar and `tempo_bpm` counts those pulses (not eighth notes). Note `onset_beat`s are still quarter
   notes (the melody step converts: one 6/8 pulse is 1.5 quarters).
-- Key: Krumhansl-Schmuckler on a pitch-class histogram of the harmonic part of the sound.
+- Key: Krumhansl-Schmuckler matching (Temperley profiles) on a pitch-class histogram of the harmonic part of the sound.
 """
 
 from __future__ import annotations
@@ -51,9 +51,10 @@ HALVE_RATIO = 0.45  # every other beat weaker than this share of its neighbours:
 EVEN_STRONG_RATIO = 0.75  # ...but only when the remaining beats are this even with each other
 MIN_BEATS = 4
 
-# Krumhansl-Kessler key profiles, starting at the tonic.
-MAJOR_PROFILE = (6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88)
-MINOR_PROFILE = (6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17)
+# Temperley (Kostka-Payne) key profiles, starting at the tonic. They replaced the Krumhansl-Kessler ones, which
+# named the key a fifth too high (the dominant) on 3 of 4 real band recordings; these got all 4 right.
+MAJOR_PROFILE = (0.748, 0.060, 0.488, 0.082, 0.670, 0.460, 0.096, 0.715, 0.104, 0.366, 0.057, 0.400)
+MINOR_PROFILE = (0.712, 0.084, 0.474, 0.618, 0.049, 0.460, 0.105, 0.747, 0.404, 0.067, 0.133, 0.330)
 
 # Tonic spelling by semitone above C. Sharp keys use sharps, flat keys use flats; the two six-accidental
 # keys (F#/Gb, D#/Eb) both use the sharp spelling so relative keys match (F# major with D# minor).
