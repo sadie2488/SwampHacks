@@ -82,6 +82,7 @@ def extract_melody(
     grid: str = "auto",
     part_id: str = "melody",
     max_seconds: float = MAX_SECONDS,
+    time_signature: dict | None = None,
 ) -> list[dict]:
     """Note events (contract `note-event` Note) for the single melody line in `y`.
 
@@ -90,6 +91,10 @@ def extract_melody(
     The beat origin is `beats[0]` when `beats` is given, otherwise the first note. Notes before the
     origin move the origin back by whole beats, so beats are never negative. Only the first
     `max_seconds` of audio are used. Raises `AnalysisError` when no pitched melody is found.
+
+    `tempo_bpm` and `beats` count the felt beat (a dotted quarter in 6/8, see `quarters_per_beat`), but
+    `onset_beat` and `duration_beat` are in quarter notes, as the contract says. In 6/8, 9/8 and 12/8
+    (`time_signature`) the grid is a sixteenth note, so there is no straight/triplet choice there.
     """
     if grid not in _GRIDS:
         raise ValueError(f"grid must be one of {sorted(_GRIDS)}")
@@ -105,7 +110,17 @@ def extract_melody(
     notes = _absorb_short(_join(_fix_octaves(_to_notes(segments))))
     if not notes:
         raise _no_melody()
-    return _quantize(notes, tempo_bpm, beats, grid, part_id)
+    return _quantize(notes, tempo_bpm, beats, grid, part_id, quarters_per_beat(time_signature))
+
+
+def quarters_per_beat(time_signature: dict | None) -> float:
+    """How many quarter notes one counted beat lasts: 1.5 in 6/8, 9/8 and 12/8 (a dotted quarter),
+    otherwise one `1/denominator` note (1 in x/4, 0.5 in 3/8, 2 in 2/2)."""
+    ts = time_signature or {}
+    numerator, denominator = ts.get("numerator") or 4, ts.get("denominator") or 4
+    if denominator == 8 and numerator >= 6 and numerator % 3 == 0:
+        return 1.5
+    return 4.0 / denominator
 
 
 def melody_to_part(
@@ -526,13 +541,15 @@ def _snap_error(beats_at, unit: float) -> float:
     return float(np.sum(np.abs(beats_at - np.round(beats_at / unit) * unit)))
 
 
-def _quantize(notes, tempo_bpm: float, beats, grid: str, part_id: str) -> list[dict]:
+def _quantize(notes, tempo_bpm: float, beats, grid: str, part_id: str, beat_quarters: float = 1.0) -> list[dict]:
     seconds_per_beat = 60.0 / float(tempo_bpm)
     origin = float(beats[0]) if beats is not None and len(beats) > 0 else notes[0]["start"]
     onset_beats = np.array([(n["start"] - origin) / seconds_per_beat for n in notes])
     end_beats = np.array([(n["end"] - origin) / seconds_per_beat for n in notes])
 
-    if grid == "triplet":
+    if beat_quarters == 1.5:
+        unit = _STRAIGHT_UNIT / beat_quarters  # a sixteenth: the beat already splits in three eighths
+    elif grid == "triplet":
         unit = _TRIPLET_UNIT
     elif grid == "sixteenth" or len(notes) < 3:
         unit = _STRAIGHT_UNIT
@@ -580,8 +597,8 @@ def _quantize(notes, tempo_bpm: float, beats, grid: str, part_id: str) -> list[d
         end_ms = math.floor(float(n["end"]) * 1000)
         if i + 1 < len(kept):
             end_ms = min(end_ms, starts_ms[i + 1])  # never overlap the next note
-        first_beat = round((row["on"] + shift) * unit, 6)
-        last_beat = round((row["on"] + shift + row["len"]) * unit, 6)  # ends exactly where the next starts
+        first_beat = round((row["on"] + shift) * unit * beat_quarters, 6)  # in quarter notes
+        last_beat = round((row["on"] + shift + row["len"]) * unit * beat_quarters, 6)  # ends exactly where the next starts
         result.append(
             {
                 "id": f"m{i + 1}",
