@@ -8,6 +8,8 @@ import { boneDots, eyeLine, hull, toScreen, type Pt } from './guide';
 import { GUIDES, modeLook, type ModeId, type Screen } from './modes';
 
 const MAX_DPR = 1.5;
+/** Draw the head (face outline + eye line)? Hidden for now at the team's request; the hand dots stay. Flip to show it again. */
+const SHOW_HEAD = false;
 
 export function GuideLayer({ screen, mode }: { screen: Screen; mode: ModeId }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -56,7 +58,7 @@ export function GuideLayer({ screen, mode }: { screen: Screen; mode: ModeId }) {
         ctx.fill();
       }
       const face = lm.face?.points;
-      if (parts.includes('head') && face && face.length > 263) {
+      if (SHOW_HEAD && parts.includes('head') && face && face.length > 263) {
         const pts = face.map(map);
         const outline = hull(pts);
         ctx.lineWidth = 1.5;
