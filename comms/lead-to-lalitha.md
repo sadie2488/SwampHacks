@@ -140,3 +140,11 @@ Lalitha asked the main laptop to talk to her Claude directly. Please show her th
 - A helper is porting Overture into the real app now, in committed steps: fonts (self-hosted for offline: Instrument Serif, Archivo, Mea Culpa) + colours, entrance + record menu mapped to the 4 modes, in-mode layouts (sheet on a calm high-contrast surface), songLevels-driven motion, polish. Flowers stay swappable placeholders (one file each, one folder) for your drawings
 - I'll send screenshots next to the mockup before it goes in
 - Sign-language mode switch (hold a sign, ring fills ~2 s): noted; the ASL letter recognition it needs is waiting for a go from the main laptop
+
+---
+*2026-10-18 04:13 UTC*
+
+## Pushed: GitHub main is current (3dc5d72)
+- Pull main on your laptop now: `git checkout main && git pull`
+- Includes the Overture mockup + your docs, all fixes from two code reviews, offline camera, faster uploads, `songLevels`, the style-director agent (`.claude/agents/style-director.md`)
+- The Overture port into the app is in progress on the main laptop (first working version targeted in ~30 min)
