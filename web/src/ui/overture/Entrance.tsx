@@ -29,13 +29,14 @@ export function Entrance({ onEnter }: { onEnter: (camera: boolean) => void }) {
         <i>Chrysanthemum</i>
       </p>
       <div className="entrance-gate">
-        <p className="entrance-logo">Overture</p>
         <button ref={enterRef} type="button" className="pill entrance-enter" data-testid="entrance-enter-camera" onClick={() => onEnter(true)}>
           Enter with camera + sound
         </button>
         <button type="button" className="entrance-quiet" data-testid="entrance-enter-sound" onClick={() => onEnter(false)}>
           Enter with sound only
         </button>
+        {/* the wordmark sits under the two ways in */}
+        <p className="entrance-logo">Overture</p>
       </div>
     </section>
   );

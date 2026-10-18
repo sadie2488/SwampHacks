@@ -1,4 +1,4 @@
-/* Screen 1, the entrance. Dark, the script logo and one button on the left, the flower spray on the right. */
+/* Screen 1, the entrance. Dark, the two enter buttons with the script logo under them on the left, the flower spray on the right. */
 .entrance {
   position: fixed;
   inset: 0;
@@ -22,7 +22,8 @@
 }
 
 .entrance-logo {
-  margin: 0 0 18px;
+  /* under the buttons: breathing room above, none below */
+  margin: 18px 0 0;
   font: 400 clamp(76px, 11vw, 168px) / 0.8 var(--script);
   color: var(--paper-white);
   letter-spacing: 0;
