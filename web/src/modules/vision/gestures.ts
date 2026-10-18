@@ -70,6 +70,10 @@ export const THRESHOLDS = {
   nodRecover: 0.6,
   nodMaxDownMs: 600,
   nodWindowMs: 1000,
+  /** Grab: an open palm held at least this long, then a fist within grabWindowMs of the palm going away; once per grabCooldownMs. */
+  grabPalmMs: 150,
+  grabWindowMs: 600,
+  grabCooldownMs: 1000,
 } as const;
 
 // ---- one hand ----
@@ -295,6 +299,10 @@ interface SideState {
   wrist: Array<{ t: number; y: number }>;
   drumArmed: boolean;
   lastDrum: number;
+  /** Grab: when the current open palm started (null = no palm), the last time it was still on, and the last grab. */
+  palmSince: number | null;
+  palmLast: number;
+  lastGrab: number;
 }
 
 /**
@@ -320,7 +328,7 @@ export class GestureTracker {
 
   private newSide(): SideState {
     const latch = () => new Latch(this.o.onMs, this.o.offMs);
-    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch(), thumbs_up: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity };
+    return { holds: { fist: latch(), open_palm: latch(), raised: latch(), pinch: latch(), thumbs_up: latch() }, wrist: [], drumArmed: true, lastDrum: -Infinity, palmSince: null, palmLast: -Infinity, lastGrab: -Infinity };
   }
 
   update(frame: FrameObs): SignalOut[] {
@@ -410,10 +418,14 @@ export class GestureTracker {
     if (wants.thumbs_up) wants.fist = false;
     // A fist often tucks the thumb against the index finger: while the fist is on (or about to be), it is not a pinch.
     if (s.holds.fist.active || fistShape === true) wants.pinch = false;
+    let fistStarted = false;
     for (const h of HOLDS) {
       const edge = s.holds[h].update(t, wants[h]);
       if (edge) out.push(moment(`vision.hand.${side}.${h}`, edge, conf, t));
+      if (h === 'fist' && edge === 'start') fistStarted = true;
     }
+    // The thumbs-up hold only exists for the left hand, so for the grab check the thumb shape on either hand.
+    this.grab(out, side, t, conf, fistStarted && !isThumbsUp(pts, aspect) && !s.holds.thumbs_up.active);
 
     // Drum hit: the wrist moves down fast, once per stroke.
     const wrist = pts[HAND.WRIST];
@@ -430,9 +442,33 @@ export class GestureTracker {
     }
   }
 
+  /**
+   * Grab (Lalitha's menu gesture): an open palm held for a moment, then closed into a fist quickly. Uses the palm and fist
+   * latches, so it inherits their hysteresis. A fist that starts as a thumbs-up never counts.
+   */
+  private grab(out: SignalOut[], side: Side, t: number, conf: number, fistStarted: boolean): void {
+    const s = this.sides[side];
+    if (s.holds.open_palm.active) {
+      s.palmSince ??= t;
+      s.palmLast = t;
+    }
+    if (!fistStarted || s.palmSince === null) {
+      if (!s.holds.open_palm.active && t - s.palmLast > THRESHOLDS.grabWindowMs) s.palmSince = null;
+      return;
+    }
+    const heldLongEnough = s.palmLast - s.palmSince >= THRESHOLDS.grabPalmMs;
+    const quickClose = t - s.palmLast <= THRESHOLDS.grabWindowMs;
+    s.palmSince = null;
+    if (heldLongEnough && quickClose && t - s.lastGrab >= THRESHOLDS.grabCooldownMs) {
+      s.lastGrab = t;
+      out.push(moment(`vision.hand.${side}.grab`, 'start', conf, t));
+    }
+  }
+
   private handMissing(out: SignalOut[], side: Side, t: number): void {
     const s = this.sides[side];
     s.wrist = [];
+    s.palmSince = null;
     s.drumArmed = true;
     for (const h of HOLDS) {
       const edge = s.holds[h].update(t, false, this.o.lostMs);
