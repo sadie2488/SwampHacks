@@ -29,6 +29,8 @@
 
 # --- Play mode ---------------------------------------------------------------------------------------------------
 
+# Sat-night fix: this rule now eases in from the current tempo, ignores wobbles under 0.02x,
+# and pauses while a practice run is listening (any tempo change would end the run early).
 - name: hand height controls tempo
   mode: play
   when: vision.hand.right.height

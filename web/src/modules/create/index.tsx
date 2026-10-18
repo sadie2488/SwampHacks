@@ -8,6 +8,7 @@ import { startController } from './controller';
 import { playFakeHum } from './fake-hum';
 import { currentLayer, describeState, hasBeat, initialState, isRecording } from './layers';
 import { EFFECT_IDS, INSTRUMENT_IDS, midiToName } from './music';
+import type { FetchFn } from './api';
 import { SavedTracks } from './saved-tracks';
 import { applyAnalysis, createSettings, takeSummaryText } from './settings';
 import { createStore } from './store';
@@ -58,7 +59,8 @@ function useMode(): Mode | undefined {
 
 const label = (id: string) => id.charAt(0).toUpperCase() + id.slice(1);
 
-export function CreatePanel() {
+/** `fetchFn`: the app's fetch for its own server (it adds the login token); saving falls back to plain fetch without it. */
+export function CreatePanel({ fetchFn }: { fetchFn?: FetchFn } = {}) {
   const state = useSyncExternalStore(store.subscribe, store.getState);
   const options = useSyncExternalStore(settings.subscribe, settings.getState);
   // the controller also listens, but the screen must show the right default even when it is drawn first
@@ -227,7 +229,7 @@ export function CreatePanel() {
         </button>
       </p>
 
-      <SavedTracks store={store} />
+      <SavedTracks store={store} fetchFn={fetchFn} />
     </section>
   );
 }

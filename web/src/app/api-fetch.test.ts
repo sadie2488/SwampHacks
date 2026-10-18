@@ -2,6 +2,7 @@
 // apiFetch adds the login token only when there is one, and only for this site's own addresses.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiFetch, isSignedIn, setTokenProvider } from './api-fetch';
+import { saveTrack } from '@/modules/create/api';
 import { hasExpired, looksSigned, pickToken } from './auth-token';
 
 const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -132,6 +133,56 @@ describe('pickToken', () => {
         },
       }),
     ).toBeNull();
+  });
+
+  it('does not ask Auth0 for new tokens while a stored one is still good', async () => {
+    const refresh = vi.fn(async () => jwt(600, 'new'));
+    const id = jwt(600, 'id');
+    expect(await pickToken({ accessToken: none, idToken: async () => ({ __raw: id }), refresh })).toBe(id);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('asks Auth0 for new tokens when the stored ones ran out, then uses the renewed ID token', async () => {
+    let stored = jwt(-30, 'old');
+    const refresh = vi.fn(async () => {
+      stored = jwt(600, 'renewed'); // Auth0 stores the new ID token as part of the refresh
+      return 'Zm9v_opaque-access-token';
+    });
+    expect(await pickToken({ accessToken: none, idToken: async () => ({ __raw: stored }), refresh })).toBe(stored);
+    expect(stored).toContain('.sig_renewed');
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a renewed signed access token straight away', async () => {
+    const access = jwt(600, 'access');
+    expect(await pickToken({ accessToken: none, idToken: none, refresh: async () => access })).toBe(access);
+  });
+
+  it('throws when the refresh fails (the login has ended)', async () => {
+    const refresh = async () => {
+      throw new Error('login_required');
+    };
+    await expect(pickToken({ accessToken: none, idToken: async () => ({ __raw: jwt(-30) }), refresh })).rejects.toThrow('login_required');
+  });
+});
+
+describe('Create saves through apiFetch', () => {
+  const track = { name: 'My track', tempo_bpm: 100, layers: [] };
+  const created = () => Promise.resolve(new Response(JSON.stringify({ id: 'abc', name: 'My track', created_at: '' }), { status: 201 }));
+
+  it('sends the Authorization header when a token exists', async () => {
+    fetchMock.mockImplementation(created);
+    setTokenProvider(async () => 'tok-create');
+    expect(await saveTrack(track, { fetchFn: apiFetch })).toMatchObject({ ok: true, id: 'abc', local: false });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/creations');
+    expect(headerOf()).toBe('Bearer tok-create');
+    expect(new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers).get('Content-Type')).toBe('application/json');
+  });
+
+  it('still saves, with no header, when nobody is logged in', async () => {
+    fetchMock.mockImplementation(created);
+    expect(await saveTrack(track, { fetchFn: apiFetch })).toMatchObject({ ok: true, id: 'abc', local: false });
+    expect(headerOf()).toBeNull();
   });
 });
 

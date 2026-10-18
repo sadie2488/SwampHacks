@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from './config';
-import { countKeywords, KeywordGate, matchKeywords } from './keywords';
+import { countKeywords, KeywordGate, loneKeyword, matchKeywords } from './keywords';
 
 describe('matching words', () => {
   it('finds each of the six keywords, in any capitals', () => {
@@ -106,5 +106,64 @@ describe('arming', () => {
     expect(gate.accept(['play'], 0)).toEqual(['play']);
     now = 900;
     expect(gate.accept(['pause'], 1)).toEqual([]);
+  });
+});
+
+// Create mode lets Start/Next through without the fist, but only when the word is said on its own.
+describe('Create mode without the fist', () => {
+  const make = () => {
+    let now = 1000;
+    const gate = new KeywordGate(() => now);
+    return { gate, tick: (ms: number) => (now += ms) };
+  };
+
+  it('knows a word said alone (an "okay" in front and punctuation are fine)', () => {
+    expect(loneKeyword('start')).toBe('start');
+    expect(loneKeyword('  Next! ')).toBe('next');
+    expect(loneKeyword('okay, start.')).toBe('start');
+    expect(loneKeyword('OK next')).toBe('next');
+    expect(loneKeyword("let's start")).toBeNull();
+    expect(loneKeyword('next I will add drums')).toBeNull();
+    expect(loneKeyword('okay')).toBeNull();
+  });
+
+  it('"start" alone fires', () => {
+    const { gate } = make();
+    expect(gate.accept(['start'], 0, true)).toEqual(['start']);
+    expect(gate.accept(['Okay, next.'], 1, true)).toEqual(['next']);
+  });
+
+  it('narration does not fire', () => {
+    const { gate } = make();
+    expect(gate.accept(["let's start"], 0, true)).toEqual([]);
+    expect(gate.accept(["next I'll add drums"], 1, true)).toEqual([]);
+    expect(gate.accept(['none of this has reverb'], 2, true)).toEqual([]);
+    expect(gate.accept(['turn the beat on'], 3, true)).toEqual([]);
+  });
+
+  it('waits for the final result, so "start" on the way to "start the drums" does not fire', () => {
+    const { gate } = make();
+    expect(gate.accept(['start'], 0, true, [false])).toEqual([]);
+    expect(gate.accept(['start the drums'], 0, true, [true])).toEqual([]);
+    expect(gate.accept(['next'], 1, true, [false])).toEqual([]);
+    expect(gate.accept(['next'], 1, true, [true])).toEqual(['next']);
+  });
+
+  it('with the fist held, any phrase with the word still fires', () => {
+    const { gate, tick } = make();
+    gate.arm();
+    expect(gate.accept(["let's start"], 0, true)).toEqual(['start']);
+    expect(gate.accept(["next I'll add drums"], 1, true, [false])).toEqual(['next', 'drums']);
+    tick(1000);
+    gate.disarm();
+    expect(gate.accept(["let's start"], 2, true)).toEqual([]);
+  });
+
+  it('Play mode is unchanged: nothing without the fist, any phrase with it', () => {
+    const { gate } = make();
+    expect(gate.accept(['start'], 0)).toEqual([]);
+    expect(gate.accept(['play'], 1)).toEqual([]);
+    gate.arm();
+    expect(gate.accept(['please play it'], 0, false, [false])).toEqual(['play']);
   });
 });

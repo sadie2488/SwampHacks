@@ -270,6 +270,37 @@ describe('signed in', () => {
     expect((fetchMock.mock.calls.at(-1)![1] as RequestInit | undefined)?.headers).toBeUndefined();
   });
 
+  it('asks Auth0 for a new token when the stored one ran out, and sends the new one', async () => {
+    let stored = `${b64({ alg: 'RS256' })}.${b64({ exp: Math.floor(Date.now() / 1000) - 60 })}.sig`; // ran out a minute ago
+    const fresh = idToken('fresh');
+    const getAccessTokenSilently = vi.fn(async (o?: { cacheMode?: string }) => {
+      if (o?.cacheMode === 'off') stored = fresh; // the refresh also renews the stored ID token
+      return 'opaque-access-token';
+    });
+    setAuth0({ getAccessTokenSilently, getIdTokenClaims: vi.fn(async () => ({ __raw: stored })) });
+    await show();
+    await until(() => isSignedIn(), 'the token source');
+    await apiFetch('/api/creations');
+    expect(getAccessTokenSilently).toHaveBeenCalledWith({ cacheMode: 'off' });
+    expect(new Headers((fetchMock.mock.calls.at(-1)![1] as RequestInit).headers).get('Authorization')).toBe(`Bearer ${fresh}`);
+    expect($('login-user')?.textContent).toBe('Hi Sam Rivera');
+  });
+
+  it('shows the person as signed out when the login ran out and cannot be renewed', async () => {
+    const getAccessTokenSilently = vi.fn(async (o?: { cacheMode?: string }) => {
+      if (o?.cacheMode === 'off') throw Object.assign(new Error('Login required'), { error: 'login_required' });
+      return undefined;
+    });
+    setAuth0({ getAccessTokenSilently, getIdTokenClaims: vi.fn(async () => undefined) });
+    await show();
+    await until(() => $('btn-login'), 'the Log in button');
+    expect($('login-user')).toBeNull();
+    expect($('login-error')?.textContent).toMatch(/log in again/);
+    expect(isSignedIn()).toBe(false);
+    await apiFetch('/api/creations');
+    expect((fetchMock.mock.calls.at(-1)![1] as RequestInit | undefined)?.headers).toBeUndefined();
+  });
+
   it('stops adding the token when the page part is removed', async () => {
     setAuth0({ getIdTokenClaims: vi.fn(async () => ({ __raw: idToken('one') })) });
     await show();
