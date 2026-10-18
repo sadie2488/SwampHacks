@@ -63,12 +63,8 @@ export function App() {
   const [guide, setGuide] = useState(false);
   const closeGuide = useCallback(() => setGuide(false), []);
   const songTab = tab === 'learn' || tab === 'play';
-  const { isOpen, toggle: togglePanel, openPanel } = usePanels();
+  const { isOpen, toggle: togglePanel, openPanel, reset: resetPanels } = usePanels();
   useModules();
-  // arriving in Learn shows the player bar (play, pause, Restart) without a click; it can still be closed
-  useEffect(() => {
-    if (screen === 'mode' && tab === 'learn') openPanel('player');
-  }, [screen, tab, arrive.n, openPanel]);
   useDeviceAutostart(screen);
 
   // On the entrance and the record menu a neutral mode is published, so the last mode's voice and hand rules stop
@@ -83,8 +79,14 @@ export function App() {
   useEffect(() => {
     const from = lastSection.current;
     lastSection.current = section;
+    if (from !== section) resetPanels();
     for (const command of leaveSectionCommands(from, section)) sendCommand(command, 'button', { how: 'trigger' });
-  }, [section]);
+  }, [section, resetPanels]);
+  // arriving in Learn shows the player bar (play, pause, Restart) without a click; it can still be closed.
+  // Declared after the section-change reset above so the reset does not close it again on the same arrival.
+  useEffect(() => {
+    if (screen === 'mode' && tab === 'learn') openPanel('player');
+  }, [screen, tab, arrive.n, openPanel]);
   useEffect(() => unlockOnFirstGesture(), []);
   // Play loops the song: loop turns on on arrival and after every song load (the Loop button can still turn it off)
   usePlayLoop(autoLoops(screen, tab));
@@ -200,7 +202,7 @@ export function App() {
             <Devices fake={isFakeMode()} />
             <CameraPreview />
           </div>
-          {songTab && <SongView open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
+          {songTab && <SongView mode={tab === 'play' ? 'play' : 'learn'} open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}
           {tab === 'create' && (
             <div className="stage-main float-panel create-slot" data-layers={isOpen('layers')} data-tracks={isOpen('tracks')} {...panelProps(isOpen('layers') || isOpen('tracks'))}>
               <PanelBoundary name="Create">

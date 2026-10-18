@@ -8,7 +8,8 @@ export type PanelName = 'song' | 'devices' | 'practice' | 'player' | 'sheet' | '
 
 export const PANELS_FOR: Record<ModeId, PanelName[]> = {
   learn: ['song', 'practice', 'sheet', 'player'],
-  play: ['song', 'practice', 'sheet', 'player'],
+  // Play has no panels at all: it is used purely by hands and voice (the demo song loads itself when none is loaded)
+  play: [],
   create: ['devices', 'layers', 'tracks'],
   lab: [],
 };
@@ -31,10 +32,14 @@ const ALL: PanelName[] = ['song', 'devices', 'practice', 'player', 'sheet', 'lay
  * inside the panels right after the page loads. The tests will learn to open the toggles later; until then this
  * keeps them working.
  */
+export function defaultOpen(): Set<PanelName> {
+  return new Set(typeof navigator !== 'undefined' && navigator.webdriver === true ? ALL : []);
+}
+
 export function usePanels() {
-  const [open, setOpen] = useState<ReadonlySet<PanelName>>(
-    () => new Set(typeof navigator !== 'undefined' && navigator.webdriver === true ? ALL : []),
-  );
+  const [open, setOpen] = useState<ReadonlySet<PanelName>>(defaultOpen);
+  // back to the start state: Learn and Play share panel names, so a panel left open in one must not show in the other
+  const reset = useCallback(() => setOpen(defaultOpen()), []);
   const toggle = useCallback(
     (name: PanelName) =>
       setOpen((prev) => {
@@ -51,7 +56,7 @@ export function usePanels() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  return { isOpen: (name: PanelName) => open.has(name), toggle, openPanel };
+  return { isOpen: (name: PanelName) => open.has(name), toggle, openPanel, reset };
 }
 
 export function PanelToggles({ mode, isOpen, toggle }: { mode: ModeId; isOpen: (n: PanelName) => boolean; toggle: (n: PanelName) => void }) {
