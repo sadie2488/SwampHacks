@@ -22,6 +22,17 @@ export function unlockSounds(): void {
   resumeAudio().catch(() => {});
 }
 
+/** Unlock on the first click or key press anywhere (any screen, e.g. after a reload straight onto the menu). */
+export function unlockOnFirstGesture(): () => void {
+  const opts = { capture: true, once: true } as const;
+  window.addEventListener('pointerdown', unlockSounds, opts);
+  window.addEventListener('keydown', unlockSounds, opts);
+  return () => {
+    window.removeEventListener('pointerdown', unlockSounds, opts);
+    window.removeEventListener('keydown', unlockSounds, opts);
+  };
+}
+
 export const soundsMuted = () => muted;
 export function setSoundsMuted(next: boolean): void {
   muted = next;
@@ -41,7 +52,8 @@ function ready(): AudioContext | null {
   if (muted || !unlocked) return null;
   try {
     const ctx = getAudioContext();
-    if (ctx.state !== 'running') return null;
+    // right after the first click the context may still be resuming: notes queued now play the moment it runs
+    if (ctx.state === 'closed') return null;
     if (!out) {
       out = ctx.createGain();
       out.gain.value = 0.5;

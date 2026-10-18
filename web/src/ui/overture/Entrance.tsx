@@ -30,10 +30,10 @@ export function Entrance({ onEnter }: { onEnter: (camera: boolean) => void }) {
       </p>
       <div className="entrance-gate">
         <p className="entrance-logo">Overture</p>
-        <button ref={enterRef} type="button" className="pill entrance-enter" onClick={() => onEnter(true)}>
+        <button ref={enterRef} type="button" className="pill entrance-enter" data-testid="entrance-enter-camera" onClick={() => onEnter(true)}>
           Enter with camera + sound
         </button>
-        <button type="button" className="entrance-quiet" onClick={() => onEnter(false)}>
+        <button type="button" className="entrance-quiet" data-testid="entrance-enter-sound" onClick={() => onEnter(false)}>
           Enter with sound only
         </button>
       </div>

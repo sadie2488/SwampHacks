@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="-100 -100 200 200">
+  <!-- placeholder iris (closed), drawn by make-sections.mjs; hand-drawn PNGs in drawn/ replace it -->
+  <path d="M0 6C12 -16 8.4 -82 0 -82C-8.4 -82 -12 -16 0 6ZM0 0C9.8 -16.6 12.9 -69 7.3 -69.6C1.7 -70.2 -6.1 -18.2 0 0ZM-8 4C4 -20 -6 -50 4 -80" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

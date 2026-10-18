@@ -6,12 +6,25 @@ flowers. No outside artwork is used here.
 
 | Files | Where they show |
 |---|---|
-| `chrysanthemum-a/`, `chrysanthemum-b/`, `chrysanthemum-c/` | The entrance spray, and one per mode (it opens on a strong beat) |
+| `chrysanthemum-a/`, `chrysanthemum-b/`, `chrysanthemum-c/` | The entrance spray |
 | `bud/` | The entrance spray (small buds) |
 | `orchid-stipple.svg` | The dotted flower printed on every record in the mode menu |
+| `sections/<section>/` | One flower per section (placeholders by `make-sections.mjs`): menu chrysanthemum, learn forget-me-not, play bird of paradise, create sweet pea, lab iris |
+| `drawn/` | Lalitha's hand-drawn section flowers (PNG). Anything here wins over `sections/` |
 
-`index.ts` lists every flower and which mode uses which. `web/src/ui/overture/spray.ts` lists where each entrance
-flower sits and how big it is.
+`index.ts` lists the entrance flowers, `sections.ts` the section flowers and their inks. `web/src/ui/overture/spray.ts`
+lists where each entrance flower sits and how big it is.
+
+## Hand-drawn section flowers (drop-in)
+
+1. Draw on a 2048 x 2048 transparent canvas, flower centre exactly in the middle (it lines up with the record hole),
+   pure black line about 14 px. Any other black area can go in a second "fill" file
+2. Export PNGs named `<section>-<flower>-<state>.png`, plus optional `<section>-<flower>-<state>-fill.png`.
+   Sections: `menu`, `learn`, `play`, `create`, `lab`. States: `closed`, `half`, `open`.
+   Example: `learn-forgetmenot-open.png`, `learn-forgetmenot-open-fill.png`
+3. Put them in `drawn/`. That is all: the app picks them up on the next build, tints the line with the section's main
+   ink and the fill with its second ink (once, into a small picture, so it stays fast). A missing state keeps its
+   placeholder. Keep each PNG under about 300 KB (flat black compresses well)
 
 ## The three states
 

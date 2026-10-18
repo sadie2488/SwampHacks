@@ -16,7 +16,7 @@ import { RecordMenu } from '@/ui/overture/RecordMenu';
 import { ModeTitle } from '@/ui/overture/ModeTitle';
 import { initialScreen, readScreenHints, rememberEntered } from '@/ui/overture/screen';
 import { SoundToggle } from '@/ui/overture/SoundToggle';
-import { needleDrop, swell, unlockSounds } from '@/ui/overture/sounds';
+import { needleDrop, swell, unlockOnFirstGesture, unlockSounds } from '@/ui/overture/sounds';
 import { changeScreen, PORTAL_MS } from '@/ui/overture/transition';
 import { AnalysisWarnings } from './AnalysisSummary';
 import { apiFetch } from './api-fetch';
@@ -56,6 +56,7 @@ export function App() {
   useEffect(() => {
     bus.emit('mode', modeOf(tab));
   }, [tab]);
+  useEffect(() => unlockOnFirstGesture(), []);
 
   const openMode = (id: Tab) => {
     unlockSounds();

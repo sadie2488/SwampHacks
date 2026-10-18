@@ -56,6 +56,37 @@
   }
 }
 
+/* five thin staff lines from the big word's baseline up to its cap height (one painted box, no extra elements);
+   --gap is the line spacing in the big word's em */
+.mode-word {
+  --gap: 0.165em;
+}
+
+.mode-staff {
+  position: absolute;
+  left: -0.12em;
+  right: -0.12em;
+  bottom: 0.1em;
+  height: calc(var(--gap) * 4 + 1px);
+  background: repeating-linear-gradient(to bottom, var(--a) 0 1px, transparent 1px var(--gap));
+  opacity: 0.55;
+  z-index: -1;
+}
+
+/* the smaller words sit like notes at different heights on the staff (transform only) */
+.mode-note {
+  display: inline-block;
+  margin-left: 0.24em;
+  font-size: 0.34em;
+  line-height: 1;
+  transform: translate3d(0, calc(var(--step) * var(--gap) / -0.68), 0);
+}
+
+.mode-note-in {
+  display: inline-block;
+  animation: line-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) calc(120ms + var(--i) * 90ms) both;
+}
+
 .mode-sub {
   margin: 10px 0 0;
   max-width: 26ch;
@@ -67,7 +98,7 @@
 }
 
 /* the section's flower sits behind the title, top right of it; it opens on strong bar starts */
-.mode-flower {
+.bloom.mode-flower {
   position: absolute;
   width: clamp(110px, 12vw, 190px);
   aspect-ratio: 1;
@@ -82,7 +113,7 @@
     font-size: clamp(56px, 18vw, 96px);
   }
 
-  .mode-flower {
+  .bloom.mode-flower {
     width: 96px;
     right: 0;
     top: -8px;
@@ -91,7 +122,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mode-word-line,
-  .mode-word-slip {
+  .mode-word-slip,
+  .mode-note-in {
     animation: none;
   }
 
