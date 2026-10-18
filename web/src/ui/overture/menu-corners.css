@@ -2,7 +2,8 @@
 .menu-about {
   position: absolute;
   left: var(--m);
-  top: var(--m);
+  /* under the logo, which keeps the top-left corner on this screen (shell.css: .brand-block, about 34 px tall) */
+  top: calc(var(--m) + 54px);
   max-width: 240px;
   z-index: 3;
 }
