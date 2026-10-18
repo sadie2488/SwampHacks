@@ -1,6 +1,6 @@
 # Overture design mockup
 
-`overture-mockup.html` is Lalitha's working design for the look and motion of Overture. It is a single self-contained page: a design reference to port from, **not app code**. Everything in it can be changed from one `CONFIG` block at the top of the script.
+`overture-mockup.html` is Lalitha's working design for the look and motion of Overture. It is a single self-contained page: a design to port from, **not app code**. Everything in it can be changed from one `CONFIG` block at the top of the script.
 
 Design rules, research and decisions: `web/src/styles/design-principles.md`. Colours and type: `web/src/styles/color-scheme.md`.
 
@@ -25,7 +25,7 @@ Design rules, research and decisions: `web/src/styles/design-principles.md`. Col
 - **Background:** the live camera, pushed back on this screen (dark, soft focus, nearly colourless: `CONFIG.menuLook`). It eases back to the normal look inside a mode
 - **Carousel:** four records on a rising diagonal; scroll / arrow keys / pills to move; the chosen one is flatter (faces you), bigger, casts a soft shadow and slowly turns. The others rest, grey and dimmed
 - **Record style (all four the same):** frosted, semi-transparent vinyl in the mode colour; the name in huge stacked letters (LEA/RN, PL/AY, CRE/ATE, COMMAND/LAB) **cut out of the frosted filter**, so the record's own colour, grooves and dotted flower show through the letters unfiltered; gray instead of white details (gray mist, gray grooves); dark centre label; see-through hole
-- **Words around the record (Grail-inspired):** two giant serif lines per mode (e.g. "LEARN / BY EAR"). The first line sits just above the record and tucks **behind** it; the second runs **in front** across its lower part. Lines sit a small step off the record's centre (about 1/8 of its width) and **alternate sides** record to record (1: top-left/bottom-right, 2: mirrored ...). Each line slides in from the side it leans towards, leading letters first
+- **Words around the record:** two giant serif lines per mode (e.g. "LEARN / BY EAR"). The first line sits just above the record and tucks **behind** it; the second runs **in front** across its lower part. Lines sit a small step off the record's centre (about 1/8 of its width) and **alternate sides** record to record (1: top-left/bottom-right, 2: mirrored ...). Each line slides in from the side it leans towards, leading letters first
 - **Corners, one job each:** top-left = information (mode label + one-liner); bottom-left = the single instruction ("FOUR WAYS IN. PICK ONE."); bottom-right = control (mode pills) with a tiny decorative music staff above; top-right = tools (faint Arrange/Tweak)
 - **Click transition:** a ripple runs through the camera picture from the record, the record turns to face you and rushes at the screen (slow start, very fast finish); the mode page is visible only **through the record's hole** until the hole fills the screen
 
@@ -46,7 +46,7 @@ Design rules, research and decisions: `web/src/styles/design-principles.md`. Col
 | Reactive values | `songLevels`, `transport`, `analysis` bus topics | The mockup fakes a beat; swap in `songLevels.level` / bands |
 
 Not in this folder on purpose:
-- Reference images (Pinterest/other artists' work) are **not** committed: they're someone else's artwork. The (switched-off) flower-print record option points at a local reference file that isn't in git
+- No outside images are committed. The switched-off flower-print record option has an empty image slot for Lalitha's own drawing
 - Older experiments (hand-orbit menu, font test pages) stayed on Lalitha's laptop
 
 ## Switched-off options still in the file (easy to turn back on)

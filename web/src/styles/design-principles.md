@@ -40,9 +40,9 @@ Line, shape, color, value (light or dark), texture, space and type. Value contra
 - **Motion controls are off for now:** hand and head are drawn but control nothing while the design is being finalised
 - **The flowers are placeholders:** they are drawn by code for now. Once the design is final and the work moves on to motion, Lalitha will hand-draw every flower and they will replace the coded ones
 
-## Restraint: why Grail feels more premium (our self-critique, and what we changed)
+## Restraint (our self-critique, and what we changed)
 
-We compared the menu to the totem section of [grail-app.com](https://grail-app.com/). Grail feels expensive because of restraint: one object, one colour story, one font pair, a quiet background. Our first menu had strong ideas but all of them were switched on at once. Fixes applied (the "quiet menu" pass):
+The most premium-feeling sites are restrained: one object, one colour story, one font pair, a quiet background. Our first menu had strong ideas but all of them were switched on at once. Fixes applied (the "quiet menu" pass):
 
 1. **Background steps back on the menu:** the camera goes dark, soft-focus and almost colourless there. It comes back clear inside a mode, where seeing yourself matters
 2. **Fewer competing things:** no micro-text grid, particles, cursor smoke or scanlines on the menu. Tools are small and faint
@@ -52,13 +52,12 @@ We compared the menu to the totem section of [grail-app.com](https://grail-app.c
 6. **One margin (28 px)** for every menu element
 7. **Motion only where it means something:** only the chosen record turns; words slide in on change; everything else is still
 
-## Grail's totem section: what we borrowed
+## Words around the object
 
-- **Giant words wrapped around the object:** one line behind it, one in front, so object and words weave together in depth
+- **Giant words wrapped around the chosen record:** one line behind it, one in front, so record and words weave together in depth
 - **Extreme size contrast:** giant title lines, one medium headline, everything else tiny. Almost nothing mid-sized
 - **A quiet frame:** small corner text, one thin rule across the page
-- **Animation:** title lines slide in on change, staggered
-- **What we did NOT copy:** their counters/numbers (Lalitha removed ours), their colours, fonts or 3D object
+- **Animation:** title lines slide in on change, staggered. No counters or numbers
 
 ## Placement rules we use for words around a record
 
@@ -75,26 +74,14 @@ We compared the menu to the totem section of [grail-app.com](https://grail-app.c
 
 ## Type choices (and how we picked them)
 
-- **Script:** Mea Culpa (closest free match to the "Observe / Judge" reference after comparing 28 scripts side by side; Ballet as backup). Many dafont fonts are personal-use only: check the licence before using any font on the public site
-- **Big words:** Instrument Serif (tall, high contrast, close to Grail's display serif)
+- **Script:** Mea Culpa (picked after comparing 28 free scripts side by side; Ballet as backup). Many free-font sites offer fonts for personal use only: check the licence before using any font on the public site
+- **Big words:** Instrument Serif (tall, high contrast)
 - **Labels and record letters:** Archivo
-- Tried and parked: Cinzel Decorative (tall swashy "FALLEN" look), Grenze Gotisch (spiky calligraphy ring), Bodoni Moda
+- Tried and parked: Cinzel Decorative (tall swashy capitals), Grenze Gotisch (spiky calligraphy ring), Bodoni Moda
 
 ## Records: the final style
 
 Frosted, semi-transparent vinyl in the mode colour; huge stacked letters cut out of the frost so the record itself (colour, grooves, dotted flower) shows through unfiltered; gray instead of white; no glow; see-through hole. Earlier record experiments (wireframe, grunge paper label, clear vinyl, flower print, shatter, ripples) are kept switched off in the mockup.
-
-## Reference board (Lalitha's inspiration, by idea, not to copy)
-
-- Halftone flower posters (dot texture, pink/cream on black): the dot/print language
-- A24 disc carousel: records as the menu
-- Active Theory: particles; Emotion agency: cursor ripple/smoke
-- Jacob How: saturated colour on black; colour per mode
-- X-ray flower photography, moth orchid and chrysanthemum blooming: the entrance flowers
-- "Blooming" type-mark flower poster: flowers drawn with dashes and crosses
-- Grunge, clear, coloured and splatter vinyl labels; "YOU & ME" cover (letters cut out of a frosted filter): the record style
-- Grail (grail-app.com) totem section: words around the object, size contrast
-- "Observe / Judge" poster: the script font
 
 ## Checklist before changing a screen
 
@@ -106,7 +93,6 @@ Frosted, semi-transparent vinyl in the mode colour; huge stacked letters cut out
 
 ## Sources
 
-- Grail: [grail-app.com](https://grail-app.com/) (totem section)
 - Uxcel: [Optical center](https://app.uxcel.com/courses/design-composition/dc--lesson-030/optical-center-7764)
 - The Paper Mill Store: [Designing using visual center](https://blog.thepapermillstore.com/designing-using-visual-center/)
 

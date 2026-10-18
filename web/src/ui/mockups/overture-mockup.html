@@ -49,7 +49,7 @@ canvas.layer{position:fixed;inset:0;width:100%;height:100%;display:block;pointer
 #gate .ghost{border:0;text-decoration:underline;font-size:10px}
 @media (max-width:700px){#gate{top:auto;bottom:90px;transform:none;left:16px}}
 
-/* ===== RECORD ROW (A24-style selection) ===== */
+/* ===== RECORD ROW ===== */
 #select{position:fixed;inset:0}
 #row{position:absolute;inset:0;perspective:1400px}
 .disc{position:absolute;left:0;top:0;width:340px;height:340px;transform-style:preserve-3d;will-change:transform}
@@ -81,7 +81,7 @@ canvas.layer{position:fixed;inset:0;width:100%;height:100%;display:block;pointer
 #readout b{display:block;font-family:var(--serif);font-weight:400;font-size:34px;line-height:1}
 #wire{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 
-/* ===== BOTTOM PILL NAV (Jacob How style) ===== */
+/* ===== BOTTOM PILL NAV ===== */
 #nav{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:999px;
   background:rgba(11,10,12,.55);backdrop-filter:blur(8px);z-index:5}
 #nav .pill{border-color:transparent}
@@ -251,16 +251,16 @@ const CONFIG = {
       rows:[['Uses','Camera + mic'],['Shows','What it sees'],['For','Practising moves']],
       quotes:[['Gestures','“See every move land”'],['Words','“Test each command”']] },
   ],
-  // Two ink colors per screen, printed on black (Jacob How palette + the flower posters)
+  // Two ink colors per screen, printed on black
   palettes: {
     intro:  { a:'#ff2d8a', b:'#f4e4a1' },
-    learn:  { a:'#1fb3bf', b:'#ff4a3d' },        // brighter, cleaner teal (was #2b8a94, from the vinyl reference)
+    learn:  { a:'#1fb3bf', b:'#ff4a3d' },        // brighter, cleaner teal (was #2b8a94)
     play:   { a:'#ff7a00', b:'#ff2d8a' },
     create: { a:'#c9a8ff', b:'#ff4fa3' },
     lab:    { a:'#2f5bff', b:'#ff9a1f' },
   },
   background: '#0b0a0c',
-  fieldLineColor: '#5fe1d6',                       // Active Theory teal arcs
+  fieldLineColor: '#5fe1d6',                       // teal field-line arcs
   tweak: {                                         // live sliders: [value, min, max, step]
     effect:       [.25, 0, 1, .05],     // 0 = plain camera, 1 = full halftone print
     camColor:     [.6, 0, 1, .05],      // 0 = black and white, 1 = natural colour
@@ -308,8 +308,8 @@ const CONFIG = {
     xrayHigh: '#f6f2ff',                           // thick / overlapping parts
     plate: ['Fig. 01', 'Chrysanthemum'],            // specimen-plate labels (top right)
     lipColor: '#e0185a',                           // flower centres
-    coolInk:   '#6f8fe0',                          // faint marks (the blue bits in the references)
-    // Traced from the reference photo. Units: 100 photo px = 1, (0,0) = middle of the spray, y up.
+    coolInk:   '#6f8fe0',                          // faint marks
+    // Flower positions. Units: 1 = one flower radius, (0,0) = middle of the spray, y up.
     // flowers: [x, y, size, tilt]; a negative size makes a bud. Max 16.
     flowers: [
       [-2.05, 3.5, .6, .5],  [-.45, 2.35, .92, .1],  [.85, 1.85, .8, -.1],  [-1.35, 1.2, .95, .05],
@@ -335,7 +335,7 @@ const CONFIG = {
     nameSize:42, nameWidth:170, tilt:-8, blur:1.4, nameOpacity:.9 },   // 'blur' = stacked, tilted, out of focus; 'arc' = round the record
   // shattered record: breaks apart when selected, pieces rejoin when clicked (null = off)
   shatter: { mode:null,          /* was 'create': turned off by Lalitha */  pieces:7, spread:1, rotate:9, breakTime:.45, accel:5, joinSpeed:.0000001 },   // breakTime: seconds to fully shatter; accel: how sharply it speeds up
-  flowerDisc: { mode:null,      /* was 'create' */ image:'create-flower-ref.png', cx:.53, cy:.472, r:.425, threshold:.5, ink:'#0b0a0c' },                         // this mode's record uses the very first design, for comparison (null = none)
+  flowerDisc: { mode:null,      /* was 'create' */ image:'',   /* placeholder: Lalitha's own flower drawing goes here */ cx:.53, cy:.472, r:.425, threshold:.5, ink:'#0b0a0c' },                         // this mode's record uses the very first design, for comparison (null = none)
   // Record labels (grunge print look)
   label: {
     paper: '#e8e3d6',                              // label paper
@@ -413,7 +413,7 @@ const quadCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
 const QUAD = new THREE.PlaneGeometry(2,2);
 const VERT = `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.);}`;
 
-// ===== CURSOR SMOKE TRAIL (Emotion-style): ping-pong buffer that fades and rises =====
+// ===== CURSOR SMOKE TRAIL: ping-pong buffer that fades and rises =====
 const rtOpts = { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
 let trailA = new THREE.WebGLRenderTarget(4,4,rtOpts), trailB = new THREE.WebGLRenderTarget(4,4,rtOpts);
 const trailU = { uPrev:{value:null}, uMouse:{value:new THREE.Vector2(.5,.5)}, uAmt:{value:0}, uFade:{value:.96},
@@ -474,7 +474,7 @@ vec2 flower(vec2 p){                                                            
   lip*=1.4;                                                                     // the lip is thick, so it reads denser
   return vec2(d+lip+smoothstep(.1,0.,length(p*vec2(1.,.75)-vec2(0.,.02)))*.9, lip);
 }
-// The flowers and stems come from CONFIG.entrance.flowers / stems (traced from Lalitha's reference photo).
+// The flowers and stems come from CONFIG.entrance.flowers / stems .
 // Returns x = x-ray density, y = density x "solidness" (each flower solid at its centre, dots at its own edges), z = lip density.
 uniform vec4 uF[16];uniform float uFN;uniform vec4 uSeg[12];uniform float uSN;
 // CHRYSANTHEMUM: three rings of petals. Closed (b=0): a tight ball of wide, cupped, incurved petals.
@@ -568,7 +568,7 @@ void main(){
   if(uIntro>.001){
     // Flowers drawn with type-like marks: + crosses where faint, dashes in the middle, = double lines where dense.
     // A soft glow sits behind them; the cursor trail "exposes" a smoother picture.
-    // Like the "Blooming" references: blooms filled with small type marks (dense runs of dashes, + crosses,
+    // Blooms filled with small type marks (dense runs of dashes, + crosses,
     // little boxes), cream with cool accents, floating in a big blurry glow.
     vec2 p=px/uRes; vec4 o=orchid(p); float xr=1.-exp(-o.x*1.6);
     vec2 cs=vec2(uIDot*1.4,uIDot), cid=floor(px/cs), c=cid*cs+cs*.5, pc=c/uRes; vec4 oc=orchid(pc);
@@ -661,7 +661,7 @@ function readAudio(t){
   return { level:Math.min(s/fbuf.length/90,1), bass:Math.min(b/9/220,1) };
 }
 
-// ===== FIELD LINES (Active Theory arcs that lean toward the cursor) =====
+// ===== FIELD LINES (arcs that lean toward the cursor) =====
 function drawField(cx,cy,R,t){
   ctx.clearRect(0,0,innerWidth,innerHeight);
   const K=T.fieldLines|0; if(!K)return;
@@ -682,7 +682,7 @@ function drawField(cx,cy,R,t){
   ctx.globalAlpha=1;
 }
 
-// ===== RECORD ROW (A24-style: discs on a rising diagonal, scroll to choose) =====
+// ===== RECORD ROW (discs on a rising diagonal, scroll to choose) =====
 // Each record is a printed label: grainy paper, a stippled orchid, a big script name, small label type.
 // The whole label spins. Where the name crosses the see-through hole it becomes an outline.
 const LABEL=CONFIG.label;
@@ -781,7 +781,7 @@ function scriptRing(m,id,o){
     <g style="mix-blend-mode:screen" opacity="${o.opacity}"><text font-family="${o.font}" font-size="${o.size}" fill="${LABEL.titleColor}" dominant-baseline="middle"
       textLength="${(C*.98).toFixed(1)}" lengthAdjust="spacingAndGlyphs"><textPath href="#sr${id}">${word}</textPath></text></g>`;
 }
-// WINDOW letters (like the 'YOU & ME' cover): a coloured, frosted filter covers the whole record and the
+// WINDOW letters: a coloured, frosted filter covers the whole record and the
 // big stacked letters are cut out of it, so you see straight through them, untouched, with a thin light edge
 function windowLines(m,o){ const N=m.name.toUpperCase(), n=N.replace(' ',''), half=Math.ceil(n.length/2);
   const lines=N.includes(' ')?N.split(' '):n.length>3?[n.slice(0,half),n.slice(half)]:[n], fs=o.toneSize*(Math.max(...lines.map(l=>l.length))>4?.8:1), lh=fs*.9;
@@ -791,7 +791,7 @@ function windowMask(m,id,o){ const t=windowLines(m,o);
   return `<mask id="win${id}"><rect x="-120" y="-120" width="240" height="240" fill="#fff"/>${t('fill="#000"')}</mask>`; }
 function windowEdges(m,id,o){ const t=windowLines(m,o);
   return `<g clip-path="url(#face${id})" style="mix-blend-mode:screen" opacity="${o.window.edge}">${t(`fill="none" stroke="${o.gray?o.gray.color:LABEL.titleColor}" stroke-width=".7"`)}</g>`; }
-// tone-on-tone stacked letters (like the 'YOU & ME' cover): huge letters that quietly darken the record
+// tone-on-tone stacked letters: huge letters that quietly darken the record
 // behind them, with a faint light edge, so they read as a window rather than as text on top
 function toneName(m,id,o){
   const n=m.name.toUpperCase().replace(' ',''), half=Math.ceil(n.length/2), lines=n.length>3?[n.slice(0,half),n.slice(half)]:[n];
@@ -820,10 +820,10 @@ function originalDiscSVG(m,i){
 }
 const isOriginal=m=>CONFIG.compareOriginal===m.id;
 // FLOWER RECORD: solid colour disc, a dark flower printed across it, the name knocked out in the disc colour.
-// The flower comes from a reference picture for now (Lalitha will draw her own): dark pixels become the print.
+// The flower is a placeholder (Lalitha will draw her own): dark pixels of the image become the print.
 const FD=CONFIG.flowerDisc; let flowerPrint=null;
 const isFlower=m=>FD&&FD.mode===m.id;
-(function loadFlowerPrint(){ if(!FD)return; const img=new Image(); img.onload=()=>{
+(function loadFlowerPrint(){ if(!FD||!FD.image)return; const img=new Image(); img.onload=()=>{
   const N=512, cv=document.createElement('canvas'); cv.width=cv.height=N; const g=cv.getContext('2d');
   const w=img.naturalWidth, h=img.naturalHeight, r=FD.r*w;
   g.drawImage(img,FD.cx*w-r,FD.cy*h-r,r*2,r*2,0,0,N,N);
@@ -940,7 +940,7 @@ function discSVG(m,i){
   const LT=PM.gray?PM.gray.color:LABEL.titleColor;                         // the record's 'light' colour: cream, or gray on Play
   const H=LABEL.hole, id=i, style=LABEL.nameStyle, lines=style==='display'?[m.name.toUpperCase()]:(style==='serif'||style==='sans')?m.name.toUpperCase().split(' '):[style==='script'?m.name:m.name.toUpperCase()];
   // grooves: many fine rings so it reads as a record, kept well below the title's contrast
-  // Like the vinyl reference: bands of grooves alternate stronger and fainter, and light and dark lines alternate.
+  // Bands of grooves alternate stronger and fainter, and light and dark lines alternate.
   let grooves=''; for(let r=97,k=0;r>H+5;r-=1.8,k++){
     const band=Math.floor(k/4)%3, light=k%2===1;                           // 3 band strengths, light/dark lines in turn
     const op=LABEL.grooves*[1.8,.6,1.1][band]*(light?.9:1)*(.8+.4*((k*37)%11)/11);
