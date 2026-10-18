@@ -21,6 +21,7 @@ export function startWith(deps: Pick<SenderDeps, 'url' | 'notice' | 'createSocke
     bus.on('mode', (m) => tracker.setMode(m), { replay: true }),
     bus.on('controls', (c) => tracker.setControls(c), { replay: true }),
     bus.on('transport', (t) => tracker.onTransport({ bpm: t.bpm, beatPhase: t.beatPhase }), { replay: true }),
+    bus.on('songLevels', (l) => tracker.onSongLevels(l), { replay: true }),
     bus.on('pitch', (p) => tracker.onPitch({ midi: p.midi, rms: p.rms })),
     bus.on('signal', (s) => tracker.onSignal(s)),
     bus.on('enable', (e) => {

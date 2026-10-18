@@ -53,6 +53,8 @@ export class WebAudioOutput implements AudioOutput {
 
   private ctx: AudioContext | null = null;
   private gain: GainNode | null = null;
+  /** Listens to the gain node's output (after pitch, tempo and volume) for the song levels. Not connected onward, so it adds no delay. */
+  private analyser: AnalyserNode | null = null;
   private backend: Backend | null = null;
   private path: SoundPath = 'none';
   private disposed = false;
@@ -80,6 +82,10 @@ export class WebAudioOutput implements AudioOutput {
   }
   get positionSec(): number {
     return this.backend ? this.backend.positionSec() : this.lastPosition;
+  }
+  /** The analyser tapping the song's output, or null before a song is loaded (or where the browser has none). */
+  analyserNode(): AnalyserNode | null {
+    return this.analyser;
   }
   /** Which way the sound is being made right now. */
   get soundPath(): SoundPath {
@@ -134,6 +140,8 @@ export class WebAudioOutput implements AudioOutput {
     this.backend = null;
     this.gain?.disconnect();
     this.gain = null;
+    this.analyser?.disconnect();
+    this.analyser = null;
     this.ctx = null;
     this.path = 'none';
   }
@@ -148,6 +156,7 @@ export class WebAudioOutput implements AudioOutput {
     gain.connect(ctx.destination);
     this.ctx = ctx;
     this.gain = gain;
+    this.analyser = makeAnalyser(ctx, gain);
     this.choosePath(ctx);
     return ctx;
   }
@@ -238,4 +247,16 @@ export class WebAudioOutput implements AudioOutput {
     this.gain.gain.setTargetAtTime(inWorklet ? 1 : this.volume, this.ctx.currentTime, 0.02);
     this.backend?.setVolume(this.volume);
   }
+}
+
+/** A side branch off the gain node for measuring levels. What the person hears goes straight on to the speakers, unchanged. */
+function makeAnalyser(ctx: AudioContext, gain: GainNode): AnalyserNode | null {
+  if (typeof ctx.createAnalyser !== 'function') return null;
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0; // levels.ts does its own smoothing
+  analyser.minDecibels = -90;
+  analyser.maxDecibels = -20;
+  gain.connect(analyser);
+  return analyser;
 }
