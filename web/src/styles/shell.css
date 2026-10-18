@@ -1,7 +1,6 @@
 /* The Overture shell: pills, the header on each screen, the fixed layers behind everything. */
 .pill,
-.tabs [role='tab'],
-.records-pill {
+.tabs [role='tab'] {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -43,9 +42,21 @@
   visibility: hidden;
 }
 
-/* on the menu only two header pieces stay: the mode pills (bottom-right corner) and the status (top-right) */
+/* on the entrance and the menu the logo stays in the top-left corner, always visible and clickable (it is the way home);
+   the Records button next to it is not shown there (the menu is the records page) */
+.app[data-screen='entrance'] .brand-block,
 .app[data-screen='menu'] .brand-block {
-  visibility: hidden;
+  position: fixed;
+  z-index: 35;
+  top: var(--m);
+  left: var(--m);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.app[data-screen='entrance'] .records-button,
+.app[data-screen='menu'] .records-button {
+  display: none;
 }
 
 .app[data-screen='menu'] .tabs {
@@ -85,6 +96,7 @@
 }
 
 .app[data-screen='menu'] .tabs,
+.app[data-screen='menu'] .brand-block,
 .app[data-screen='menu'] .header-end {
   pointer-events: auto;
 }

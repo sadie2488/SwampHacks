@@ -19,18 +19,18 @@
 }
 
 .brand-home:focus-visible,
-.td-sparkle:focus-visible {
+.records-button:focus-visible {
   outline: 2px solid var(--paper-white);
   outline-offset: 4px;
   border-radius: 6px;
 }
 
-/* TouchDesigner: a mini record with a star hole in a thin circle; the mode colour fills the disc while it is on */
-.td-sparkle-wrap {
+/* Records: a mini record with a star hole in a thin circle next to the logo; it goes back to the four records */
+.records-button-wrap {
   display: inline-flex;
 }
 
-.td-sparkle {
+.records-button {
   display: inline-grid;
   place-items: center;
   width: 30px;
@@ -47,21 +47,16 @@
     color 0.3s;
 }
 
-.td-sparkle:focus-visible {
+.records-button:focus-visible {
   border-radius: 50%;
 }
 
-.td-sparkle:hover {
+.records-button:hover {
   border-color: var(--a);
   color: var(--a);
 }
 
-.td-sparkle[aria-pressed='true'] {
-  border-color: var(--a);
-  color: var(--a);
-}
-
-.td-sparkle-icon {
+.records-button-icon {
   width: 15px;
   height: 15px;
   fill: currentColor;
@@ -176,7 +171,7 @@
 }
 
 /* --a-text is set on :root (so elsewhere it is the entrance ink); the Lab sets its own lighter blue for small text */
-.app[data-mode='lab'] :is(.guide-overlay-kicker, .guide-overlay-close, .td-sparkle:hover) {
+.app[data-mode='lab'] :is(.guide-overlay-kicker, .guide-overlay-close, .records-button:hover) {
   color: var(--a-text);
 }
 
