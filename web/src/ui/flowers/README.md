@@ -8,7 +8,7 @@ flowers. No outside artwork is used here.
 |---|---|
 | `chrysanthemum-a/`, `chrysanthemum-b/`, `chrysanthemum-c/` | The entrance spray |
 | `bud/` | The entrance spray (small buds) |
-| `orchid-stipple.svg` | The dotted flower printed on every record in the mode menu |
+| `orchid-stipple.svg` | Not shown any more (the records carry only hand-drawn flowers, see below) |
 | `sections/<section>/` | One flower per section (placeholders by `make-sections.mjs`): menu chrysanthemum, learn forget-me-not, play bird of paradise, create sweet pea, lab iris |
 | `drawn/` | Lalitha's hand-drawn section flowers (PNG). Anything here wins over `sections/` |
 
@@ -44,7 +44,7 @@ The app only fades between these pictures (nothing is redrawn while it animates)
    filling it, the same size in all three
 2. Replace `closed.svg`, `half.svg` and `open.svg` in the flower's folder (keep the names), or add a new folder and
    list it in `index.ts`
-3. The record orchid is one file; anything coloured `currentColor` takes the record's mode colour
+3. The records in the mode menu show only the hand-drawn `drawn/<mode>-<flower>-open.png` (plus its `-fill`), tinted with the mode inks; a mode without one has a plain record
 4. Keep each file small (under about 100 KB) so the page stays quick: merge shapes into a few paths if you can
 5. `node web/src/ui/flowers/make-placeholders.mjs` regenerates the placeholders (it overwrites them, so do not run it
    once the hand-drawn ones are in)

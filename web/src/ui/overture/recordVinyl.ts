@@ -1,7 +1,7 @@
 // The record's vinyl as an SVG picture (drawn ONCE into a canvas by recordImages.ts, never live):
-// see-through vinyl in the mode colour, gray streaks along the grooves, soft gray clouds, the dotted orchid,
-// a dark centre label and fine grooves. No filters or blend modes: soft edges come from gradients.
-import orchidRaw from '@/ui/flowers/orchid-stipple.svg?raw';
+// see-through vinyl in the mode colour, gray streaks along the grooves, soft gray clouds, a dark centre label and
+// fine grooves. No filters or blend modes: soft edges come from gradients. Lalitha's drawn flower (if any) is laid
+// on by recordImages.ts.
 import type { ModeLook } from './modes';
 
 export const HOLE = 14;
@@ -34,15 +34,8 @@ function grooves(): string {
 
 const MIST: Array<[number, number, number, number]> = [[-40, -35, 45, 32], [45, 40, 40, 30], [10, -70, 35, 20], [-60, 50, 30, 24]];
 
-/** The orchid's drawing without its outer <svg>, with its accent dots in the record's colour. */
-function orchidInner(color: string): string {
-  const start = orchidRaw.indexOf('<g');
-  const end = orchidRaw.lastIndexOf('</g>');
-  return start < 0 || end < 0 ? '' : orchidRaw.slice(start, end + 4).replace(/currentColor/g, color);
-}
 
 export function vinylSVG(m: ModeLook, index: number): string {
-  const turn = [0, 20, -17, 34][index % 4];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-110 -110 220 220" width="220" height="220">
 <defs>
   <radialGradient id="body"><stop offset=".3" stop-color="${m.a}" stop-opacity=".3"/><stop offset="1" stop-color="${m.a}" stop-opacity=".55"/></radialGradient>
@@ -55,7 +48,6 @@ export function vinylSVG(m: ModeLook, index: number): string {
   <circle r="100" fill="url(#body)"/>
   <g fill="none" stroke-linecap="round" opacity=".35">${streaks(index)}</g>
   <g clip-path="url(#face)">${MIST.map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx * 1.5}" ry="${ry * 1.5}" fill="url(#mist)"/>`).join('')}</g>
-  <g clip-path="url(#face)" opacity=".45" transform="rotate(${turn})">${orchidInner(m.a)}</g>
   <circle r="${LABEL_R}" fill="${NIGHT}" fill-opacity=".88"/>
   <circle r="${LABEL_R}" fill="none" stroke="${m.a}" stroke-opacity=".6" stroke-width=".6"/>
   <g fill="none">${grooves()}</g>
