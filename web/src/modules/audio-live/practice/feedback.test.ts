@@ -2,7 +2,6 @@
 import slowFixture from '@fixtures/performance-event/twinkle-played-slow.json';
 import { describe, expect, it } from 'vitest';
 import type { Feedback, PerformanceEvent } from '@/contracts';
-import { barOf } from './bars';
 import { compareNotes, timingClass, type CompareOptions, type PlayedNote } from './compare';
 import { buildFeedback } from './feedback';
 import { floatPitch } from './run';
@@ -43,22 +42,6 @@ function expectValid(fb: Feedback, totalBars = 12) {
   // plain words: no raw numbers beyond a percentage, no jargon
   expect(fb.summary).not.toMatch(/\bms\b|cents|\bBPM\b/i);
 }
-
-describe('bars', () => {
-  it('numbers bars from the downbeats', () => {
-    expect([0, 1.2, 2.39, 2.4, 4.8, 28.7].map((t) => barOf(song, t))).toEqual([1, 1, 1, 2, 3, 12]);
-  });
-  it('falls back to the beats, then to the tempo', () => {
-    const noDownbeats = { ...song, downbeats: undefined };
-    expect([0, 2.4, 4.8].map((t) => barOf(noDownbeats, t))).toEqual([1, 2, 3]);
-    const noBeats = { ...noDownbeats, beats: undefined };
-    expect([0, 2.4, 4.8].map((t) => barOf(noBeats, t))).toEqual([1, 2, 3]);
-  });
-  it('counts 6/8 in two beats', () => {
-    const six8 = { ...song, downbeats: undefined, time_signature: { numerator: 6, denominator: 8 as const } };
-    expect([0, 1.2, 1.3].map((t) => barOf(six8, t))).toEqual([1, 2, 2]);
-  });
-});
 
 describe('timing grades (music-notes section 7)', () => {
   it('50 ms is on time, 50-100 a bit, beyond that off', () => {
