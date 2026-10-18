@@ -1,5 +1,5 @@
 /**
- * A mini vinyl record with a star-shaped centre hole (the TouchDesigner switch next to the logo).
+ * A mini vinyl record with a star-shaped centre hole (the Records button next to the logo).
  * One even-odd path: the disc, two thin groove rings and the star are all real holes, so the
  * background shows through them. The disc takes the current text colour.
  */

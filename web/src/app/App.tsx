@@ -28,8 +28,8 @@ import { AnalysisWarnings } from './AnalysisSummary';
 import { apiFetch } from './api-fetch';
 import { useDeviceAutostart } from './device-autostart';
 import { CameraPreview } from './CameraPreview';
-import { Devices, TouchDesignerToggle } from './Devices';
-import { LoginButton } from './LoginButton';
+import { Devices } from './Devices';
+import { RecordMark } from '@/ui/overture/RecordMark';
 import { leaveSectionCommands, logoTarget, publishedMode, shownSection } from './navigation';
 import { useModules } from './modules-start';
 import { PanelBoundary } from './PanelBoundary';
@@ -155,16 +155,16 @@ export function App() {
       <CommandToast />
       {screen === 'entrance' && <Entrance onEnter={enter} />}
       {screen === 'menu' && <RecordMenu sel={menuSel} onSelect={setMenuSel} onChoose={(i) => openMode(MODES[i].id)} />}
-      <header className="app-header" {...inert(screen === 'entrance')}>
+      {/* the header is never inert: the Overture logo stays clickable on every screen (the rest is hidden by CSS where it does not apply) */}
+      <header className="app-header">
         <div className="brand-block">
           <h1 className="brand">
             <button type="button" className="brand-home" aria-label="Overture, home" title="Back to the title screen" onClick={openEntrance}>
               Overture
             </button>
           </h1>
-          <TouchDesignerToggle />
-          <button type="button" className="pill records-pill" title="Back to the four records" onClick={openMenu}>
-            Records
+          <button type="button" className="records-button" aria-label="Records" title="Records: back to the four records" onClick={openMenu}>
+            <RecordMark />
           </button>
         </div>
         <div role="tablist" aria-label="Mode" className="tabs">
@@ -179,7 +179,6 @@ export function App() {
             Guide
           </button>
           <SoundToggle />
-          <LoginButton />
         </div>
       </header>
       {guide && screen !== 'entrance' && <InstructionsOverlay screen={screen === 'menu' ? 'menu' : tab} onClose={closeGuide} />}
@@ -197,7 +196,7 @@ export function App() {
                 <AnalysisWarnings />
               </>
             )}
-            <Devices fake={isFakeMode()} />
+            <Devices fake={isFakeMode()} touchdesigner={tab === 'lab'} />
             <CameraPreview />
           </div>
           {songTab && <SongView mode="learn" open={{ practice: isOpen('practice'), player: isOpen('player'), sheet: isOpen('sheet') }} />}

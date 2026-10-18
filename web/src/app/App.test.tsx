@@ -108,6 +108,17 @@ describe('layout', () => {
     expect(text('transport-state')).toBe('no song');
   });
 
+  it('the small record next to the logo is the Records button; the header has no TouchDesigner switch', () => {
+    const records = container.querySelector<HTMLButtonElement>('header button[aria-label="Records"]');
+    expect(records).not.toBeNull();
+    expect(records!.querySelector('svg.record-mark')).not.toBeNull();
+    expect(container.querySelector('header .records-pill')).toBeNull();
+    expect(container.querySelector('header [data-testid="btn-enable-td"]')).toBeNull();
+    // login is not shown anywhere, and the header is never inert (the logo works on every screen)
+    expect(container.querySelector('[data-testid="btn-login"], .login-box')).toBeNull();
+    expect(container.querySelector('header')?.hasAttribute('inert')).toBe(false);
+  });
+
   it('starts every module once and stops them when the page goes away', async () => {
     const mods = [playback, commands, vision, audioLive, touchdesigner, create];
     for (const m of mods) expect(m.start).toHaveBeenCalledTimes(1);
@@ -279,6 +290,8 @@ describe('devices', () => {
   it('toggles each device with an enable event and shows status in plain words', async () => {
     expect(text('btn-enable-vision')).toBe('Camera off');
     expect(text('btn-enable-audio')).toBe('Microphone off');
+    expect($('btn-enable-td')).toBeNull(); // TouchDesigner is switched only in the Command Lab
+    await click('tab-lab');
     expect(text('btn-enable-td')).toBe('TouchDesigner off');
     await click('btn-enable-vision');
     await click('btn-enable-audio');
@@ -302,6 +315,7 @@ describe('devices', () => {
   const status = (module: string, state: Topics['status']['state'], message?: string) => emit('status', { module, state, message });
 
   it('keeps the TouchDesigner button on while it retries, however many problems it reports', async () => {
+    await click('tab-lab');
     await click('btn-enable-td');
     expect(text('btn-enable-td')).toBe('TouchDesigner on');
     await status('touchdesigner', 'starting', 'Connecting to the TouchDesigner relay...');
@@ -358,6 +372,7 @@ describe('devices', () => {
     bus.emit('status', { module: 'touchdesigner', state: 'error', message: 'Relay not found: start it with: node bridge/relay.mjs.' });
     root = createRoot(container);
     await act(async () => root.render(<App />));
+    await click('tab-lab');
     expect(text('btn-enable-vision')).toBe('Camera on');
     expect(text('status-vision')).toBe('On (Camera tracking is on)');
     expect(text('btn-enable-audio')).toBe('Microphone off');
