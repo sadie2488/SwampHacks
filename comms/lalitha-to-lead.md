@@ -60,3 +60,33 @@ App name decided: **Overture**
 - Please log it in docs/decisions.md and tell the team (Sadie, Shayaan, Veda)
 - Places that may need it later: page title, header, README, the GoDaddy domain (check if overture-style domains are free), Auth0 app name
 - Design lane will use it on the entrance screen in the script font
+
+---
+*2026-10-18 03:30 UTC*
+
+## Handoff from Lalitha's laptop: Overture design (mockup + all design research)
+
+Lalitha is moving the design work over to you. Everything is on GitHub on her branch:
+**`design/lalitha/F1-look`** (commit 883dad2, 4 files, all inside the design lane, checked with branch-scope.mjs).
+
+### What's in it
+- `web/src/ui/mockups/overture-mockup.html`: the full working mockup (one self-contained page, everything editable from a `CONFIG` block). Her current arrangement is baked in as the defaults
+- `web/src/ui/mockups/README.md`: how to open it, what each screen does, what to port into the real app, what's switched off
+- `web/src/styles/design-principles.md`: all design research and decisions (principles of design, eye-tracking, audiovisual sync points / synchresis, optical centre, Grail analysis, the "restraint" self-critique and fixes, corner jobs, type choices, record style, reference board)
+- `web/src/styles/color-scheme.md`: colours, per-mode inks, readability table, type
+
+### Decisions to log (docs/decisions.md)
+- Name: **Overture** (sent earlier)
+- Learn colour changed to bright teal `#1fb3bf` (from vinyl reference); menu type is paper white `#f2eee6`
+- Fonts: Instrument Serif (big words, titles), Archivo (labels), Mea Culpa (script, Overture logo only). All Google Fonts, free for commercial use. The app currently links Bricolage Grotesque + DM Mono: these would need adding/swapping in `web/index.html` (lead-owned)
+- Entrance: chrysanthemums drawn as type marks, bloom (closed to open, constant size) as the cursor nears Enter
+- Menu: record carousel; all records share one style (frosted mode-colour vinyl, giant stacked letters cut out of the frost); Grail-style giant words around the chosen record (one behind, one in front, alternating sides); quiet menu look (camera dark + soft focus); one job per corner; no counters/numbers
+- Click: ripple + record rushes forward, mode shown through the hole
+- Hand guide drawn as dots, head as outline; **motion controls OFF** for now (visual only)
+- All flowers are placeholders: **Lalitha will hand-draw them** once the design is final
+
+### Notes / asks
+- The mockup is a design reference, not app code. When porting: keep every data-testid and control; draw hand/head from the vision module's bus data instead of running a second MediaPipe; drive motion from `songLevels` / `transport`
+- Reference images (other artists' work) were deliberately NOT committed
+- No PR opened (no GitHub CLI here). Her branch is ready if you want to open one or pull it locally
+- The sign-language mode-switch idea from earlier is still open (hold a sign, ring fills, ~2 s)
