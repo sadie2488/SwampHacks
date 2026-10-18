@@ -2,6 +2,7 @@
 // It only starts when asked and keeps itself running (Chrome ends a session after a pause) until told to stop.
 interface ResultLike {
   readonly length: number;
+  readonly isFinal?: boolean;
   readonly [i: number]: { readonly transcript: string };
 }
 interface ResultEventLike {
@@ -36,13 +37,19 @@ export interface SpeechListener {
 }
 
 export interface SpeechHandlers {
-  /** The text of speech results `firstIndex`, `firstIndex + 1`, ... (interim results repeat and grow). */
-  onText(texts: string[], firstIndex: number): void;
+  /** The text of speech results `firstIndex`, `firstIndex + 1`, ... (interim results repeat and grow); `finals[k]` is true once result k is finished. */
+  onText(texts: string[], firstIndex: number, finals: boolean[]): void;
   /** A new recognition run began (its results are numbered from 0 again). */
   onNewSession(): void;
   /** Something stopped voice commands from working, in plain words. */
   onProblem(message: string): void;
+  /** Speech came through again after a network problem. */
+  onRecovered?(): void;
 }
+
+// Sat-night fix: a network error used to switch voice commands off until the next fist or mode change (venue Wi-Fi drops
+// would silently end Create voice commands). Now it keeps trying, waiting longer each time, while listening is wanted.
+export const NETWORK_RETRY_MS = [2000, 5000, 10000, 15000] as const;
 
 export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
   const Ctor = findCtor();
@@ -50,6 +57,16 @@ export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
   let rec: RecognizerLike | null = null;
   let wanted = false;
   let restart: ReturnType<typeof setTimeout> | undefined;
+  let networkFails = 0;
+  let waitingForNetwork = false;
+
+  const scheduleStart = (ms: number) => {
+    clearTimeout(restart);
+    restart = setTimeout(() => {
+      waitingForNetwork = false;
+      if (wanted) tryStart();
+    }, ms);
+  };
 
   const give = (message: string) => {
     wanted = false;
@@ -64,22 +81,31 @@ export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
     r.lang = 'en-US';
     r.onstart = () => h.onNewSession();
     r.onresult = (e) => {
+      if (networkFails > 0) {
+        networkFails = 0;
+        h.onRecovered?.();
+      }
       const texts: string[] = [];
-      for (let i = e.resultIndex; i < e.results.length; i++) texts.push(e.results[i][0].transcript);
-      h.onText(texts, e.resultIndex);
+      const finals: boolean[] = [];
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        texts.push(e.results[i][0].transcript);
+        finals.push(e.results[i].isFinal !== false);
+      }
+      h.onText(texts, e.resultIndex, finals);
     };
     r.onerror = (e) => {
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') give('Voice commands were blocked: allow the microphone for speech in the address bar, then hold your fist again');
       else if (e.error === 'audio-capture') give('Voice commands could not hear the microphone');
-      else if (e.error === 'network') give('Voice commands need an internet connection (Chrome sends speech to Google to read it)');
+      else if (e.error === 'network' && wanted) {
+        h.onProblem('Voice commands need an internet connection (Chrome sends speech to Google to read it)');
+        waitingForNetwork = true;
+        scheduleStart(NETWORK_RETRY_MS[Math.min(networkFails++, NETWORK_RETRY_MS.length - 1)]);
+      }
       // "no-speech" and "aborted" are normal: the end handler below starts again if we still want to listen
     };
     r.onend = () => {
-      if (!wanted) return;
-      clearTimeout(restart);
-      restart = setTimeout(() => {
-        if (wanted) tryStart();
-      }, 250);
+      if (!wanted || waitingForNetwork) return; // a network retry is already booked
+      scheduleStart(250);
     };
     return (rec = r);
   };
@@ -95,10 +121,12 @@ export function createSpeechListener(h: SpeechHandlers): SpeechListener | null {
   return {
     start() {
       wanted = true;
-      tryStart();
+      if (!waitingForNetwork) tryStart(); // never start early while a network retry is waiting
     },
     stop() {
       wanted = false;
+      waitingForNetwork = false;
+      networkFails = 0;
       clearTimeout(restart);
       try {
         rec?.abort();
