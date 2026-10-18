@@ -4,7 +4,7 @@
 // so x = 0 is the user's own left edge as they see it on screen. Distances are measured in "picture-height" units
 // (x is multiplied by the image's width/height ratio) so a circle stays a circle.
 import type { Signal } from '@/contracts';
-import { SignTracker } from './signs';
+import { SignTracker, type SignOptions } from './signs';
 
 export interface Pt {
   x: number;
@@ -318,11 +318,12 @@ export class GestureTracker {
   private lastFace = -Infinity;
   private lastNod = -Infinity;
   private lastT = 0;
-  /** Finger counts and fingerspelling letters (signs.ts). */
-  private readonly signs = new SignTracker();
+  /** Finger counts and fingerspelling letters (signs.ts; letters only when SIGNS_ENABLED or `signs.letters`). */
+  private readonly signs: SignTracker;
 
-  constructor(opts: Partial<TrackerOptions> = {}) {
+  constructor(opts: Partial<TrackerOptions> = {}, signs: Partial<SignOptions> = {}) {
     this.o = { ...DEFAULT_TRACKER, ...opts };
+    this.signs = new SignTracker(signs);
     this.sides = { left: this.newSide(), right: this.newSide() };
   }
 

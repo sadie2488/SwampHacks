@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { signalCatalog } from '@/contracts/catalogs';
 import { GestureTracker, HAND, THRESHOLDS, palmCenter, type HandObs, type Pt, type Side, type SignalOut } from './gestures';
+import { SIGNS_ENABLED } from './signs';
 import { LETTER_POSES, makeFace, makeHand, makePose, type FaceSpec, type HandSpec, type PoseSpec } from './synthetic';
 
 const FRAME = 1000 / 15; // the camera runs at about 15 pictures a second
@@ -343,7 +344,10 @@ describe('sliders', () => {
 });
 
 describe('everything in the signal catalog that vision promises', () => {
-  const visionIds = signalCatalog.signals.filter((s) => s.source === 'vision').map((s) => s.id);
+  // While the letters are switched off (SIGNS_ENABLED false), the vision.sign.* ids must NOT come out; everything else must.
+  const visionIds = signalCatalog.signals
+    .filter((s) => s.source === 'vision' && (SIGNS_ENABLED || !s.id.startsWith('vision.sign.')))
+    .map((s) => s.id);
 
   it('both hands doing every gesture, plus a tilting, nodding head, produce every vision signal id and nothing else', () => {
     const rig = new Rig();
