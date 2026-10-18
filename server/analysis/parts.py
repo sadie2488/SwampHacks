@@ -2,7 +2,8 @@
 
 - Clean-up: overtones the model reports as notes of their own (an octave, an octave and a fifth, or two
   octaves over a note that is already sounding, and quieter) go, and so do very short or very faint notes.
-- Bass: the lowest voice, at or under B3 (about 250 Hz), one note at a time.
+- Bass: the lowest voice, at or under E3 (about 165 Hz), one note at a time. (Higher, it is mostly the
+  lowest note of the chords when a song has no bass.)
 - Melody: the top voice of what is left, one note at a time, without lonely jumps far from its neighbours.
 - Chords: the remaining held notes, grouped by the half beat they start on; two or more pitches make a chord.
 Melody and bass go through the same beat grid as the pYIN melody (`melody._quantize`); all parts share
@@ -26,7 +27,7 @@ MIN_AMP = 0.25  # the model's note strength (0 to 1); fainter notes are mostly b
 MIN_NOTE_SEC = 0.12
 CLUSTER_SEC = 0.06  # notes starting this close together start "at the same time"
 HOLD_LEFT_SEC = 0.15  # a voice keeps its note while this much of it is left, unless the new note is beyond it
-BASS_MAX_PITCH = 59  # B3, about 247 Hz
+BASS_MAX_PITCH = 52  # E3, about 165 Hz: the top of most bass lines
 MELODY_MIN_PITCH = 55  # G3: lower than this is accompaniment in nearly every song
 JUMP_MAX = 12  # a melody note more than an octave from both neighbours is an outlier
 CHORD_MIN_SEC = 0.2
@@ -222,8 +223,7 @@ def split_parts(
                 why = "nothing left on the beat grid"
         if why:
             omitted[kind] = why
-    flat = [n for c in held for n in c]
-    why = _too_weak(flat, analyzed_sec, min_notes=2 * MIN_CHORDS) if len(held) >= MIN_CHORDS else f"only {len(held)} chords"
+    why = _too_weak([c[0] for c in held], analyzed_sec, min_notes=MIN_CHORDS)  # one note stands for each chord
     if why:
         omitted["harmony"] = why
     else:

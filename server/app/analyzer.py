@@ -11,6 +11,10 @@ The steps, using the building blocks in `server/analysis/`:
    drums taken out (`separation.harmonic_part`), and keeps that result only if it is clearly better.
    The same second run happens when the first one finds no melody at all, and its notes are used if
    they clear a few bars that keep noise from becoming a melody.
+4. A song that still looks like many instruments is split into parts: Melody, Bass and Chords, from every
+   note the basic-pitch model hears once the drums are out (`analysis/polyphonic.py`, `analysis/parts.py`).
+   A part that comes out too thin is left out with a warning; if the step fails, the melody from step 3
+   stays on its own, with a warning.
 `sections` is left out: nothing cheap and trustworthy produces it yet.
 Speed (a 5 minute full mix in about 20 s instead of 60): the key and the drum removal run in helper
 threads next to steps 2 and 3, and the melody's pitch tracking is spread over worker processes
@@ -30,6 +34,7 @@ plain sentences for the person who uploaded the song. It is left out when there 
 import importlib
 import json
 import logging
+import os
 import shutil
 import threading
 import time
@@ -53,6 +58,13 @@ WARNING_TOO_LONG = "This song is longer than 6 minutes, so only the first 6 minu
 WARNING_UNAVAILABLE = (
     "Real song analysis is not available on this server right now, so the tempo, key and notes "
     "shown are an example, not your song."
+)
+WARNING_NO_PART = {
+    "bass": "I couldn't hear a clear bass line in this song, so there is no Bass part.",
+    "harmony": "I couldn't find clear chords in this song, so there is no Chords part.",
+}
+WARNING_PARTS_FAILED = (
+    "I could only work out the melody of this song this time, not its bass or chords."
 )
 ERROR_NO_MUSIC = (
     "I couldn't find a steady beat or a melody in this recording, so there is nothing to show. "
@@ -100,6 +112,11 @@ DRUMS_OUT_CLEAR_CONFIDENCE = FULL_MIX_MAX_CONFIDENCE + 0.1  # the warning goes o
 # covering 90% or more. So, beyond FULL_MIX_MIN_NOTES notes:
 NO_MELODY_RETRY_MIN_CONFIDENCE = 0.2  # twice the melody step's own floor of 0.1, under the weakest real mix seen (0.23)
 NO_MELODY_RETRY_MIN_SOUND_SHARE = 0.25  # the notes must cover this share of the analyzed sound; scattered clicks do not
+
+# Songs with several instruments are also split into melody, bass and chords (`analysis/parts.py`), from the
+# notes the basic-pitch model finds once the drums are out. With this many cores that starts right away, next
+# to the melody step (about 5 s for a 3 minute song on 12 cores); with fewer, only once a song needs it.
+BAND_EARLY_MIN_CORES = 4
 
 
 class AnalysisFailed(Exception):
@@ -306,6 +323,66 @@ def _without_drums(melody, y, sr: int, result: dict, notes: list[dict], drums_ou
     return again, _unsure_after_drums_out(again)
 
 
+def _band_notes(y, sr: int, drums_out=None) -> list[dict]:
+    """Every note in the sound with the drums taken out (`analysis/polyphonic.py`). Raises on any failure."""
+    separation = importlib.import_module("analysis.separation")
+    polyphonic = importlib.import_module("analysis.polyphonic")
+    quieter = drums_out.result() if drums_out is not None else separation.harmonic_part(y, sr)
+    return polyphonic.transcribe(quieter, sr)
+
+
+def _start_band_notes(helpers, y, sr: int, drums_out):
+    """Start `_band_notes` in a helper thread on a machine with cores to spare (a future), else None (done later,
+    only for a song that needs it). Never raises."""
+    if (os.cpu_count() or 1) < BAND_EARLY_MIN_CORES:
+        return None
+    try:
+        return helpers.submit(_band_notes, y, sr, drums_out)
+    except Exception:
+        log.info("Could not start the band transcription in the background.", exc_info=True)
+        return None
+
+
+def _band_parts(melody, y, sr: int, result: dict, melody_part: dict, drums_out=None, band=None):
+    """`(parts, warnings)` for a song with several instruments: melody, bass and chords (`analysis/parts.py`).
+
+    The melody is the top voice of the band notes when that is a real line, otherwise the pYIN melody already
+    found. Bass or chords that come out too thin are left out, with a warning; when both are missing the song
+    is one line (perhaps over drums) and the pYIN melody stays alone, as before. Any failure gives back the
+    pYIN melody alone with a warning, so the upload still works.
+    """
+    started = time.monotonic()
+    try:
+        splitter = importlib.import_module("analysis.parts")
+        notes = band.result() if band is not None else _band_notes(y, sr, drums_out)
+        quarters = melody.quarters_per_beat(result.get("time_signature"))
+        found, omitted = splitter.split_parts(
+            notes, result["tempo_bpm"], result["beats"], beat_quarters=quarters, analyzed_sec=len(y) / sr
+        )
+        if not found.keys() & {"bass", "harmony"}:
+            # Nothing under the tune: one line over drums (whose leftovers the model can read as extra notes).
+            log.info("Band split found no bass or chords (%s); the melody stays as it was.", omitted)
+            return [melody_part], []
+        top = found.pop("melody", None)
+        if top is not None:
+            hint = melody.transposition_hint(top["notes"])
+            if hint:
+                top["instrument"] = hint
+        parts = [top or melody_part] + [found[k] for k in ("bass", "harmony") if k in found]
+        splitter.align_parts(parts, result["tempo_bpm"], quarters)
+    except Exception:
+        log.exception("Splitting the song into melody, bass and chords failed; only the melody is kept.")
+        return [melody_part], [WARNING_PARTS_FAILED]
+    log.info(
+        "Band split took %.1f s: %s (melody from %s; left out: %s).",
+        time.monotonic() - started,
+        ", ".join(f"{p['name']} {len(p['notes'])} notes" for p in parts),
+        "the band notes" if top is not None else "pYIN",
+        omitted or "nothing",
+    )
+    return parts, [WARNING_NO_PART[k] for k in ("bass", "harmony") if k in omitted]
+
+
 def analyze_audio(path: Path) -> dict:
     """Analyze the audio file at `path` and return a song-analysis dict (see the module notes).
 
@@ -325,10 +402,13 @@ def analyze_audio(path: Path) -> dict:
     # threads while the tempo and melody steps run here. The drum removal is only needed when the first
     # melody try looks like a full mix; started now, it is usually ready by then (a few spare seconds of
     # work for a solo recording, which finish after the answer is sent).
-    helpers = ThreadPoolExecutor(max_workers=2, thread_name_prefix="analysis-helper")
+    # The band transcription (all notes at once, for melody, bass and chords) follows the drum removal in a
+    # third thread on a machine with spare cores; it is only used for a song with several instruments.
+    helpers = ThreadPoolExecutor(max_workers=3, thread_name_prefix="analysis-helper")
     try:
         key = helpers.submit(tempo_key.estimate_key, y, sr)
         drums_out = _start_drums_out(helpers, y, sr)
+        band = _start_band_notes(helpers, y, sr, drums_out)
         try:
             result = tempo_key.analyze_tempo_key(y, sr, with_key=False)
         except tempo_key.AnalysisError as err:
@@ -345,6 +425,9 @@ def analyze_audio(path: Path) -> dict:
         if not parts and result["tempo_confidence"] < NO_MUSIC_MAX_TEMPO_CONFIDENCE:
             raise AnalysisFailed(ERROR_NO_MUSIC)
         warnings += melody_warnings
+        if parts and WARNING_FULL_MIX in melody_warnings:
+            parts, band_warnings = _band_parts(melody, y, sr, result, parts[0], drums_out, band)
+            warnings += band_warnings
         signature = result.pop("time_signature")
         result.update(key=key.result(), time_signature=signature)  # same order as before
     finally:
@@ -410,6 +493,10 @@ def warm_up() -> bool:
         except Exception:
             ok = False
             log.info("Warm-up of the melody step did not finish.", exc_info=True)
+        try:  # loads the band model (several seconds); optional, so it does not count against `ok`
+            importlib.import_module("analysis.polyphonic").transcribe(y, sr)
+        except Exception:
+            log.info("Warm-up of the band transcription did not finish.", exc_info=True)
         return ok
     except Exception:
         log.info("Analysis warm-up skipped.", exc_info=True)
