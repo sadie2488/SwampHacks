@@ -5,6 +5,7 @@ import { bus } from '@/bus';
 import type { SongAnalysis } from '@/contracts';
 import { buildScore, INSTRUMENT_CHOICES, type Score } from './notes-to-musicxml';
 import { emptySheetMessage } from './sheet-empty';
+import { cursorTiming, DEFAULT_TIMING, stepAt, wholeNotesAt, type CursorTiming } from './sheet-cursor';
 
 type DrawState =
   | { status: 'empty' }
@@ -31,7 +32,7 @@ export function Sheet() {
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const cursorRef = useRef<Cursor>({ times: [], index: -1 });
   const positionRef = useRef(0);
-  const timingRef = useRef({ bpm: 120, denominator: 4 });
+  const timingRef = useRef<CursorTiming>(DEFAULT_TIMING);
 
   // Listen for the loaded song (and pick its first part).
   useEffect(
@@ -58,7 +59,7 @@ export function Sheet() {
     }
   }, [analysis, part, beginner, instrument]);
 
-  if (analysis) timingRef.current = { bpm: analysis.tempo_bpm > 0 ? analysis.tempo_bpm : 120, denominator: analysis.time_signature?.denominator ?? 4 };
+  if (analysis) timingRef.current = cursorTiming(analysis);
 
   // Move the cursor to where the song is now. Cheap: it only moves when the step changes.
   const followPosition = () => {
@@ -66,15 +67,7 @@ export function Sheet() {
     const host = hostRef.current;
     const c = cursorRef.current;
     if (!osmd || !host || c.times.length === 0) return;
-    const { bpm, denominator } = timingRef.current;
-    const whole = (positionRef.current * bpm) / 60 / denominator;
-    let lo = 0;
-    let hi = c.times.length - 1;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (c.times[mid] <= whole + 1e-6) lo = mid;
-      else hi = mid - 1;
-    }
+    const lo = stepAt(c.times, wholeNotesAt(positionRef.current, timingRef.current));
     if (lo === c.index) return;
     try {
       if (lo < c.index || c.index < 0) {
