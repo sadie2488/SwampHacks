@@ -21,6 +21,7 @@ const PLAY: GuideLine[] = [
 export const GUIDE_LINES: Record<ModeId | 'menu', GuideLine[]> = {
   menu: [
     { big: 'Scroll or drag', small: 'to turn the records; click the one in front to open it' },
+    { big: 'Open your hand, then close it', small: 'to enter the record in front' },
     SIGNS,
   ],
   learn: [
