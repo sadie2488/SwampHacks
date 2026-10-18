@@ -117,11 +117,13 @@ export function ModeVisual({ mode }: { mode: ModeId }) {
         if (playing) schedule();
       } else if (mode === 'create') {
         const cx = w / 2;
-        const cy = h * 0.52;
+        // a little lower and smaller than the mockup, so the rings clear the "CREATE FROM HUMS" title above and the
+        // hand legend below at 1280x800 and 1440x900
+        const cy = h * 0.565;
         for (let k = 0; k < 3; k++) {
           ctx.setLineDash(k ? [1, 9] : []);
           ctx.beginPath();
-          ctx.arc(cx, cy, h * 0.28 + k * 18 + voice * 40 * (k + 1), 0, Math.PI * 2);
+          ctx.arc(cx, cy, h * 0.25 + k * 18 + voice * 40 * (k + 1), 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.setLineDash([]);
